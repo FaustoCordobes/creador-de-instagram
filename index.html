@@ -130,6 +130,7 @@ aside{counter-reset:st}
       <button class="btn pri" id="lLinkGo" style="flex:0 0 auto">Traer todo</button>
     </div>
     <p class="hint">Con un solo link completa datos, logo y fotos. Después revisá todo.</p>
+    <div class="status" id="lStatus"></div>
     <label class="f">¿Para quién es el contenido?</label>
     <div class="chips" id="purpose">
       <span class="chip on" data-p="local">Para el Instagram del local</span>
@@ -150,7 +151,6 @@ aside{counter-reset:st}
       <button class="btn pri hidden" id="lGenAI">✨ Escribir con IA</button>
       <button class="btn" id="lGenAuto">⚡ Armar contenido</button>
     </div>
-    <div class="status" id="lStatus"></div>
   </div>
 
   <!-- Proyecto (mi app/web, o la web que le hice al local) -->
@@ -287,7 +287,7 @@ aside{counter-reset:st}
       <button class="tab" data-out="story">Historia</button>
       <button class="tab" data-out="reel">Reel (video)</button>
       <button class="tab" data-out="text">Texto del posteo</button>
-      <button class="tab" data-out="publish">🚀 Subir a IG</button>
+      <button class="tab" data-out="publish">⚙ Conexiones</button>
     </div>
     <div class="spacer"></div>
     <button class="btn" id="dlAll">⬇ Descargar todo (.zip)</button>
@@ -339,48 +339,29 @@ aside{counter-reset:st}
     <div class="single">
       <div style="flex:1;min-width:300px;max-width:560px">
         <div class="card" id="pubOffline">
-          <h2>Subir directo a Instagram</h2>
-          <p class="hint" style="margin-top:0">Esto funciona en tu versión publicada en Vercel, con Instagram conectado. Acá adentro de Claude no hay conexión a internet: descargá los archivos y subilos desde el celu.</p>
+          <h2>Conexiones</h2>
+          <p class="hint" style="margin-top:0">Leer links de Google e Instagram funciona en tu versión publicada en Vercel. Acá adentro de Claude no hay conexión a internet: cargá los datos y las fotos a mano.</p>
         </div>
         <div id="pubOnline" class="hidden">
           <div class="card">
-            <h2>Cuenta</h2>
-            <div id="igAccount" class="hint" style="margin:0">Revisando…</div>
-            <div id="srvChecks" class="hint"></div>
+            <h2>Estado</h2>
+            <div id="srvChecks" class="hint" style="margin-top:0"></div>
+            <div id="igAccount" class="hint"></div>
             <label class="f">Clave del estudio</label>
             <input type="password" id="studioKey" placeholder="La que pusiste en STUDIO_PASSWORD">
-          </div>
-          <div class="card" style="margin-top:14px">
-            <h2>¿Qué subo?</h2>
-            <label class="chk"><input type="checkbox" id="pubCarousel" checked> Carrusel con el texto y los hashtags</label>
-            <label class="chk"><input type="checkbox" id="pubPost"> Post simple (imagen cuadrada)</label>
-            <label class="chk"><input type="checkbox" id="pubStory" checked> Historia</label>
-            <label class="chk"><input type="checkbox" id="pubReel"> Reel (video)</label>
-            <label class="chk" style="padding-left:26px"><input type="checkbox" id="pubReelFeed" checked> Mostrar el reel también en el feed</label>
-            <div class="status show hidden" id="pubWarn"></div>
-            <button class="btn pri" id="pubGo" style="width:100%;margin-top:12px">🚀 Publicar ahora</button>
-            <ol id="pubLog" class="pubLog"></ol>
           </div>
         </div>
       </div>
       <div class="side">
-        <h3>Conectar tu Instagram (una sola vez)</h3>
-        <ol style="padding-left:18px;margin:6px 0">
-          <li>Seguí la guía <b>GUIA-INSTAGRAM.md</b> del repo: crea la Página de Facebook, la vincula a tu Instagram profesional y arma la app de Meta.</li>
-          <li>En <b>Graph API Explorer</b> generá un token con los permisos de la guía y pegalo acá abajo.</li>
-          <li>Copiá los dos valores que aparecen en Vercel (<i>Settings → Environment Variables</i>) y hacé <b>Redeploy</b>.</li>
-        </ol>
-        <details><summary>Convertir mi token</summary>
+        <h3>Google Maps</h3>
+        <p style="margin:4px 0 0">Con la clave de Google, un link de búsqueda de Google, de Maps o solo el nombre del local trae dirección, horarios, teléfono, calificación, una reseña y fotos. Pasos en <b>GUIA-GOOGLE.md</b>.</p>
+        <h3 style="margin-top:18px">Instagram (solo lectura)</h3>
+        <p style="margin:4px 0 6px">Con Meta conectado, un link de Instagram trae el logo, la bio y las últimas fotos del local. La app nunca publica nada. Pasos en <b>GUIA-INSTAGRAM.md</b>; el último es este:</p>
+        <details><summary>Convertir mi token de Graph API Explorer</summary>
           <textarea id="igToken" rows="3" placeholder="Pegá el token de Graph API Explorer" style="margin-top:8px"></textarea>
           <button class="btn sm" id="igSetup" style="margin-top:8px">Convertir</button>
           <div id="igSetupOut" class="hint"></div>
         </details>
-        <h3 style="margin-top:18px">Límites de Instagram</h3>
-        <ul>
-          <li>Solo cuentas profesionales; hasta 50 publicaciones por día.</li>
-          <li>Las historias se publican sin stickers (link, encuesta, ubicación): agregalos a mano si los necesitás.</li>
-          <li>El reel sale sin música; para sumarla, subilo desde la app.</li>
-        </ul>
       </div>
     </div>
   </div>
@@ -1682,101 +1663,19 @@ function updatePublishUI(){
   $('#pubOnline').classList.toggle('hidden', !on);
   if (!on) return;
   const sv = S.server, mk = (ok, t) => `<div>${ok ? '✅' : '⬜'} ${t}</div>`;
-  $('#srvChecks').innerHTML = mk(sv.ig, 'Instagram conectado') + mk(sv.blob, 'Almacenamiento temporal (Vercel Blob)') + mk(sv.google, 'Google Maps (para links de Google)') + mk(sv.protected, 'Clave del estudio configurada');
+  $('#srvChecks').innerHTML = mk(sv.protected, 'Clave del estudio configurada') + mk(sv.google, 'Google Maps (links de Google y búsqueda por nombre)') + mk(sv.ig, 'Instagram (leer perfiles de locales)');
   refreshAccount();
-  const warn = $('#pubWarn');
-  if (isLocalOwn()) { warn.innerHTML = '<b>Ojo:</b> se publica en <b>tu</b> cuenta, no en la del local. Para la cuenta del local, descargá todo y subilo desde su celu.'; warn.classList.remove('hidden'); }
-  else warn.classList.add('hidden');
 }
 async function refreshAccount(){
   const box = $('#igAccount');
-  if (!S.server || !S.server.ig) { box.textContent = 'Instagram todavía no está conectado. Seguí los pasos de la derecha.'; return; }
+  if (!S.server || !S.server.ig) { box.textContent = ''; return; }
   try {
     const a = await api('api/ig', { action: 'status' });
     S.igAccount = a;
-    const used = a.limit ? ` · usaste ${a.limit.quota_usage} de ${(a.limit.config && a.limit.config.quota_total) || 50} publicaciones hoy` : '';
-    box.innerHTML = `Conectado como <b style="color:var(--ink)">@${a.username}</b>${a.followers_count != null ? ` · ${a.followers_count} seguidores` : ''}${used}`;
+    box.innerHTML = `Instagram conectado con <b style="color:var(--ink)">@${a.username}</b> (solo para leer perfiles).`;
   } catch (e) { box.textContent = e.status === 401 ? 'Escribí tu clave del estudio para ver la cuenta.' : 'No pude leer la cuenta: ' + e.message; }
 }
 
-/* ---- subir archivos temporales y publicar ---- */
-let blobLib = null;
-async function blobUpload(blob, name, type){
-  if (!blobLib) {
-    for (const u of ['https://esm.sh/@vercel/blob@2.8.2/client', 'https://cdn.jsdelivr.net/npm/@vercel/blob@2.8.2/dist/client.js/+esm']) { try { blobLib = await import(u); break; } catch {} }
-    if (!blobLib) throw new Error('No pude cargar el módulo de subida (revisá la conexión).');
-  }
-  const r = await blobLib.upload(`ig/${Date.now()}-${name}`, blob, { access: 'public', handleUploadUrl: 'api/upload', clientPayload: studioKey(), contentType: type });
-  return r.url;
-}
-const jpegBlob = c => new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
-function plog(msg, cls){ const li = document.createElement('li'); li.innerHTML = msg; if (cls) li.className = cls; $('#pubLog').appendChild(li); return li; }
-async function waitReady(id, video){
-  const t0 = Date.now();
-  for (;;) {
-    const j = await api('api/ig', { action: 'check', id });
-    if (j.status_code === 'FINISHED') return;
-    if (j.status_code === 'ERROR' || j.status_code === 'EXPIRED') throw new Error('Instagram rechazó el archivo' + (j.status ? ': ' + j.status : ''));
-    if (Date.now() - t0 > 6 * 60 * 1000) throw new Error('Instagram tardó demasiado en procesar el archivo');
-    await sleep(video ? 5000 : 1500);
-  }
-}
-let pubArmed = 0;
-async function publishFlow(){
-  const want = { carousel: $('#pubCarousel').checked, post: $('#pubPost').checked, story: $('#pubStory').checked, reel: $('#pubReel').checked };
-  const n = Object.values(want).filter(Boolean).length;
-  if (!n) { toast('Elegí qué subir'); return; }
-  if (!S.server || !S.server.ig) { toast('Primero conectá Instagram'); return; }
-  try { localStorage.setItem('igstudio.key', $('#studioKey').value.trim()); } catch {}
-  const btn = $('#pubGo');
-  if (Date.now() - pubArmed > 6000) { pubArmed = Date.now(); btn.textContent = `Confirmá: publicar ${n} cosa${n > 1 ? 's' : ''} en @${(S.igAccount && S.igAccount.username) || 'tu cuenta'}`; setTimeout(() => { if (Date.now() - pubArmed >= 6000) btn.textContent = '🚀 Publicar ahora'; }, 6200); return; }
-  pubArmed = 0; btn.disabled = true; btn.textContent = 'Publicando…'; $('#pubLog').innerHTML = '';
-  const caption = ($('#f-caption').value.trim() + '\n\n' + $('#f-hashtags').value.trim()).trim().slice(0, 2200);
-  const uploaded = [];
-  const up = async (blob, name, type) => { const u = await blobUpload(blob, name, type); uploaded.push(u); return u; };
-  const done = (what, r) => plog(`✅ ${what} ${what === 'Historia' ? 'publicada' : 'publicado'}${r.permalink ? ` — <a href="${r.permalink}" target="_blank" rel="noopener">ver</a>` : ''}`, 'ok');
-  try {
-    await ensureFonts(); renderAll();
-    if (want.carousel) {
-      const cs = $$('#carousel canvas').slice(0, 10);
-      const li = plog(`Subiendo ${cs.length} imágenes del carrusel…`);
-      const ids = [];
-      for (let i = 0; i < cs.length; i++) { const url = await up(await jpegBlob(cs[i]), `slide-${i + 1}.jpg`, 'image/jpeg'); ids.push((await api('api/ig', { action: 'container', kind: 'item', url })).id); li.textContent = `Preparando carrusel ${i + 1}/${cs.length}…`; }
-      const parent = (await api('api/ig', { action: 'container', kind: 'carousel', children: ids, caption })).id;
-      await waitReady(parent, false);
-      done('Carrusel', await api('api/ig', { action: 'publish', id: parent }));
-    }
-    if (want.post) {
-      plog('Subiendo el post…');
-      const url = await up(await jpegBlob($('#cPost')), 'post.jpg', 'image/jpeg');
-      const id = (await api('api/ig', { action: 'container', kind: 'image', url, caption })).id;
-      await waitReady(id, false); done('Post', await api('api/ig', { action: 'publish', id }));
-    }
-    if (want.story) {
-      plog('Subiendo la historia…');
-      const url = await up(await jpegBlob($('#cStory')), 'historia.jpg', 'image/jpeg');
-      const id = (await api('api/ig', { action: 'container', kind: 'story', url })).id;
-      await waitReady(id, false); done('Historia', await api('api/ig', { action: 'publish', id }));
-    }
-    if (want.reel) {
-      const li = plog('Creando el video del reel…');
-      const r = await encodeReel(p => li.textContent = `Creando el video del reel… ${Math.round(p * 100)}%`);
-      if (r.ext !== 'mp4') throw new Error('Este navegador solo crea WEBM y Instagram pide MP4. Usá Chrome o Edge actualizados.');
-      S.lastReel = r;
-      li.textContent = 'Subiendo el reel…';
-      const url = await up(r.blob, 'reel.mp4', 'video/mp4');
-      const id = (await api('api/ig', { action: 'container', kind: 'reel', url, caption, shareToFeed: $('#pubReelFeed').checked })).id;
-      li.textContent = 'Instagram está procesando el reel (puede tardar un par de minutos)…';
-      await waitReady(id, true); done('Reel', await api('api/ig', { action: 'publish', id }));
-    }
-    toast('¡Publicado!');
-  } catch (e) {
-    plog('❌ ' + (e.status === 401 ? 'Clave del estudio incorrecta.' : e.message), 'err');
-  } finally {
-    if (uploaded.length) { try { await api('api/ig', { action: 'cleanup', urls: uploaded }); } catch {} }
-    btn.disabled = false; btn.textContent = '🚀 Publicar ahora'; refreshAccount();
-  }
-}
 async function igSetup(){
   const out = $('#igSetupOut'); out.textContent = 'Convirtiendo…';
   try {
@@ -1840,6 +1739,22 @@ async function localFromLink(){
   const notes = [];
   try {
     if (!S.server && L.kind !== 'web' && L.kind !== 'tiktok') { lstatus('Traer datos de Google o Instagram funciona en tu versión de Vercel (con las claves configuradas). Acá completá los datos a mano.', true); return; }
+    // validar antes de borrar nada
+    if (L.kind === 'ig' && !S.server.ig) {
+      if (!S.server.google) throw new Error('Para leer links de Instagram conectá Meta o Google (pestaña "⚙ Conexiones").');
+      const handle = (L.user || '').replace(/[._]+/g, ' ').trim();
+      L = { kind: 'query', q: `${handle} ${readBrand().city || ''}`.trim(), igUser: L.user };
+      notes.push(`Instagram sin conectar: busqué "${handle}" en Google`);
+    }
+    if (L.kind === 'query' && !S.server.google) {
+      const nm = (L.q || '').replace(/\b(san martin de los andes|sma|neuquen|neuquén|argentina)\b/gi, '').replace(/\s+/g, ' ').trim();
+      const demo = !$('#lDemoBadge').classList.contains('hidden');
+      if (demo) { LFIELDS.forEach(k => $('#l-' + k).value = ''); LTF.forEach(k => $('#lf-' + k).value = ''); $('#lDemoBadge').classList.add('hidden'); }
+      if (nm && !$('#l-name').value.trim()) $('#l-name').value = nm.replace(/\b\w/g, c => c.toUpperCase());
+      renderAll();
+      localAutoTexts(true); makeLocalCaption(); renderAll();
+      throw new Error('⚠️ Google Maps todavía no está conectado: solo cargué el nombre. Para traer dirección, horarios y fotos, configurá GOOGLE_PLACES_KEY en Vercel (GUIA-GOOGLE.md) y hacé Redeploy.');
+    }
     // empezar de cero
     LFIELDS.forEach(k => $('#l-' + k).value = ''); LTF.forEach(k => $('#lf-' + k).value = '');
     S.shots = []; S.logo = null; $('#logoSlot').textContent = 'sin logo'; $('#delLogo').classList.add('hidden'); $('#lDemoBadge').classList.add('hidden');
@@ -1848,7 +1763,6 @@ async function localFromLink(){
     if (L.kind === 'gshort') { lstatus('Abriendo el link de Google…'); try { const r = await api('api/place', { resolve: L.url }, 'GET'); L = linkKind(r.url); } catch { L = { kind: 'query', q: '' }; } if (!L.q && L.kind === 'query') throw new Error('No pude leer ese link corto de Google. Probá con el link largo o escribí el nombre del local.'); }
 
     if (L.kind === 'ig') {
-      if (!S.server.ig) throw new Error('Para leer Instagram primero conectá tu cuenta (pestaña "Subir a IG").');
       lstatus(`Leyendo @${L.user} en Instagram…`);
       const d = await api('api/ig', { action: 'discover', username: L.user });
       set('name', d.name || d.username); set('ig', '@' + (d.username || L.user)); set('web', d.website && !/instagram\.com|linktr\.ee/i.test(d.website) ? d.website.replace(/^https?:\/\//, '').replace(/\/$/, '') : '');
@@ -1866,6 +1780,7 @@ async function localFromLink(){
       lstatus(`Buscando "${L.q}" en Google Maps…`);
       place = await fetchPlace(L.q);
       if (!place) throw new Error('Google no encontró ese local. Probá agregando la ciudad.');
+      if (L.igUser) set('ig', '@' + L.igUser);
     } else if (L.kind === 'tiktok') {
       $('#l-tiktok').value = L.url;
       const t = await tiktokInfo(readLocal());
@@ -1908,7 +1823,7 @@ async function localFromLink(){
     if (design) await applyAuto(design); else renderAll();
     lstatus(`Listo: ${notes.join(' · ') || 'datos cargados'}. Revisá todo${$('#l-wa').value ? ' (fijate que el teléfono sea el WhatsApp)' : ''}.`);
   } catch (e) {
-    lstatus(e.status === 401 ? 'Clave del estudio incorrecta (ponela en la pestaña "Subir a IG").' : (e.message || 'No pude leer ese link.'), true);
+    lstatus(e.status === 401 ? 'Clave del estudio incorrecta (ponela en la pestaña "⚙ Conexiones").' : (e.message || 'No pude leer ese link.'), true);
     renderAll();
   } finally { btn.disabled = false; }
 }
@@ -2130,7 +2045,6 @@ function applyMode(){
   $$('#purpose .chip').forEach(x => x.classList.toggle('on', x.dataset.p === S.purpose));
   $('#projTitle').textContent = S.mode === 'local' ? 'La web o app que le hiciste (opcional)' : 'Tu proyecto';
   $('#imgTitle').textContent = S.mode === 'local' ? 'Logo y fotos' : 'Capturas de pantalla';
-  if (S.server) { const w = $('#pubWarn'); if (isLocalOwn()) { w.innerHTML = '<b>Ojo:</b> se publica en <b>tu</b> cuenta, no en la del local. Para la cuenta del local, descargá todo y subilo desde su celu.'; w.classList.remove('hidden'); } else w.classList.add('hidden'); }
   $('#brandLabel').textContent = isLocalOwn() ? 'Tu marca (sale como crédito chico: "Diseño: …")' : 'Tu marca';
 }
 function setMode(m){
@@ -2155,7 +2069,6 @@ LTF.forEach(k => $('#lf-' + k).addEventListener('input', () => debounce(renderAl
 $('#lGenAuto').onclick = buildLocal;
 $('#lLinkGo').onclick = localFromLink;
 $('#lLink').onkeydown = e => { if (e.key === 'Enter') localFromLink(); };
-$('#pubGo').onclick = publishFlow;
 $('#igSetup').onclick = igSetup;
 $('#studioKey').addEventListener('change', () => { try { localStorage.setItem('igstudio.key', $('#studioKey').value.trim()); } catch {} refreshAccount(); });
 $('#lGenAI').onclick = () => S.purpose === 'caso' ? generateAI() : generateLocalAI();
