@@ -93,7 +93,7 @@ module.exports = async (req, res) => {
 
     if (action === 'cleanup') {
       const urls = (body.urls || []).filter(u => /blob\.vercel-storage\.com/.test(u));
-      if (urls.length && process.env.BLOB_READ_WRITE_TOKEN) { const { del } = await import('@vercel/blob'); await del(urls); }
+      if (urls.length && process.env.BLOB_READ_WRITE_TOKEN) { const { del } = require('@vercel/blob'); await del(urls); }
       return res.json({ deleted: urls.length });
     }
 
