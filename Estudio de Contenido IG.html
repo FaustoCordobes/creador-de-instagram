@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estudio de Contenido IG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.js"></script>
+<style>
+:root{
+  --bg:#0b0d12; --panel:#12151d; --panel2:#181c26; --line:#252a37; --ink:#eef0f4; --muted:#8e97a8;
+  --acc:#c6ff3d; --acc-ink:#0b0d12; --danger:#ff6b6b; --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+header.top{display:flex;align-items:center;gap:14px;padding:18px 24px;border-bottom:1px solid var(--line)}
+.logo{width:38px;height:38px;border-radius:11px;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;font:700 18px 'Space Grotesk'}
+header h1{font:700 19px 'Space Grotesk';margin:0}
+header p{margin:0;color:var(--muted);font-size:13px}
+.wrap{display:grid;grid-template-columns:440px 1fr;min-height:calc(100vh - 75px)}
+@media (max-width:980px){.wrap{grid-template-columns:1fr}}
+aside{border-right:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:16px;overflow:auto}
+@media (min-width:981px){aside{max-height:calc(100vh - 75px);position:sticky;top:0}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.card h2{font:700 15px 'Space Grotesk';margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.step{background:var(--acc);color:var(--acc-ink);border-radius:99px;width:22px;height:22px;display:inline-grid;place-items:center;font-size:12px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tab{background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:6px 13px;cursor:pointer;font-size:13px}
+.tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.drop{border:1.5px dashed #3a4153;border-radius:12px;padding:22px 14px;text-align:center;color:var(--muted);cursor:pointer;transition:.15s}
+.drop:hover,.drop.over{border-color:var(--acc);color:var(--ink);background:#c6ff3d0d}
+.drop b{color:var(--ink)}
+label.f{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;font-weight:600;letter-spacing:.02em}
+input[type=text],input[type=url],textarea,select{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;outline:none}
+input:focus,textarea:focus,select:focus{border-color:#4a5268}
+textarea{resize:vertical;min-height:62px}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+.btn{border:0;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:600;background:var(--panel2);border:1px solid var(--line)}
+.btn:hover{border-color:#4a5268}
+.btn.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+.btn.pri:hover{filter:brightness(1.05)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:6px 10px;font-size:13px}
+.hint{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+.status{font-size:13px;margin-top:10px;padding:9px 11px;border-radius:10px;background:var(--panel2);display:none}
+.status.show{display:block}
+.status.err{color:#ffb3b3}
+.shots{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.shot{position:relative;width:86px;height:86px;border-radius:10px;overflow:hidden;border:2px solid transparent;cursor:pointer;background:#000}
+.shot img{width:100%;height:100%;object-fit:cover;object-position:top}
+.shot.off{opacity:.3}
+.shot.first{border-color:var(--acc)}
+.shot .tag{position:absolute;left:4px;top:4px;font-size:10px;background:var(--acc);color:var(--acc-ink);padding:1px 6px;border-radius:99px;font-weight:700}
+.shot .x{position:absolute;right:3px;top:3px;background:#000b;border:0;border-radius:99px;width:20px;height:20px;cursor:pointer;font-size:12px;line-height:1}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:6px 12px;border-radius:99px;border:1px solid var(--line);cursor:pointer;font-size:13px;background:var(--panel2)}
+.chip.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+main{padding:18px 22px;min-width:0}
+.outbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.outbar .tabs{margin:0}
+.spacer{flex:1}
+.pane{display:none}
+.pane.on{display:block}
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.frame{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px}
+.frame canvas{width:100%;height:auto;display:block;border-radius:6px;background:#000}
+.frame .meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:12.5px;color:var(--muted)}
+.single{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}
+.single .frame{width:min(440px,100%)}
+.single.v .frame{width:min(330px,100%)}
+.side{flex:1;min-width:240px;color:var(--muted);font-size:14px}
+.side h3{color:var(--ink);font:700 15px 'Space Grotesk';margin:0 0 8px}
+.side ul{padding-left:18px;margin:8px 0}
+.bar{height:8px;background:var(--panel2);border-radius:99px;overflow:hidden;margin-top:10px;display:none}
+.bar.show{display:block}
+.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .1s}
+.textout textarea{min-height:260px;font-size:14px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;font-weight:600;font-size:14px;opacity:0;transition:.2s;pointer-events:none;z-index:9}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.demo-badge{font-size:12px;background:#ffd36b22;color:#ffd36b;border:1px solid #ffd36b55;padding:4px 10px;border-radius:99px}
+details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-top:10px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">IG</div>
+  <div>
+    <h1>Estudio de Contenido</h1>
+    <p>Subí tu proyecto (ZIP, carpeta o GitHub) y sacá carrusel, post, historia, reel y texto listos para Instagram.</p>
+  </div>
+</header>
+
+<div class="wrap">
+<aside>
+  <!-- 1. Fuente -->
+  <div class="card">
+    <h2><span class="step">1</span> Tu proyecto</h2>
+    <div class="tabs" id="srcTabs">
+      <button class="tab on" data-src="zip">ZIP</button>
+      <button class="tab" data-src="folder">Carpeta</button>
+      <button class="tab" data-src="github">GitHub</button>
+      <button class="tab" data-src="text">Solo texto</button>
+    </div>
+    <div data-srcpane="zip">
+      <div class="drop" id="dropZip"><b>Arrastrá el .zip acá</b><br>o hacé clic para elegirlo</div>
+      <input type="file" id="inZip" accept=".zip,application/zip" hidden>
+    </div>
+    <div data-srcpane="folder" class="hidden">
+      <div class="drop" id="dropFolder"><b>Elegí la carpeta del proyecto</b><br>se lee en tu navegador, no se sube a ningún lado</div>
+      <input type="file" id="inFolder" webkitdirectory directory multiple hidden>
+    </div>
+    <div data-srcpane="github" class="hidden">
+      <div class="row">
+        <input type="url" id="ghUrl" placeholder="https://github.com/usuario/repositorio">
+        <button class="btn pri" id="ghGo" style="flex:0 0 auto">Traer</button>
+      </div>
+      <p class="hint" id="ghHint">Trae el README, package.json, index.html y las imágenes del repo.</p>
+    </div>
+    <div data-srcpane="text" class="hidden">
+      <p class="hint" style="margin-top:0">Describí el proyecto en "Contexto extra" y completá los textos del paso 2 (o generalos con IA).</p>
+    </div>
+    <div class="status" id="status"></div>
+
+    <label class="f">Capturas de pantalla <span style="font-weight:400">(clic = activar/desactivar · ★ = portada)</span></label>
+    <div class="shots" id="shots"></div>
+    <button class="btn sm" id="addShots" style="margin-top:8px">+ Agregar capturas</button>
+    <input type="file" id="inShots" accept="image/*" multiple hidden>
+
+    <label class="f">Contexto extra (opcional)</label>
+    <textarea id="ctx" placeholder="Ej: lo hice para un taller mecánico de Junín; los clientes reciben aviso por WhatsApp cuando el auto está listo."></textarea>
+    <div class="row">
+      <div><label class="f">Tono</label>
+        <select id="tone"><option>Cercano</option><option>Profesional</option><option>Vendedor y directo</option><option>Técnico (para devs)</option></select></div>
+      <div><label class="f">Objetivo</label>
+        <select id="goal"><option>Conseguir clientes (negocios)</option><option>Mostrar portfolio</option><option>Lanzar una app</option></select></div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn pri hidden" id="genAI">✨ Escribir con IA</button>
+      <button class="btn" id="genAuto">⚡ Generar automático</button>
+    </div>
+    <p class="hint" id="aiHint">El modo automático arma los textos leyendo el README y el código. Después podés editar todo.</p>
+  </div>
+
+  <!-- 2. Textos -->
+  <div class="card">
+    <h2><span class="step">2</span> Textos <span class="demo-badge" id="demoBadge">ejemplo</span></h2>
+    <label class="f">Nombre del proyecto</label><input type="text" id="f-name">
+    <label class="f">Etiqueta chica (arriba)</label><input type="text" id="f-kicker">
+    <label class="f">Gancho (frase grande de portada)</label><input type="text" id="f-hook">
+    <label class="f">Qué es, en una línea</label><input type="text" id="f-tagline">
+    <label class="f">Problema que resuelve</label><input type="text" id="f-problem">
+    <label class="f">Para quién es</label><input type="text" id="f-audience">
+    <label class="f">Funciones (una por línea · <i>Título: descripción</i>)</label><textarea id="f-features" rows="5"></textarea>
+    <label class="f">Tecnologías (separadas por coma)</label><input type="text" id="f-tech">
+    <label class="f">Llamado a la acción</label><input type="text" id="f-cta">
+  </div>
+
+  <!-- 3. Estilo -->
+  <div class="card">
+    <h2><span class="step">3</span> Estilo y marca</h2>
+    <label class="f">Tema</label>
+    <div class="chips" id="themes">
+      <span class="chip on" data-t="noche">Noche</span>
+      <span class="chip" data-t="claro">Claro</span>
+      <span class="chip" data-t="marca">Color de la app</span>
+    </div>
+    <div class="row" style="align-items:end">
+      <div><label class="f">Color de acento</label><input type="color" id="accent" value="#c6ff3d" style="width:100%;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);padding:3px"></div>
+      <div><button class="btn sm" id="useDetected" style="width:100%;height:40px" disabled>Usar color detectado</button></div>
+    </div>
+    <label class="f">Tu marca</label><input type="text" id="b-brand">
+    <div class="row">
+      <div><label class="f">WhatsApp</label><input type="text" id="b-wa"></div>
+      <div><label class="f">Instagram</label><input type="text" id="b-ig" placeholder="@tuusuario"></div>
+    </div>
+    <label class="f">Web</label><input type="text" id="b-web">
+    <label class="f">Ciudad (para hashtags)</label><input type="text" id="b-city">
+  </div>
+</aside>
+
+<main>
+  <div class="outbar">
+    <div class="tabs" id="outTabs">
+      <button class="tab on" data-out="carousel">Carrusel</button>
+      <button class="tab" data-out="post">Post</button>
+      <button class="tab" data-out="story">Historia</button>
+      <button class="tab" data-out="reel">Reel (video)</button>
+      <button class="tab" data-out="text">Texto del posteo</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" id="dlAll">⬇ Descargar todo (.zip)</button>
+  </div>
+
+  <div class="pane on" data-pane="carousel">
+    <div class="strip" id="carousel"></div>
+    <p class="hint">1080×1350 (4:5), el formato que más ocupa en el feed. Subilas en orden como una sola publicación.</p>
+  </div>
+
+  <div class="pane" data-pane="post">
+    <div class="single">
+      <div class="frame"><canvas id="cPost" width="1080" height="1080"></canvas>
+        <div class="meta"><span>1080×1080</span><button class="btn sm" data-dl="post">⬇ PNG</button></div></div>
+      <div class="side"><h3>Post simple</h3>Una sola imagen cuadrada para el feed o para mandar por WhatsApp a un posible cliente.</div>
+    </div>
+  </div>
+
+  <div class="pane" data-pane="story">
+    <div class="single v">
+      <div class="frame"><canvas id="cStory" width="1080" height="1920"></canvas>
+        <div class="meta"><span>1080×1920</span><button class="btn sm" data-dl="story">⬇ PNG</button></div></div>
+      <div class="side"><h3>Historia</h3>Deja libres la parte de arriba y de abajo, donde Instagram pone sus botones. Agregá un sticker de enlace a tu web o WhatsApp al subirla.</div>
+    </div>
+  </div>
+
+  <div class="pane" data-pane="reel">
+    <div class="single v">
+      <div class="frame"><canvas id="cReel" width="1080" height="1920"></canvas>
+        <div class="meta"><span id="reelLen">—</span>
+          <span style="display:flex;gap:6px"><button class="btn sm" id="reelPlay">▶ Ver</button><button class="btn sm pri" id="reelRender">⬇ Crear MP4</button></span></div>
+        <div class="bar" id="reelBar"><i></i></div>
+      </div>
+      <div class="side">
+        <h3>Reel animado</h3>
+        Video vertical de 15–20 segundos con las mismas escenas del carrusel, animadas. Se genera en tu navegador.
+        <ul>
+          <li>Al subirlo, agregale música desde la biblioteca de Instagram (sale sin audio para que elijas una tendencia).</li>
+          <li>Funciona mejor en Chrome o Edge en la compu.</li>
+          <li>Los textos quedan lejos de los bordes para que no los tape la interfaz del reel.</li>
+        </ul>
+        <span id="reelMsg"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="pane textout" data-pane="text">
+    <div class="single">
+      <div style="flex:1;min-width:280px">
+        <label class="f" style="margin-top:0">Texto (caption)</label>
+        <textarea id="f-caption"></textarea>
+        <label class="f">Hashtags</label>
+        <textarea id="f-hashtags" style="min-height:70px"></textarea>
+        <div class="row" style="margin-top:10px">
+          <button class="btn pri" id="copyCap">Copiar texto + hashtags</button>
+          <button class="btn" id="regenCap">Rehacer desde los campos</button>
+        </div>
+      </div>
+      <div class="side"><h3>Tips para publicar</h3>
+        <ul>
+          <li>Primero el carrusel, a los 2–3 días el reel con la misma idea.</li>
+          <li>Poné el WhatsApp también en la bio y fijá la publicación en el perfil.</li>
+          <li>Responder los comentarios la primera hora ayuda al alcance.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ============ utilidades ============ */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2600); }
+function status(msg, err){ const s=$('#status'); s.textContent=msg; s.classList.toggle('show',!!msg); s.classList.toggle('err',!!err); }
+const store = { get(k,d){ try{ const v=localStorage.getItem('igstudio.'+k); return v==null?d:JSON.parse(v);}catch{return d} }, set(k,v){ try{ localStorage.setItem('igstudio.'+k, JSON.stringify(v)); }catch{} } };
+let debT; function debounce(fn, ms=220){ clearTimeout(debT); debT=setTimeout(fn, ms); }
+
+/* ============ capacidades (IA / descargas) ============ */
+let AI = null, DL = null;
+if (window.claude && typeof window.claude.use === 'function') {
+  window.claude.use('sample').then(s => { AI = s; if (s) { $('#genAI').classList.remove('hidden'); $('#aiHint').textContent = 'Con IA escribe textos con gancho a partir del código. El automático no usa IA. Después podés editar todo.'; } }).catch(()=>{});
+  window.claude.use('downloads').then(d => { DL = d; }).catch(()=>{});
+}
+async function saveFile(name, blob){
+  if (DL) {
+    try { await DL.save({ filename:name, data:blob }); toast('Descargado: '+name); return; }
+    catch(e){
+      if (e && e.code === 'declined') { toast('Descarga cancelada'); return; }
+      if (e && e.code === 'rate_limited') { toast('Esperá un momento y probá de nuevo'); return; }
+      if (e && e.code === 'too_large') { toast('El archivo es muy grande para descargar acá'); return; }
+    }
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 5000);
+}
+const canvasBlob = c => new Promise(r => c.toBlob(r, 'image/png'));
+
+/* ============ estado ============ */
+const S = { shots: [], detected: null, theme: store.get('theme','noche'), raw: null, isDemo: true };
+
+const BRAND_DEFAULT = { brand:'F-C Web Studio', wa:'2944242906', ig:'', web:'f-cwebstudio.vercel.app', city:'San Martín de los Andes' };
+const DEMO = {
+  name:'Turnero Online', kicker:'NUEVO PROYECTO', hook:'Tus clientes sacan turno solos, 24/7',
+  tagline:'Sistema de turnos web para negocios y profesionales', problem:'¿Seguís anotando turnos en un cuaderno y contestando WhatsApp todo el día?',
+  audience:'Peluquerías, consultorios, talleres y estéticas',
+  features:'Turnos online: el cliente elige día y horario desde el celular\nRecordatorios: aviso automático por WhatsApp antes del turno\nPanel del negocio: agenda del día, clientes e historial\nSe instala como app: funciona en celu y compu, sin descargar nada',
+  tech:'HTML, CSS, JavaScript, Supabase, PWA', cta:'¿Querés una app así para tu negocio?'
+};
+
+/* ============ formulario <-> modelo ============ */
+const FIELDS = ['name','kicker','hook','tagline','problem','audience','features','tech','cta'];
+const BFIELDS = ['brand','wa','ig','web','city'];
+function readModel(){
+  const m = {}; FIELDS.forEach(k => m[k] = $('#f-'+k).value.trim());
+  m.featureList = m.features.split('\n').map(s=>s.trim()).filter(Boolean).map(line=>{
+    const i = line.indexOf(':');
+    if (i > 0 && i < 48) return { title: line.slice(0,i).trim(), desc: line.slice(i+1).trim() };
+    return { title: line, desc: '' };
+  }).slice(0,6);
+  m.techList = m.tech.split(',').map(s=>s.trim()).filter(Boolean).slice(0,8);
+  return m;
+}
+function readBrand(){ const b={}; BFIELDS.forEach(k=>b[k]=$('#b-'+k).value.trim()); return b; }
+function writeModel(m){
+  FIELDS.forEach(k => { let v = m[k]; if (k==='features' && Array.isArray(v)) v = v.map(f=> typeof f==='string'?f:(f.desc?`${f.title}: ${f.desc}`:f.title)).join('\n'); if (k==='tech' && Array.isArray(v)) v=v.join(', '); $('#f-'+k).value = v || ''; });
+}
+function fmtWa(w){ const d=(w||'').replace(/\D/g,''); if(d.length===10) return d.slice(0,4)+' '+d.slice(4,7)+'-'+d.slice(7); return w; }
+
+/* ============ lectura de archivos ============ */
+const SKIP = /(^|\/)(node_modules|\.git|\.next|\.nuxt|\.vercel|\.cache|coverage|vendor|__pycache__|\.venv|venv)\//i;
+function stripRoot(list){
+  list = list.filter(e => !SKIP.test(e.path) && !/(^|\/)__MACOSX\//.test(e.path) && !/\.DS_Store$/.test(e.path));
+  const firsts = new Set(list.map(e => e.path.split('/')[0]));
+  let root = '';
+  if (firsts.size === 1 && list.every(e => e.path.includes('/'))) { root = [...firsts][0]; list.forEach(e => e.path = e.path.slice(root.length+1)); }
+  return { list, root };
+}
+async function fromZip(file){
+  const zip = await JSZip.loadAsync(file); const out = [];
+  zip.forEach((p, e) => { if (e.dir) return; out.push({ path:p, size:(e._data && e._data.uncompressedSize)||0, text:()=>e.async('string'), blob:()=>e.async('blob') }); });
+  const r = stripRoot(out); r.root = r.root || file.name.replace(/\.zip$/i,''); return r;
+}
+function fromFolder(files){
+  const out = [...files].map(f => ({ path:f.webkitRelativePath||f.name, size:f.size, text:()=>f.text(), blob:async()=>f }));
+  return stripRoot(out);
+}
+async function fromGithub(url){
+  const m = url.trim().match(/github\.com\/([^\/\s]+)\/([^\/\s#?]+)/i);
+  if (!m) throw new Error('Ese enlace no parece de un repositorio de GitHub.');
+  const owner = m[1], repo = m[2].replace(/\.git$/,'');
+  let info;
+  try {
+    const r = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
+    if (r.status === 404) throw new Error('El repositorio no existe o es privado.');
+    if (!r.ok) throw new Error('GitHub respondió '+r.status);
+    info = await r.json();
+  } catch (e) {
+    if (e.message && /no existe|respondió/.test(e.message)) throw e;
+    const err = new Error('blocked'); err.blocked = true; err.zip = `https://github.com/${owner}/${repo}/archive/HEAD.zip`; throw err;
+  }
+  const branch = info.default_branch || 'main';
+  const tr = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`).then(r=>r.json());
+  const raw = p => `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${p.split('/').map(encodeURIComponent).join('/')}`;
+  const list = (tr.tree||[]).filter(t=>t.type==='blob').map(t=>({ path:t.path, size:t.size||0,
+    text:()=>fetch(raw(t.path)).then(r=>r.ok?r.text():''), blob:()=>fetch(raw(t.path)).then(r=>r.blob()) }));
+  const res = stripRoot(list); res.root = repo; res.gh = { description: info.description||'', homepage: info.homepage||'', topics: info.topics||[], language: info.language||'' };
+  return res;
+}
+
+async function analyze(src){
+  const L = src.list;
+  const depth = p => p.split('/').length;
+  const byDepth = arr => arr.sort((a,b)=>depth(a.path)-depth(b.path) || a.path.length-b.path.length);
+  const find = re => byDepth(L.filter(e => re.test(e.path.split('/').pop())))[0];
+  const readme = find(/^readme(\.(md|markdown|txt))?$/i);
+  const pkg = L.find(e => e.path === 'package.json') || find(/^package\.json$/);
+  const html = find(/^index\.html?$/i);
+  const manifest = find(/(^manifest\.json$|\.webmanifest$)/i);
+  const cssFiles = byDepth(L.filter(e => /\.(css|scss)$/i.test(e.path) && e.size < 400000)).slice(0,8);
+  const safeText = async e => { try { return e ? (await e.text()) : ''; } catch { return ''; } };
+  const raw = { root: src.root, gh: src.gh || null, tree: L.map(e=>e.path).slice(0,250) };
+  raw.readme = (await safeText(readme)).slice(0, 20000);
+  raw.pkgText = (await safeText(pkg)).slice(0, 8000);
+  try { raw.pkg = raw.pkgText ? JSON.parse(raw.pkgText) : null; } catch { raw.pkg = null; }
+  raw.html = (await safeText(html)).slice(0, 60000);
+  raw.manifest = null; try { const t = await safeText(manifest); raw.manifest = t ? JSON.parse(t) : null; } catch {}
+  let css = ''; for (const c of cssFiles) css += (await safeText(c)).slice(0, 80000);
+  raw.css = css;
+  // imágenes
+  const imgs = L.filter(e => /\.(png|jpe?g|webp)$/i.test(e.path) && (e.size === 0 || e.size > 3000) && !/(favicon|icon[-_]?\d*|apple-touch|sprite|logo)/i.test(e.path.split('/').pop()));
+  const prio = e => (/(screen|captura|preview|demo|mockup|shot)/i.test(e.path) ? 0 : 1);
+  imgs.sort((a,b) => prio(a)-prio(b) || b.size-a.size);
+  const found = [];
+  for (const e of imgs.slice(0, 14)) {
+    try { const b = await e.blob(); const sh = await makeShot(b, e.path.split('/').pop()); if (sh && sh.w >= 380 && sh.h >= 300) found.push(sh); } catch {}
+    if (found.length >= 8) break;
+  }
+  return { raw, shots: found };
+}
+
+/* ============ capturas ============ */
+async function makeShot(blob, name){
+  const url = URL.createObjectURL(blob);
+  const img = new Image(); img.src = url;
+  try { await img.decode(); } catch { return null; }
+  return { id: Math.random().toString(36).slice(2), name, img, url, w: img.naturalWidth, h: img.naturalHeight, on: true };
+}
+function activeShots(){ return S.shots.filter(s => s.on); }
+function renderShotList(){
+  const box = $('#shots'); box.innerHTML = '';
+  if (!S.shots.length) { box.innerHTML = '<span class="hint" style="margin:0">Sin capturas: se usa un dibujo de código. Agregá capturas de tu app para que luzca mucho más.</span>'; return; }
+  const firstOn = activeShots()[0];
+  S.shots.forEach(s => {
+    const d = document.createElement('div'); d.className = 'shot' + (s.on?'':' off') + (s===firstOn?' first':'');
+    d.title = s.name + ' — clic para activar/desactivar, doble clic para portada';
+    d.innerHTML = `<img src="${s.url}" alt="">${s===firstOn?'<span class="tag">★ portada</span>':''}<button class="x" title="Quitar">✕</button>`;
+    d.onclick = ev => { if (ev.target.classList.contains('x')) { S.shots = S.shots.filter(x=>x!==s); } else { s.on = !s.on; } renderShotList(); renderAll(); };
+    d.ondblclick = () => { s.on = true; S.shots = [s, ...S.shots.filter(x=>x!==s)]; renderShotList(); renderAll(); };
+    box.appendChild(d);
+  });
+}
+
+/* ============ análisis automático (sin IA) ============ */
+function stripMd(s){
+  return s.replace(/<[^>]+>/g,' ').replace(/!\[[^\]]*\]\([^)]*\)/g,'').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1')
+    .replace(/[`*_~>]/g,'').replace(/^#+\s*/,'').replace(/\s+/g,' ').trim();
+}
+const TECH = { 'react':'React','next':'Next.js','vue':'Vue','nuxt':'Nuxt','svelte':'Svelte','@angular/core':'Angular','@supabase/supabase-js':'Supabase','firebase':'Firebase','tailwindcss':'Tailwind','vite':'Vite','typescript':'TypeScript','express':'Node.js','fastify':'Node.js','chart.js':'Gráficos','recharts':'Gráficos','leaflet':'Mapas','react-native':'React Native','expo':'Expo','electron':'App de escritorio','prisma':'Prisma','mongoose':'MongoDB','mongodb':'MongoDB','pg':'PostgreSQL','mysql2':'MySQL','sqlite3':'SQLite','better-sqlite3':'SQLite','socket.io':'Tiempo real','stripe':'Pagos online','mercadopago':'Mercado Pago','three':'3D (Three.js)','framer-motion':'Animaciones','jspdf':'PDF','xlsx':'Excel','dexie':'Funciona offline','workbox-window':'PWA','vite-plugin-pwa':'PWA','next-pwa':'PWA' };
+const EXT = { html:'HTML', css:'CSS', js:'JavaScript', ts:'TypeScript', tsx:'TypeScript', py:'Python', php:'PHP', sql:'SQL', java:'Java', cs:'C#', go:'Go', dart:'Flutter', kt:'Kotlin', swift:'Swift' };
+function detectTech(raw){
+  const out = [];
+  const add = t => { if (t && !out.includes(t)) out.push(t); };
+  const deps = raw.pkg ? Object.keys({ ...(raw.pkg.dependencies||{}), ...(raw.pkg.devDependencies||{}) }) : [];
+  deps.forEach(d => add(TECH[d]));
+  if (raw.manifest || raw.tree.some(p => /(^|\/)(sw|service-worker)\.js$/i.test(p))) add('PWA');
+  if (raw.tree.some(p => /vercel\.json$/.test(p))) add('Vercel');
+  const cnt = {}; raw.tree.forEach(p => { const x = (p.split('.').pop()||'').toLowerCase(); if (EXT[x]) cnt[EXT[x]] = (cnt[EXT[x]]||0)+1; });
+  Object.entries(cnt).sort((a,b)=>b[1]-a[1]).forEach(([t]) => add(t));
+  if (raw.gh && raw.gh.language) add(raw.gh.language);
+  return out.slice(0, 6);
+}
+function detectColor(raw){
+  const counts = {};
+  const src = (raw.css || '') + ' ' + (raw.html || '').slice(0, 40000);
+  const theme = raw.manifest && raw.manifest.theme_color;
+  (src.match(/#([0-9a-f]{6}|[0-9a-f]{3})\b/gi) || []).forEach(h => { const c = normHex(h); counts[c] = (counts[c]||0) + 1; });
+  const ok = h => { const {s,l} = hsl(h); return s > 0.3 && l > 0.25 && l < 0.82; };
+  if (theme && /^#/.test(theme) && ok(normHex(theme))) return normHex(theme);
+  const best = Object.entries(counts).filter(([h]) => ok(h)).sort((a,b) => b[1]-a[1])[0];
+  return best ? best[0] : null;
+}
+function featuresFrom(raw){
+  const lines = (raw.readme || '').split('\n');
+  const isBullet = l => /^\s*([-*+]|\d+[.)])\s+/.test(l);
+  const clean = l => stripMd(l.replace(/^\s*([-*+]|\d+[.)])\s+/, '').replace(/^\[[ x]\]\s*/i,''));
+  const bad = l => /(npm |yarn |pnpm |git |cd |http|localhost|\.env|install|clon|licen|MIT)/i.test(l) || l.length < 6;
+  let pick = [];
+  for (let i = 0; i < lines.length; i++) {
+    const h = lines[i].match(/^#{1,4}\s+(.*)/);
+    if (h && /(caracter|funcional|feature|qu[eé] hace|incluye|m[oó]dulo|beneficio|ventaja|permite)/i.test(h[1])) {
+      for (let j = i+1; j < lines.length && !/^#{1,4}\s/.test(lines[j]); j++) if (isBullet(lines[j])) { const c = clean(lines[j]); if (!bad(c)) pick.push(c); }
+      if (pick.length) break;
+    }
+  }
+  if (!pick.length) pick = lines.filter(isBullet).map(clean).filter(l => !bad(l));
+  if (!pick.length && raw.html) {
+    try { const doc = new DOMParser().parseFromString(raw.html, 'text/html');
+      pick = [...doc.querySelectorAll('h2,h3')].map(n => n.textContent.replace(/\s+/g,' ').trim()).filter(t => t.length > 3 && t.length < 70); } catch {}
+  }
+  return pick.slice(0, 5).map(t => {
+    const m = t.match(/^(.{3,45}?)\s*(?:[:—–]|\s-\s)\s*(.+)$/);
+    if (m) return { title: m[1].trim(), desc: m[2].trim() };
+    const w = t.split(' ');
+    return w.length > 7 ? { title: w.slice(0,4).join(' '), desc: t } : { title: t, desc: '' };
+  });
+}
+function heuristic(raw){
+  let name = (raw.pkg && raw.pkg.displayName) || '';
+  const h1 = (raw.readme.match(/^#\s+(.+)$/m) || [])[1];
+  let htmlTitle = '', metaDesc = '';
+  if (raw.html) { try { const d = new DOMParser().parseFromString(raw.html,'text/html'); htmlTitle = (d.title||'').trim(); metaDesc = (d.querySelector('meta[name=description]')||{}).content || ''; } catch {} }
+  const short = s => (s || '').split(/\s[|\-–—:]\s/)[0].trim();
+  name = name || (raw.manifest && (raw.manifest.short_name || raw.manifest.name)) || (h1 && short(stripMd(h1))) || short(htmlTitle) || (raw.pkg && raw.pkg.name) || raw.root || 'Mi proyecto';
+  name = name.replace(/[-_]/g, m => name.includes(' ') ? m : ' ').replace(/\s+/g,' ').trim();
+  if (name === name.toLowerCase()) name = name.replace(/\b\w/g, c => c.toUpperCase());
+  let para = '';
+  const rl = raw.readme.split('\n');
+  for (const l of rl) { const t = stripMd(l); if (!/^#/.test(l.trim()) && t.length > 30 && !/^\s*([-*+]|\d+\.)\s/.test(l) && !/badge|shields\.io/i.test(l)) { para = t; break; } }
+  let tagline = (raw.gh && raw.gh.description) || (raw.pkg && raw.pkg.description) || metaDesc || (raw.manifest && raw.manifest.description) || para || '';
+  tagline = tagline.split(/(?<=[.!?])\s/)[0].replace(/\.$/,'');
+  if (tagline.length > 110) tagline = tagline.slice(0, 107).replace(/\s\S*$/,'') + '…';
+  const feats = featuresFrom(raw);
+  const tech = detectTech(raw);
+  const words = tagline.split(' ').length;
+  const goal = $('#goal').value;
+  return {
+    name, kicker: goal.startsWith('Lanzar') ? 'YA DISPONIBLE' : (goal.startsWith('Mostrar') ? 'PROYECTO' : 'NUEVO PROYECTO'),
+    hook: tagline && words <= 9 ? tagline : `Conocé ${name}`,
+    tagline: tagline || 'Una herramienta hecha a medida',
+    problem: '¿Seguís haciendo todo a mano, con papel y planillas?',
+    audience: 'Negocios y emprendimientos que quieren ordenarse',
+    features: feats.length ? feats : [{title:'Hecho a medida', desc:'Se adapta a cómo trabaja tu negocio'},{title:'Desde el celular', desc:'Funciona en cualquier dispositivo'},{title:'Fácil de usar', desc:'Sin capacitaciones largas'}],
+    tech, cta: goal.startsWith('Mostrar') ? '¿Tenés un proyecto en mente? Hablemos' : '¿Querés una app así para tu negocio?'
+  };
+}
+
+/* ============ IA ============ */
+async function generateAI(){
+  if (!AI) return;
+  const raw = S.raw || { tree: [], readme: '', pkgText: '', html: '', root: '' };
+  let htmlText = '';
+  if (raw.html) { try { const d = new DOMParser().parseFromString(raw.html,'text/html'); d.querySelectorAll('script,style,svg').forEach(n=>n.remove()); htmlText = (d.title + '\n' + d.body.innerText).replace(/\n\s*\n/g,'\n').slice(0, 3500); } catch {} }
+  const brand = readBrand();
+  const prompt = `Sos redactor de marketing para Instagram de un desarrollador freelance argentino (${brand.brand || 'freelancer'}, ${brand.city || 'Argentina'}) que hace apps y webs para negocios.
+Escribí en español rioplatense (voseo), claro, sin tecnicismos salvo que el tono sea técnico. Nada inventado: basate en lo que muestra el proyecto. No uses emojis en los campos cortos.
+Tono: ${$('#tone').value}. Objetivo: ${$('#goal').value}.
+Contexto que dio el autor: ${$('#ctx').value.trim() || '(ninguno)'}
+
+DATOS DEL PROYECTO
+Nombre de carpeta/repo: ${raw.root || '-'}
+${raw.gh ? 'Descripción en GitHub: ' + raw.gh.description + '\nTemas: ' + raw.gh.topics.join(', ') : ''}
+Archivos (parcial):
+${raw.tree.slice(0,120).join('\n')}
+
+package.json:
+${(raw.pkgText||'').slice(0,2500)}
+
+README:
+${(raw.readme||'').slice(0,7000)}
+
+Texto visible del index.html:
+${htmlText}
+
+Respondé SOLO con un objeto JSON con estas claves:
+{"name": "nombre comercial corto",
+ "kicker": "etiqueta de 1-3 palabras en MAYÚSCULAS",
+ "hook": "gancho de portada, máximo 8 palabras, que nombre un beneficio",
+ "tagline": "qué es, máximo 14 palabras",
+ "problem": "pregunta sobre el dolor del cliente, máximo 16 palabras",
+ "audience": "para quién es, máximo 10 palabras",
+ "features": [{"title":"máx 4 palabras","desc":"máx 14 palabras"}],  (3 a 5 items)
+ "tech": ["máximo 6 tecnologías o cualidades técnicas en palabras simples"],
+ "cta": "llamado a la acción, máximo 9 palabras",
+ "caption": "texto del posteo de 600-1100 caracteres, con saltos de línea, algunos emojis, lista de beneficios y cierre invitando a escribir por WhatsApp ${brand.wa || ''}${brand.web ? ' o visitar ' + brand.web : ''}. Sin hashtags.",
+ "hashtags": ["15 hashtags sin #, mezcla de nicho, ciudad y rubro"]}`;
+  const btn = $('#genAI'); btn.disabled = true; const old = btn.textContent; btn.textContent = 'Escribiendo…';
+  status('La IA está leyendo tu proyecto…');
+  try {
+    let val = null;
+    if (typeof AI.json === 'function') { try { val = await AI.json(prompt, { modelTier: 'default' }); } catch (e) { if (e && (e.code === 'not_granted' || e.code === 'rate_limited')) throw e; } }
+    if (!val) { const r = await AI(prompt, { modelTier: 'default' }); const m = (r.text || '').match(/\{[\s\S]*\}/); val = m ? JSON.parse(m[0]) : null; }
+    if (!val || !val.name) throw new Error('Respuesta vacía');
+    writeModel(val);
+    if (val.caption) $('#f-caption').value = val.caption;
+    if (Array.isArray(val.hashtags)) $('#f-hashtags').value = val.hashtags.map(h => '#' + String(h).replace(/^#/,'').replace(/\s+/g,'')).join(' ');
+    else makeCaption();
+    S.isDemo = false; $('#demoBadge').classList.add('hidden');
+    status('Listo. Revisá los textos del paso 2 y elegí qué descargar.');
+    renderAll();
+  } catch (e) {
+    if (e && e.code === 'not_granted') { $('#genAI').classList.add('hidden'); status('La IA no está disponible acá; usá "Generar automático".', true); }
+    else if (e && e.code === 'rate_limited') status('Muchos pedidos seguidos, esperá un minuto.', true);
+    else status('No se pudo generar con IA (' + (e.message || e.code || 'error') + '). Probá de nuevo o usá el automático.', true);
+  } finally { btn.disabled = false; btn.textContent = old; }
+}
+
+/* ============ caption sin IA ============ */
+function makeCaption(){
+  const m = readModel(), b = readBrand();
+  const feats = m.featureList.map(f => '✅ ' + f.title + (f.desc ? ' — ' + f.desc : '')).join('\n');
+  const contact = [b.wa ? `📲 WhatsApp: ${fmtWa(b.wa)}` : '', b.web ? `🌐 ${b.web}` : ''].filter(Boolean).join('\n');
+  const cap = `🚀 ${m.name}: ${m.tagline}\n\n${m.problem}\n\n${feats}\n\n${m.audience ? '👥 Ideal para: ' + m.audience + '\n\n' : ''}${m.techList.length ? '🛠️ Hecho con ' + m.techList.join(', ') + '\n\n' : ''}${m.cta} Escribime y lo charlamos 👇\n${contact}`;
+  $('#f-caption').value = cap.trim();
+  const slug = s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
+  const tags = ['desarrolloweb','programador','appsparanegocios','emprendedores','pymes','software','transformaciondigital','argentina','hechoenargentina','freelancer'];
+  if (b.city) { tags.push(slug(b.city)); }
+  m.techList.slice(0,3).forEach(t => { const s = slug(t); if (s.length > 2) tags.push(s); });
+  if (m.name) tags.push(slug(m.name));
+  $('#f-hashtags').value = [...new Set(tags)].filter(Boolean).map(t => '#' + t).join(' ');
+}
+
+/* ============ colores ============ */
+function normHex(h){ h = h.toLowerCase(); if (h.length === 4) h = '#' + h[1]+h[1]+h[2]+h[2]+h[3]+h[3]; return h; }
+function rgb(h){ h = normHex(h); return [1,3,5].map(i => parseInt(h.slice(i,i+2),16)); }
+function hsl(h){ let [r,g,b] = rgb(h).map(v=>v/255); const mx = Math.max(r,g,b), mn = Math.min(r,g,b); const l = (mx+mn)/2; const d = mx-mn; const s = d === 0 ? 0 : d / (1 - Math.abs(2*l-1)); return { s, l }; }
+function mix(a, b, t){ const A = rgb(a), B = rgb(b); return '#' + A.map((v,i) => Math.round(v + (B[i]-v)*t).toString(16).padStart(2,'0')).join(''); }
+function lum(h){ const [r,g,b] = rgb(h).map(v => { v/=255; return v <= .03928 ? v/12.92 : Math.pow((v+.055)/1.055, 2.4); }); return .2126*r + .7152*g + .0722*b; }
+function alpha(h, a){ const [r,g,b] = rgb(h); return `rgba(${r},${g},${b},${a})`; }
+function themeColors(){
+  const acc = $('#accent').value || '#c6ff3d';
+  const accInk = lum(acc) > 0.45 ? '#0c0e14' : '#ffffff';
+  if (S.theme === 'claro') {
+    const accTxt = lum(acc) > 0.45 ? mix(acc, '#000000', 0.55) : acc;
+    return { bg:'#f5f2ea', bg2:'#ebe5d8', ink:'#15171c', muted:'#5b616d', card:'#ffffff', line:'#ddd6c6', acc, accInk, accTxt, glow:0.22, dark:false };
+  }
+  if (S.theme === 'marca') return { bg: mix(acc,'#000000',0.84), bg2: mix(acc,'#000000',0.74), ink:'#ffffff', muted:'rgba(255,255,255,.72)', card: mix(acc,'#000000',0.68), line: mix(acc,'#000000',0.6), acc, accInk, accTxt: lum(acc) < 0.12 ? mix(acc,'#ffffff',0.5) : acc, glow:0.45, dark:true };
+  return { bg:'#0c0e14', bg2:'#141824', ink:'#f4f5f7', muted:'#9aa3b2', card:'#1a1f2c', line:'#2a3040', acc, accInk, accTxt: lum(acc) < 0.12 ? mix(acc,'#ffffff',0.5) : acc, glow:0.32, dark:true };
+}
+
+/* ============ motor de dibujo ============ */
+const FH = "'Space Grotesk', Inter, sans-serif", FB = "Inter, system-ui, sans-serif";
+const ease = t => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
+function rr(ctx, x, y, w, h, r){ r = Math.min(r, w/2, h/2); ctx.beginPath(); ctx.moveTo(x+r, y); ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r); ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r); ctx.closePath(); }
+function wrap(ctx, text, maxW){
+  const out = [];
+  String(text||'').split('\n').forEach(par => {
+    const words = par.split(/\s+/).filter(Boolean); let line = '';
+    words.forEach(w => {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width <= maxW || !line) { line = test; }
+      else { out.push(line); line = w; }
+      while (ctx.measureText(line).width > maxW && line.length > 4) { let k = line.length - 1; while (k > 1 && ctx.measureText(line.slice(0,k)+'-').width > maxW) k--; out.push(line.slice(0,k)+'-'); line = line.slice(k); }
+    });
+    if (line) out.push(line);
+  });
+  return out;
+}
+function fit(ctx, text, o){
+  let size = o.size;
+  for (;;) {
+    ctx.font = `${o.weight||700} ${size}px ${o.family||FH}`;
+    const lines = wrap(ctx, text, o.maxW);
+    const lh = size * (o.lh || 1.08);
+    if ((lines.length * lh <= o.maxH && (!o.maxLines || lines.length <= o.maxLines)) || size <= o.min) {
+      let ls = lines; if (o.maxLines && ls.length > o.maxLines) { ls = ls.slice(0, o.maxLines); ls[ls.length-1] = ls[ls.length-1].replace(/\s*\S*$/, '') + '…'; }
+      return { lines: ls, size, lh, font: ctx.font, h: ls.length * lh };
+    }
+    size -= Math.max(2, Math.round(size * 0.05));
+  }
+}
+function draw(ctx, F, x, y, color, align){
+  ctx.font = F.font; ctx.fillStyle = color; ctx.textAlign = align || 'left'; ctx.textBaseline = 'alphabetic';
+  F.lines.forEach((l, i) => ctx.fillText(l, x, y + F.size * 0.86 + i * F.lh));
+  return F.h;
+}
+// anima un bloque: opacidad + desplazamiento
+function anim(ctx, p, dy, fn){ if (p <= 0) return; ctx.save(); ctx.globalAlpha *= p; ctx.translate(0, (1-p) * dy); fn(); ctx.restore(); }
+
+function drawBg(ctx, W, H, T, seed, tt){
+  ctx.fillStyle = T.bg; ctx.fillRect(0, 0, W, H);
+  const u = W / 1080;
+  const spots = [[0.85,0.12],[0.12,0.2],[0.9,0.85],[0.15,0.88],[0.5,0.05]];
+  const [sx, sy] = spots[seed % spots.length];
+  const drift = tt ? Math.sin(tt * 0.6) * 40 * u : 0;
+  const g = ctx.createRadialGradient(sx*W + drift, sy*H, 0, sx*W + drift, sy*H, W*0.85);
+  g.addColorStop(0, alpha(T.acc, T.glow)); g.addColorStop(1, alpha(T.acc, 0));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // grilla de puntos
+  ctx.fillStyle = T.dark ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.06)';
+  const step = 54 * u;
+  for (let y = step/2; y < H; y += step) for (let x = step/2; x < W; x += step) { ctx.beginPath(); ctx.arc(x, y, 2*u, 0, 7); ctx.fill(); }
+}
+function drawHeader(ctx, W, T, u, top, counter, b){
+  const y = top - 70*u;
+  ctx.font = `700 30px ${FH}`.replace('30px', (30*u)+'px');
+  const name = b.brand || '';
+  if (name) {
+    const tw = ctx.measureText(name).width;
+    rr(ctx, 80*u, y, tw + 74*u, 58*u, 29*u); ctx.fillStyle = T.dark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.06)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(110*u, y + 29*u, 9*u, 0, 7); ctx.fillStyle = T.acc; ctx.fill();
+    ctx.fillStyle = T.ink; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText(name, 132*u, y + 30*u);
+  }
+  if (counter) { ctx.font = `600 ${28*u}px ${FB}`; ctx.fillStyle = T.muted; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(counter, W - 80*u, y + 30*u); }
+  ctx.textBaseline = 'alphabetic';
+}
+function drawFooter(ctx, W, H, T, u, bottom, b, swipe){
+  const y = H - bottom + 46*u;
+  ctx.font = `600 ${27*u}px ${FB}`; ctx.fillStyle = T.muted; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  const parts = [b.web, b.ig].filter(Boolean).join('   ·   ');
+  ctx.fillText(parts, 80*u, y);
+  if (swipe) { ctx.textAlign = 'right'; ctx.fillStyle = T.ink; ctx.font = `700 ${28*u}px ${FB}`; ctx.fillText('Deslizá  →', W - 80*u, y); }
+  ctx.textBaseline = 'alphabetic';
+}
+function pill(ctx, text, x, y, u, T, solid){
+  ctx.font = `700 ${26*u}px ${FB}`;
+  const tw = ctx.measureText(text).width, h = 52*u;
+  rr(ctx, x, y, tw + 44*u, h, h/2);
+  if (solid) { ctx.fillStyle = T.acc; ctx.fill(); ctx.fillStyle = T.accInk; }
+  else { ctx.fillStyle = alpha(T.acc, 0.16); ctx.fill(); ctx.strokeStyle = alpha(T.acc, 0.6); ctx.lineWidth = 2*u; ctx.stroke(); ctx.fillStyle = T.accTxt; }
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText(text, x + 22*u, y + h/2 + 1); ctx.textBaseline = 'alphabetic';
+  return h;
+}
+// captura dentro de un marco de navegador o de celular
+function drawShot(ctx, shot, x, y, w, h, T, u, b, seed){
+  if (h < 120*u) return;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 60*u; ctx.shadowOffsetY = 24*u;
+  if (shot && shot.h / shot.w > 1.25) {
+    // celular
+    const ar = Math.min(2.16, shot.h / shot.w);
+    let fh = h, fw = fh / ar; if (fw > w) { fw = w; fh = fw * ar; }
+    const fx = x + (w - fw)/2, fy = y + (h - fh)/2, bz = 16*u, rad = 54*u;
+    rr(ctx, fx, fy, fw, fh, rad); ctx.fillStyle = '#0a0a0a'; ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.strokeStyle = '#3a3a3a'; ctx.lineWidth = 3*u; ctx.stroke();
+    ctx.save(); rr(ctx, fx+bz, fy+bz, fw-2*bz, fh-2*bz, rad-bz); ctx.clip();
+    coverImg(ctx, shot.img, fx+bz, fy+bz, fw-2*bz, fh-2*bz); ctx.restore();
+    rr(ctx, fx + fw/2 - 60*u, fy + bz + 12*u, 120*u, 32*u, 16*u); ctx.fillStyle = '#0a0a0a'; ctx.fill();
+  } else {
+    // navegador
+    const bar = 54*u;
+    let fw = w, ih = shot ? Math.min(h - bar, fw * shot.h / shot.w) : h - bar;
+    if (shot && ih < (h - bar) && fw * shot.h / shot.w < h - bar) { ih = fw * shot.h / shot.w; }
+    const fh = bar + ih, fx = x, fy = y + (h - fh)/2, rad = 22*u;
+    rr(ctx, fx, fy, fw, fh, rad); ctx.fillStyle = T.dark ? '#1d2230' : '#ffffff'; ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ['#ff5f57','#febc2e','#28c840'].forEach((c, i) => { ctx.beginPath(); ctx.arc(fx + 34*u + i*30*u, fy + bar/2, 9*u, 0, 7); ctx.fillStyle = c; ctx.fill(); });
+    rr(ctx, fx + 140*u, fy + 12*u, fw - 180*u, bar - 24*u, (bar-24*u)/2); ctx.fillStyle = T.dark ? '#121621' : '#efede6'; ctx.fill();
+    ctx.font = `500 ${21*u}px ${FB}`; ctx.fillStyle = T.dark ? '#8a93a5' : '#6b707b'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+    ctx.fillText((b && b.web) || 'tu-app.com', fx + 140*u + (fw - 180*u)/2, fy + bar/2 + 1); ctx.textBaseline = 'alphabetic';
+    ctx.save(); ctx.beginPath(); ctx.moveTo(fx, fy+bar); ctx.lineTo(fx+fw, fy+bar); ctx.lineTo(fx+fw, fy+fh-rad); ctx.arcTo(fx+fw, fy+fh, fx+fw-rad, fy+fh, rad); ctx.lineTo(fx+rad, fy+fh); ctx.arcTo(fx, fy+fh, fx, fy+fh-rad, rad); ctx.closePath(); ctx.clip();
+    if (shot) { const sh = fw * shot.h / shot.w; ctx.drawImage(shot.img, fx, fy + bar, fw, sh); }
+    else codeArt(ctx, fx, fy + bar, fw, ih, T, u, seed || 0);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+function coverImg(ctx, img, x, y, w, h){
+  const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+  const s = Math.max(w/iw, h/ih); const dw = iw*s, dh = ih*s;
+  ctx.drawImage(img, x + (w-dw)/2, y, dw, dh); // anclado arriba
+}
+function codeArt(ctx, x, y, w, h, T, u, seed){
+  ctx.fillStyle = T.dark ? '#151a26' : '#f7f6f2'; ctx.fillRect(x, y, w, h);
+  // barra lateral + tarjetas tipo dashboard
+  const side = Math.min(200*u, w*0.24);
+  ctx.fillStyle = T.dark ? '#1b2131' : '#ecebe5'; ctx.fillRect(x, y, side, h);
+  for (let i = 0; i < 6; i++) { rr(ctx, x + 24*u, y + 30*u + i*56*u, side - 48*u, 26*u, 8*u); ctx.fillStyle = i === 1 ? alpha(T.acc, .8) : (T.dark ? '#2a3144' : '#dcdad2'); ctx.fill(); }
+  const cx = x + side + 30*u, cw = w - side - 60*u;
+  rr(ctx, cx, y + 30*u, cw*0.5, 34*u, 8*u); ctx.fillStyle = T.dark ? '#3a4258' : '#c9c6bc'; ctx.fill();
+  const cards = 3, gap = 20*u, cwid = (cw - gap*(cards-1)) / cards;
+  for (let i = 0; i < cards; i++) { rr(ctx, cx + i*(cwid+gap), y + 90*u, cwid, 120*u, 16*u); ctx.fillStyle = T.dark ? '#1f2636' : '#ffffff'; ctx.fill();
+    rr(ctx, cx + i*(cwid+gap) + 20*u, y + 120*u, cwid*0.4, 18*u, 6*u); ctx.fillStyle = T.dark ? '#3a4258' : '#d9d6cc'; ctx.fill();
+    rr(ctx, cx + i*(cwid+gap) + 20*u, y + 156*u, cwid*0.6, 30*u, 6*u); ctx.fillStyle = i === 0 ? T.acc : (T.dark ? '#4a5470' : '#bdb9ad'); ctx.fill(); }
+  const ch = Math.max(0, h - 270*u);
+  if (ch > 60*u) {
+    rr(ctx, cx, y + 240*u, cw, ch, 16*u); ctx.fillStyle = T.dark ? '#1f2636' : '#ffffff'; ctx.fill();
+    const bars = 9; const bw = (cw - 80*u) / bars;
+    for (let i = 0; i < bars; i++) { const v = 0.3 + 0.65 * Math.abs(Math.sin((i+1) * 1.7 + seed)); rr(ctx, cx + 40*u + i*bw + bw*0.2, y + 240*u + ch - 30*u - (ch-80*u)*v, bw*0.6, (ch-80*u)*v, 8*u); ctx.fillStyle = i % 3 === 0 ? T.acc : alpha(T.acc, .35); ctx.fill(); }
+  }
+}
+function checkIcon(ctx, x, y, s, T){
+  ctx.beginPath(); ctx.arc(x + s/2, y + s/2, s/2, 0, 7); ctx.fillStyle = T.acc; ctx.fill();
+  ctx.strokeStyle = T.accInk; ctx.lineWidth = s*0.12; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(x + s*0.28, y + s*0.52); ctx.lineTo(x + s*0.44, y + s*0.68); ctx.lineTo(x + s*0.74, y + s*0.36); ctx.stroke();
+}
+
+/* ---- escenas ---- */
+const SAFE = { carousel:{top:170,bottom:130}, post:{top:150,bottom:110}, story:{top:250,bottom:300}, reel:{top:260,bottom:440} };
+function buildSlides(m){
+  const shots = activeShots();
+  const pickShot = i => shots.length ? shots[i % shots.length] : null;
+  const s = [{ type:'cover', shot: pickShot(0) }];
+  if (m.problem) s.push({ type:'problem' });
+  m.featureList.forEach((f, i) => s.push({ type:'feature', f, n: i+1, shot: shots.length > 1 ? pickShot(i+1) : null }));
+  if (m.techList.length) s.push({ type:'tech' });
+  s.push({ type:'cta' });
+  return s;
+}
+// tt = segundos dentro de la escena (Infinity = estático)
+function drawSlide(ctx, W, H, slide, fmt, m, b, T, opts){
+  const u = W / 1080, P = 80*u, sf = SAFE[fmt];
+  const top = sf.top*u, bottom = sf.bottom*u, maxW = W - 2*P;
+  const tt = opts.tt == null ? 99 : opts.tt;
+  const A = (d, dur=0.55) => ease((tt - d) / dur);
+  drawBg(ctx, W, H, T, opts.index || 0, opts.tt);
+  const isVideo = opts.tt != null;
+  if (!isVideo || fmt !== 'reel') drawHeader(ctx, W, T, u, top, opts.counter, b);
+  else drawHeader(ctx, W, T, u, top, '', b);
+  let y = top + 30*u;
+  const avail = H - bottom - y;
+
+  if (slide.type === 'cover') {
+    anim(ctx, A(0.05), 30*u, () => pill(ctx, m.kicker || 'NUEVO PROYECTO', P, y, u, T, false));
+    y += 52*u + 34*u;
+    const F = fit(ctx, m.hook || m.name, { maxW, maxH: avail * (fmt==='post'?0.3:0.27), size: 112*u, min: 54*u, weight: 700, lh: 1.04 });
+    anim(ctx, A(0.15), 50*u, () => draw(ctx, F, P, y, T.ink)); y += F.h + 26*u;
+    ctx.font = `800 ${44*u}px ${FB}`;
+    const N = fit(ctx, m.name, { maxW, maxH: 60*u, size: 44*u, min: 30*u, weight: 800, family: FB, maxLines: 1 });
+    anim(ctx, A(0.3), 30*u, () => draw(ctx, N, P, y, T.accTxt)); y += N.h + 8*u;
+    const TG = fit(ctx, m.tagline, { maxW, maxH: 100*u, size: 36*u, min: 26*u, weight: 400, family: FB, lh: 1.3, maxLines: 2 });
+    anim(ctx, A(0.38), 30*u, () => draw(ctx, TG, P, y, T.muted)); y += TG.h + 50*u;
+    const sh = H - bottom - y - 10*u;
+    const p = A(0.5, 0.8);
+    anim(ctx, p, 140*u, () => { ctx.save(); if (isVideo) ctx.translate(0, -Math.min(tt,4) * 6*u); drawShot(ctx, slide.shot, P, y, maxW, sh, T, u, b, 1); ctx.restore(); });
+  }
+  else if (slide.type === 'problem') {
+    ctx.save(); ctx.font = `700 ${720*u}px ${FH}`; ctx.fillStyle = alpha(T.acc, 0.09); ctx.textAlign = 'right'; ctx.fillText('?', W - 20*u, top + avail*0.75); ctx.restore();
+    anim(ctx, A(0.05), 30*u, () => pill(ctx, '¿TE PASA ESTO?', P, y, u, T, false));
+    y += 52*u + 60*u;
+    const F = fit(ctx, m.problem, { maxW: maxW*0.95, maxH: avail * 0.5, size: 96*u, min: 50*u, weight: 700, lh: 1.08 });
+    anim(ctx, A(0.15), 50*u, () => draw(ctx, F, P, y, T.ink)); y += F.h + 60*u;
+    if (m.audience) {
+      anim(ctx, A(0.45), 30*u, () => {
+        ctx.fillStyle = T.acc; ctx.fillRect(P, y, 8*u, 120*u);
+        const Au = fit(ctx, 'Pensado para: ' + m.audience, { maxW: maxW - 40*u, maxH: 130*u, size: 38*u, min: 28*u, weight: 600, family: FB, lh: 1.3, maxLines: 3 });
+        draw(ctx, Au, P + 36*u, y + (120*u - Au.h)/2 - 4*u, T.muted);
+      });
+      y += 180*u;
+    }
+    anim(ctx, A(0.65), 30*u, () => { const S2 = fit(ctx, `${m.name} lo resuelve.`, { maxW, maxH: 80*u, size: 52*u, min: 34*u, weight: 700, maxLines: 1 }); draw(ctx, S2, P, Math.min(y, H - bottom - 100*u), T.accTxt); });
+  }
+  else if (slide.type === 'feature') {
+    const f = slide.f;
+    anim(ctx, A(0.05), 30*u, () => { ctx.font = `700 ${150*u}px ${FH}`; ctx.fillStyle = T.accTxt; ctx.textAlign = 'left'; ctx.fillText(String(slide.n).padStart(2,'0'), P - 6*u, y + 128*u); });
+    y += 170*u;
+    const hasShot = !!slide.shot;
+    const F = fit(ctx, f.title, { maxW, maxH: avail * (hasShot ? 0.2 : 0.3), size: 84*u, min: 48*u, weight: 700, lh: 1.05 });
+    anim(ctx, A(0.15), 40*u, () => draw(ctx, F, P, y, T.ink)); y += F.h + 22*u;
+    if (f.desc) {
+      const D = fit(ctx, f.desc, { maxW, maxH: hasShot ? 150*u : 300*u, size: hasShot ? 38*u : 46*u, min: 28*u, weight: 400, family: FB, lh: 1.32, maxLines: hasShot ? 3 : 6 });
+      anim(ctx, A(0.3), 30*u, () => draw(ctx, D, P, y, T.muted)); y += D.h + 46*u;
+    } else y += 30*u;
+    const rest = H - bottom - y - 10*u;
+    if (hasShot) anim(ctx, A(0.45, 0.8), 140*u, () => { ctx.save(); if (isVideo) ctx.translate(0, -Math.min(tt,3) * 6*u); drawShot(ctx, slide.shot, P, y, maxW, rest, T, u, b, slide.n); ctx.restore(); });
+    else anim(ctx, A(0.45), 40*u, () => {
+      const others = m.featureList.filter(x => x !== f).slice(0, 4);
+      const bh = Math.min(rest, 120*u * others.length + 40*u);
+      if (bh < 160*u) return;
+      rr(ctx, P, y, maxW, bh, 28*u); ctx.fillStyle = T.card; ctx.fill();
+      let yy = y + 36*u;
+      ctx.font = `600 ${24*u}px ${FB}`; ctx.fillStyle = T.muted; ctx.textAlign = 'left'; ctx.fillText('Y ADEMÁS', P + 36*u, yy + 18*u); yy += 46*u;
+      others.forEach(o => { if (yy + 70*u > y + bh) return; checkIcon(ctx, P + 36*u, yy, 44*u, T); const O = fit(ctx, o.title, { maxW: maxW - 140*u, maxH: 60*u, size: 36*u, min: 26*u, weight: 600, family: FB, maxLines: 1 }); draw(ctx, O, P + 100*u, yy + 2*u, T.ink); yy += 100*u; });
+    });
+  }
+  else if (slide.type === 'tech') {
+    anim(ctx, A(0.05), 30*u, () => pill(ctx, 'CÓMO ESTÁ HECHO', P, y, u, T, false));
+    y += 52*u + 44*u;
+    const F = fit(ctx, 'Tecnología actual, rápida y segura', { maxW, maxH: avail*0.3, size: 92*u, min: 50*u, weight: 700, lh: 1.05 });
+    anim(ctx, A(0.15), 40*u, () => draw(ctx, F, P, y, T.ink)); y += F.h + 60*u;
+    ctx.font = `700 ${42*u}px ${FB}`;
+    let cx = P, cy = y; const ch = 92*u, gap = 20*u;
+    m.techList.forEach((t, i) => {
+      const tw = ctx.measureText(t).width + 70*u;
+      if (cx + tw > W - P) { cx = P; cy += ch + gap; }
+      const x0 = cx, y0 = cy;
+      anim(ctx, A(0.3 + i*0.08), 30*u, () => { rr(ctx, x0, y0, tw, ch, ch/2); ctx.fillStyle = i === 0 ? T.acc : T.card; ctx.fill(); if (i) { ctx.strokeStyle = T.line; ctx.lineWidth = 2*u; ctx.stroke(); } ctx.font = `700 ${42*u}px ${FB}`; ctx.fillStyle = i === 0 ? T.accInk : T.ink; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText(t, x0 + 35*u, y0 + ch/2 + 2); ctx.textBaseline = 'alphabetic'; });
+      cx += tw + gap;
+    });
+    y = cy + ch + 70*u;
+    const extras = ['Funciona en celular y compu', 'Hecha a medida de tu negocio', 'Soporte directo con quien la programó'];
+    extras.forEach((e, i) => { if (y + 70*u > H - bottom) return; const yy = y; anim(ctx, A(0.6 + i*0.1), 30*u, () => { checkIcon(ctx, P, yy, 50*u, T); const E = fit(ctx, e, { maxW: maxW - 80*u, maxH: 60*u, size: 38*u, min: 26*u, weight: 600, family: FB, maxLines: 1 }); draw(ctx, E, P + 76*u, yy + 3*u, T.ink); }); y += 84*u; });
+  }
+  else if (slide.type === 'cta') {
+    const mid = top + avail * 0.12;
+    y = mid;
+    const F = fit(ctx, m.cta || '¿Hablamos?', { maxW, maxH: avail * 0.36, size: 108*u, min: 56*u, weight: 700, lh: 1.04 });
+    anim(ctx, A(0.05), 50*u, () => draw(ctx, F, P, y, T.ink)); y += F.h + 60*u;
+    const rows = [['WhatsApp', fmtWa(b.wa)], ['Web', b.web], ['Instagram', b.ig]].filter(r => r[1]);
+    rows.forEach((r, i) => {
+      const yy = y;
+      anim(ctx, A(0.3 + i*0.12), 30*u, () => {
+        rr(ctx, P, yy, maxW, 120*u, 28*u); ctx.fillStyle = i === 0 ? T.acc : T.card; ctx.fill();
+        ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+        ctx.font = `600 ${26*u}px ${FB}`; ctx.fillStyle = i === 0 ? alpha(T.accInk === '#ffffff' ? '#ffffff' : '#0c0e14', .7) : T.muted; ctx.fillText(r[0].toUpperCase(), P + 40*u, yy + 40*u);
+        const V = fit(ctx, r[1], { maxW: maxW - 80*u, maxH: 50*u, size: 42*u, min: 26*u, weight: 800, family: FB, maxLines: 1 });
+        ctx.font = V.font; ctx.fillStyle = i === 0 ? T.accInk : T.ink; ctx.fillText(V.lines[0], P + 40*u, yy + 82*u);
+        ctx.textBaseline = 'alphabetic';
+      });
+      y += 140*u;
+    });
+    if (!rows.length) { ctx.font = `500 ${30*u}px ${FB}`; ctx.fillStyle = T.muted; ctx.fillText('Completá tu WhatsApp y web en el paso 3', P, y + 40*u); }
+    anim(ctx, A(0.75), 20*u, () => { const B = fit(ctx, (b.brand || '') + (b.city ? '  ·  ' + b.city : ''), { maxW, maxH: 50*u, size: 32*u, min: 22*u, weight: 600, family: FB, maxLines: 1 }); draw(ctx, B, P, Math.min(y + 30*u, H - bottom - 60*u), T.muted); });
+  }
+  if (!(isVideo && fmt === 'reel')) drawFooter(ctx, W, H, T, u, bottom, b, opts.swipe);
+}
+
+function drawPost(ctx, W, H, m, b, T){
+  const u = W / 1080, P = 70*u;
+  drawBg(ctx, W, H, T, 0);
+  drawHeader(ctx, W, T, u, 140*u, '', b);
+  let y = 150*u;
+  const shot = activeShots()[0] || null;
+  const F = fit(ctx, m.hook || m.name, { maxW: W - 2*P, maxH: 230*u, size: 92*u, min: 46*u, weight: 700, lh: 1.04, maxLines: 3 });
+  draw(ctx, F, P, y, T.ink); y += F.h + 16*u;
+  const N = fit(ctx, m.name + (m.tagline ? ' — ' + m.tagline : ''), { maxW: W - 2*P, maxH: 90*u, size: 34*u, min: 24*u, weight: 600, family: FB, lh: 1.3, maxLines: 2 });
+  draw(ctx, N, P, y, T.muted); y += N.h + 40*u;
+  drawShot(ctx, shot, P, y, W - 2*P, H - y - 150*u, T, u, b, 2);
+  // banda inferior
+  const by = H - 120*u;
+  rr(ctx, P, by, W - 2*P, 80*u, 40*u); ctx.fillStyle = T.acc; ctx.fill();
+  ctx.fillStyle = T.accInk; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  const t = [m.cta, b.wa ? 'WhatsApp ' + fmtWa(b.wa) : b.web].filter(Boolean).join('  ·  ');
+  const C = fit(ctx, t, { maxW: W - 2*P - 60*u, maxH: 40*u, size: 32*u, min: 20*u, weight: 800, family: FB, maxLines: 1 });
+  ctx.font = C.font; ctx.fillText(C.lines[0], W/2, by + 41*u); ctx.textBaseline = 'alphabetic';
+}
+function drawStory(ctx, W, H, m, b, T){
+  const u = W / 1080, P = 80*u, top = SAFE.story.top*u, bottom = SAFE.story.bottom*u;
+  drawBg(ctx, W, H, T, 3);
+  drawHeader(ctx, W, T, u, top, '', b);
+  let y = top + 30*u;
+  pill(ctx, m.kicker || 'NUEVO', P, y, u, T, false); y += 90*u;
+  const F = fit(ctx, m.hook || m.name, { maxW: W - 2*P, maxH: 300*u, size: 104*u, min: 54*u, weight: 700, lh: 1.04 });
+  draw(ctx, F, P, y, T.ink); y += F.h + 20*u;
+  const N = fit(ctx, m.name, { maxW: W - 2*P, maxH: 60*u, size: 42*u, min: 28*u, weight: 800, family: FB, maxLines: 1 });
+  draw(ctx, N, P, y, T.accTxt); y += N.h + 40*u;
+  const feats = m.featureList.slice(0, 3);
+  const listH = feats.length * 86*u;
+  const ctaH = 130*u;
+  const shotH = H - bottom - y - listH - ctaH - 90*u;
+  drawShot(ctx, activeShots()[0] || null, P, y, W - 2*P, shotH, T, u, b, 4);
+  y += Math.max(0, shotH) + 50*u;
+  feats.forEach(f => { checkIcon(ctx, P, y, 50*u, T); const L = fit(ctx, f.title, { maxW: W - 2*P - 80*u, maxH: 56*u, size: 40*u, min: 26*u, weight: 600, family: FB, maxLines: 1 }); draw(ctx, L, P + 76*u, y + 2*u, T.ink); y += 86*u; });
+  y += 10*u;
+  rr(ctx, P, y, W - 2*P, 110*u, 55*u); ctx.fillStyle = T.acc; ctx.fill();
+  ctx.fillStyle = T.accInk; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const C = fit(ctx, b.wa ? 'Escribime: ' + fmtWa(b.wa) : (m.cta || 'Escribime'), { maxW: W - 2*P - 60*u, maxH: 50*u, size: 40*u, min: 24*u, weight: 800, family: FB, maxLines: 1 });
+  ctx.font = C.font; ctx.fillText(C.lines[0], W/2, y + 56*u); ctx.textBaseline = 'alphabetic';
+}
+
+/* ---- reel ---- */
+function reelScenes(){
+  const m = readModel();
+  const slides = buildSlides(m);
+  const feats = slides.filter(s => s.type === 'feature').slice(0, 3);
+  const order = [slides.find(s=>s.type==='cover'), slides.find(s=>s.type==='problem'), ...feats, slides.find(s=>s.type==='tech'), slides.find(s=>s.type==='cta')].filter(Boolean);
+  const dur = { cover: 3.4, problem: 3.0, feature: 2.8, tech: 2.6, cta: 3.6 };
+  let t = 0; const scenes = order.map((s, i) => { const d = dur[s.type]; const sc = { slide: s, start: t, dur: d, index: i }; t += d; return sc; });
+  return { scenes, total: t, m };
+}
+function drawReelFrame(ctx, R, t, b, T){
+  const W = 1080, H = 1920;
+  let sc = R.scenes[R.scenes.length - 1];
+  for (const s of R.scenes) if (t >= s.start && t < s.start + s.dur) { sc = s; break; }
+  const local = t - sc.start;
+  ctx.save();
+  drawSlide(ctx, W, H, sc.slide, 'reel', R.m, b, T, { tt: local, index: sc.index });
+  // salida
+  const outT = sc.dur - local;
+  if (outT < 0.28 && sc !== R.scenes[R.scenes.length - 1]) { ctx.fillStyle = T.bg; ctx.globalAlpha = 1 - outT / 0.28; ctx.fillRect(0, 0, W, H); }
+  ctx.restore();
+  // barras de progreso estilo historia
+  const u = 1, n = R.scenes.length, gap = 10, x0 = 80, bw = (W - 160 - gap*(n-1)) / n, yb = 180;
+  R.scenes.forEach((s, i) => {
+    rr(ctx, x0 + i*(bw+gap), yb, bw, 8, 4); ctx.fillStyle = T.dark ? 'rgba(255,255,255,.18)' : 'rgba(0,0,0,.12)'; ctx.fill();
+    const p = t >= s.start + s.dur ? 1 : t < s.start ? 0 : (t - s.start) / s.dur;
+    if (p > 0) { rr(ctx, x0 + i*(bw+gap), yb, Math.max(8, bw*p), 8, 4); ctx.fillStyle = T.acc; ctx.fill(); }
+  });
+}
+
+/* ============ render ============ */
+let fontsReady = false;
+async function ensureFonts(){
+  if (fontsReady) return;
+  try { await Promise.all(['700 80px "Space Grotesk"','500 40px "Space Grotesk"','400 40px Inter','600 40px Inter','800 40px Inter'].map(f => document.fonts.load(f))); } catch {}
+  fontsReady = true;
+}
+function renderAll(){
+  store.set('brand', readBrand());
+  const m = readModel(), b = readBrand(), T = themeColors();
+  // carrusel
+  const slides = buildSlides(m);
+  const box = $('#carousel'); box.innerHTML = '';
+  slides.forEach((s, i) => {
+    const fr = document.createElement('div'); fr.className = 'frame';
+    const c = document.createElement('canvas'); c.width = 1080; c.height = 1350; c.dataset.slide = i;
+    drawSlide(c.getContext('2d'), 1080, 1350, s, 'carousel', m, b, T, { index: i, counter: `${String(i+1).padStart(2,'0')}/${String(slides.length).padStart(2,'0')}`, swipe: i < slides.length - 1 });
+    fr.appendChild(c);
+    const meta = document.createElement('div'); meta.className = 'meta';
+    meta.innerHTML = `<span>Slide ${i+1}</span>`;
+    const btn = document.createElement('button'); btn.className = 'btn sm'; btn.textContent = '⬇ PNG';
+    btn.onclick = async () => saveFile(`${fileBase()}-carrusel-${String(i+1).padStart(2,'0')}.png`, await canvasBlob(c));
+    meta.appendChild(btn); fr.appendChild(meta); box.appendChild(fr);
+  });
+  drawPost($('#cPost').getContext('2d'), 1080, 1080, m, b, T);
+  drawStory($('#cStory').getContext('2d'), 1080, 1920, m, b, T);
+  if (!reelPlaying) { const R = reelScenes(); $('#reelLen').textContent = `1080×1920 · ${Math.round(R.total)} s`; drawReelFrame($('#cReel').getContext('2d'), R, 2.2, b, T); }
+}
+function fileBase(){ return (readModel().name || 'proyecto').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase() || 'proyecto'; }
+
+/* ---- vista previa del reel ---- */
+let reelPlaying = false, reelRaf = 0;
+function playReel(){
+  if (reelPlaying) { stopReel(); return; }
+  reelPlaying = true; $('#reelPlay').textContent = '■ Parar';
+  const R = reelScenes(), b = readBrand(), T = themeColors(), ctx = $('#cReel').getContext('2d');
+  const t0 = performance.now();
+  const loop = () => { if (!reelPlaying) return; const t = ((performance.now() - t0) / 1000) % R.total; drawReelFrame(ctx, R, t, b, T); reelRaf = requestAnimationFrame(loop); };
+  loop();
+}
+function stopReel(){ reelPlaying = false; cancelAnimationFrame(reelRaf); $('#reelPlay').textContent = '▶ Ver'; renderAll(); }
+
+/* ---- exportar MP4 ---- */
+async function encodeReel(onProg){
+  const R = reelScenes(), b = readBrand(), T = themeColors();
+  const W = 1080, H = 1920, fps = 30, N = Math.ceil(R.total * fps);
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const ctx = c.getContext('2d');
+  if ('VideoEncoder' in window && window.Mp4Muxer) {
+    let cfg = null;
+    for (const codec of ['avc1.640028', 'avc1.4d0028', 'avc1.42e028', 'avc1.640033']) {
+      const t = { codec, width: W, height: H, bitrate: 9_000_000, framerate: fps };
+      try { const s = await VideoEncoder.isConfigSupported(t); if (s.supported) { cfg = t; break; } } catch {}
+    }
+    if (cfg) {
+      const muxer = new Mp4Muxer.Muxer({ target: new Mp4Muxer.ArrayBufferTarget(), video: { codec: 'avc', width: W, height: H }, fastStart: 'in-memory' });
+      let err = null;
+      const enc = new VideoEncoder({ output: (ch, meta) => muxer.addVideoChunk(ch, meta), error: e => { err = e; } });
+      enc.configure(cfg);
+      for (let i = 0; i < N; i++) {
+        if (err) throw err;
+        drawReelFrame(ctx, R, i / fps, b, T);
+        const vf = new VideoFrame(c, { timestamp: Math.round(i * 1e6 / fps), duration: Math.round(1e6 / fps) });
+        enc.encode(vf, { keyFrame: i % (fps * 2) === 0 }); vf.close();
+        while (enc.encodeQueueSize > 6) await sleep(4);
+        if (i % 6 === 0) { onProg(i / N); await sleep(0); }
+      }
+      await enc.flush(); if (err) throw err; muxer.finalize(); onProg(1);
+      return { blob: new Blob([muxer.target.buffer], { type: 'video/mp4' }), ext: 'mp4' };
+    }
+  }
+  // respaldo: grabación en tiempo real
+  if (!c.captureStream || !window.MediaRecorder) throw new Error('Este navegador no puede crear video. Probá con Chrome o Edge.');
+  const types = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+  const type = types.find(t => MediaRecorder.isTypeSupported(t)) || '';
+  const stream = c.captureStream(fps); const rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 9_000_000 });
+  const chunks = []; rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+  const done = new Promise(r => rec.onstop = r);
+  rec.start(250); const t0 = performance.now();
+  await new Promise(res => { const step = () => { const t = (performance.now() - t0) / 1000; if (t >= R.total) { res(); return; } drawReelFrame(ctx, R, t, b, T); onProg(t / R.total); requestAnimationFrame(step); }; step(); });
+  rec.stop(); await done; onProg(1);
+  const ext = type.includes('mp4') ? 'mp4' : 'webm';
+  return { blob: new Blob(chunks, { type: type || 'video/webm' }), ext };
+}
+async function renderReelFile(){
+  if (reelPlaying) stopReel();
+  const btn = $('#reelRender'), bar = $('#reelBar'), msg = $('#reelMsg');
+  btn.disabled = true; bar.classList.add('show'); msg.textContent = '';
+  try {
+    await ensureFonts();
+    const r = await encodeReel(p => { bar.firstElementChild.style.width = Math.round(p * 100) + '%'; btn.textContent = Math.round(p * 100) + '%'; });
+    S.lastReel = r;
+    if (r.ext === 'webm') msg.innerHTML = '<br><b>Ojo:</b> este navegador solo pudo crear .webm. Instagram prefiere MP4: abrí esta página en Chrome o Edge actualizados.';
+    await saveFile(`${fileBase()}-reel.${r.ext}`, r.blob);
+  } catch (e) { msg.textContent = 'No se pudo crear el video: ' + (e.message || e); }
+  finally { btn.disabled = false; btn.textContent = '⬇ Crear MP4'; setTimeout(() => bar.classList.remove('show'), 1200); }
+}
+
+/* ---- descargar todo ---- */
+async function downloadAll(){
+  const btn = $('#dlAll'); btn.disabled = true; btn.textContent = 'Armando ZIP…';
+  try {
+    renderAll();
+    const zip = new JSZip(), base = fileBase();
+    const cs = $$('#carousel canvas');
+    for (let i = 0; i < cs.length; i++) zip.file(`carrusel/${String(i+1).padStart(2,'0')}.png`, await canvasBlob(cs[i]));
+    zip.file('post-1080x1080.png', await canvasBlob($('#cPost')));
+    zip.file('historia-1080x1920.png', await canvasBlob($('#cStory')));
+    if (!$('#f-caption').value.trim()) makeCaption();
+    zip.file('texto-del-posteo.txt', $('#f-caption').value + '\n\n' + $('#f-hashtags').value);
+    if (S.lastReel) zip.file(`reel.${S.lastReel.ext}`, S.lastReel.blob);
+    const blob = await zip.generateAsync({ type: 'blob' });
+    await saveFile(`${base}-instagram.zip`, blob);
+    if (!S.lastReel) toast('El reel no va en el ZIP hasta que lo crees en la pestaña Reel');
+  } catch (e) { toast('Error al armar el ZIP'); }
+  finally { btn.disabled = false; btn.textContent = '⬇ Descargar todo (.zip)'; }
+}
+
+/* ============ carga de proyecto ============ */
+async function ingest(srcPromise, label){
+  status('Leyendo ' + label + '…');
+  try {
+    const src = await srcPromise;
+    if (!src.list.length) throw new Error('No encontré archivos.');
+    status(`Analizando ${src.list.length} archivos…`);
+    const { raw, shots } = await analyze(src);
+    S.raw = raw;
+    // reemplaza capturas detectadas, conserva las agregadas a mano
+    S.shots = [...S.shots.filter(s => s.manual), ...shots];
+    renderShotList();
+    S.detected = detectColor(raw);
+    $('#useDetected').disabled = !S.detected;
+    if (S.detected) { $('#useDetected').style.background = S.detected; $('#useDetected').style.color = lum(S.detected) > .45 ? '#000' : '#fff'; }
+    const m = heuristic(raw); writeModel(m); makeCaption();
+    S.isDemo = false; $('#demoBadge').classList.add('hidden');
+    const found = [raw.readme && 'README', raw.pkg && 'package.json', raw.html && 'index.html', shots.length && `${shots.length} imagen(es)`].filter(Boolean).join(', ');
+    status(`Listo: leí ${found || 'los archivos'}.${AI ? ' Tocá "Escribir con IA" para mejores textos.' : ''}${shots.length ? '' : ' No había capturas: agregá algunas para que luzca más.'}`);
+    renderAll();
+  } catch (e) {
+    if (e.blocked) {
+      status('', false);
+      $('#ghHint').innerHTML = `Desde acá no puedo conectarme a GitHub. Hacelo en 2 pasos: <a href="${e.zip}" target="_blank" rel="noopener" style="color:var(--acc)">1) bajá el ZIP del repo</a> y 2) soltalo en la pestaña ZIP.`;
+      setSrc('github');
+    } else status(e.message || 'No pude leer eso.', true);
+  }
+}
+function setSrc(k){ $$('#srcTabs .tab').forEach(t => t.classList.toggle('on', t.dataset.src === k)); $$('[data-srcpane]').forEach(p => p.classList.toggle('hidden', p.dataset.srcpane !== k)); }
+
+/* ============ eventos ============ */
+$$('#srcTabs .tab').forEach(t => t.onclick = () => setSrc(t.dataset.src));
+$$('#outTabs .tab').forEach(t => t.onclick = () => { $$('#outTabs .tab').forEach(x => x.classList.toggle('on', x === t)); $$('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === t.dataset.out)); if (t.dataset.out !== 'reel' && reelPlaying) stopReel(); });
+function dropify(zone, input, handler){
+  zone.onclick = () => input.click();
+  zone.ondragover = e => { e.preventDefault(); zone.classList.add('over'); };
+  zone.ondragleave = () => zone.classList.remove('over');
+  zone.ondrop = e => { e.preventDefault(); zone.classList.remove('over'); handler(e.dataTransfer.files, e.dataTransfer); };
+  input.onchange = () => { if (input.files.length) handler(input.files); input.value = ''; };
+}
+dropify($('#dropZip'), $('#inZip'), files => { const f = [...files].find(f => /\.zip$/i.test(f.name)) || files[0]; if (!f) return; ingest(fromZip(f), f.name); });
+dropify($('#dropFolder'), $('#inFolder'), (files, dt) => {
+  if (dt && dt.items && dt.items[0] && dt.items[0].webkitGetAsEntry) { ingest(readDropped(dt), 'la carpeta'); return; }
+  ingest(Promise.resolve(fromFolder(files)), 'la carpeta');
+});
+async function readDropped(dt){
+  const out = [];
+  const walk = (entry, path) => new Promise(res => {
+    if (entry.isFile) entry.file(f => { out.push({ path: path + f.name, size: f.size, text: () => f.text(), blob: async () => f }); res(); }, () => res());
+    else if (entry.isDirectory) { if (SKIP.test(path + entry.name + '/')) return res(); const rd = entry.createReader(); const all = []; const read = () => rd.readEntries(async ents => { if (!ents.length) { for (const e of all) await walk(e, path + entry.name + '/'); res(); } else { all.push(...ents); read(); } }, () => res()); read(); }
+    else res();
+  });
+  for (const it of [...dt.items]) { const e = it.webkitGetAsEntry && it.webkitGetAsEntry(); if (e) await walk(e, ''); }
+  if (out.length === 1 && /\.zip$/i.test(out[0].path)) return fromZip(await out[0].blob());
+  return stripRoot(out);
+}
+$('#ghGo').onclick = () => { const u = $('#ghUrl').value; if (!u) return; ingest(fromGithub(u), 'el repositorio'); };
+$('#ghUrl').onkeydown = e => { if (e.key === 'Enter') $('#ghGo').click(); };
+$('#addShots').onclick = () => $('#inShots').click();
+$('#inShots').onchange = async () => { for (const f of $('#inShots').files) { const s = await makeShot(f, f.name); if (s) { s.manual = true; S.shots.unshift(s); } } $('#inShots').value = ''; renderShotList(); renderAll(); };
+$('#genAuto').onclick = () => {
+  if (!S.raw) { const m = readModel(); if ($('#ctx').value.trim() && S.isDemo) { status('Sin archivos cargados: completá los textos del paso 2 a mano o cargá el proyecto.', true); } makeCaption(); renderAll(); return; }
+  writeModel(heuristic(S.raw)); makeCaption(); renderAll(); status('Textos regenerados desde los archivos.');
+};
+$('#genAI').onclick = generateAI;
+FIELDS.forEach(k => $('#f-'+k).addEventListener('input', () => debounce(renderAll)));
+BFIELDS.forEach(k => $('#b-'+k).addEventListener('input', () => debounce(renderAll)));
+$('#accent').addEventListener('input', () => { store.set('accent', $('#accent').value); debounce(renderAll, 80); });
+$('#useDetected').onclick = () => { if (S.detected) { $('#accent').value = S.detected; store.set('accent', S.detected); renderAll(); } };
+$$('#themes .chip').forEach(c => c.onclick = () => { S.theme = c.dataset.t; store.set('theme', S.theme); $$('#themes .chip').forEach(x => x.classList.toggle('on', x === c)); renderAll(); });
+$$('[data-dl]').forEach(btn => btn.onclick = async () => { const k = btn.dataset.dl; const c = k === 'post' ? $('#cPost') : $('#cStory'); saveFile(`${fileBase()}-${k === 'post' ? 'post' : 'historia'}.png`, await canvasBlob(c)); });
+$('#reelPlay').onclick = playReel;
+$('#reelRender').onclick = renderReelFile;
+$('#dlAll').onclick = downloadAll;
+$('#regenCap').onclick = () => { makeCaption(); toast('Texto rehecho'); };
+$('#copyCap').onclick = async () => {
+  const txt = $('#f-caption').value + '\n\n' + $('#f-hashtags').value;
+  try { await navigator.clipboard.writeText(txt); toast('Copiado'); }
+  catch { const ta = $('#f-caption'); ta.value = txt; ta.select(); toast('Seleccioné el texto: copialo con Ctrl+C'); }
+};
+
+/* ============ inicio ============ */
+(async function init(){
+  const br = store.get('brand', BRAND_DEFAULT);
+  BFIELDS.forEach(k => $('#b-'+k).value = br[k] != null ? br[k] : (BRAND_DEFAULT[k] || ''));
+  $('#accent').value = store.get('accent', '#c6ff3d');
+  $$('#themes .chip').forEach(x => x.classList.toggle('on', x.dataset.t === S.theme));
+  writeModel(DEMO);
+  renderShotList();
+  makeCaption();
+  renderAll();
+  await ensureFonts();
+  renderAll();
+})();
+</script>
+</body>
+</html>
