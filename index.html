@@ -84,6 +84,15 @@ main{padding:18px 22px;min-width:0}
 .toast.show{opacity:1;transform:translateX(-50%)}
 .demo-badge{font-size:12px;background:#ffd36b22;color:#ffd36b;border:1px solid #ffd36b55;padding:4px 10px;border-radius:99px}
 details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-top:10px}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mode{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.mode b{font:700 15px 'Space Grotesk'}
+.mode span{font-size:12.5px;color:var(--muted)}
+.mode.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+aside{counter-reset:st}
+.card:not(.hidden) .step::before{counter-increment:st;content:counter(st)}
+.logo-slot{width:64px;height:64px;border-radius:50%;background:var(--panel2);border:1px dashed #3a4153;display:grid;place-items:center;font-size:11px;color:var(--muted);overflow:hidden;flex:0 0 64px}
+.logo-slot img{width:100%;height:100%;object-fit:contain;background:#fff}
 .hidden{display:none!important}
 </style>
 </head>
@@ -98,18 +107,47 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-top:10px
 
 <div class="wrap">
 <aside>
-  <!-- 1. Fuente -->
-  <div class="card">
-    <h2><span class="step">1</span> Tu proyecto</h2>
+  <div class="modes" id="modes">
+    <button class="mode on" data-mode="dev"><b>Mi app o web</b><span>Promocionar un proyecto tuyo</span></button>
+    <button class="mode" data-mode="local"><b>Un local</b><span>Contenido para un negocio</span></button>
+  </div>
+
+  <!-- Local: datos -->
+  <div class="card" data-show="local">
+    <h2><span class="step"></span> Datos del local <span class="demo-badge hidden" id="lDemoBadge">ejemplo</span></h2>
+    <label class="f" style="margin-top:0">¿Para quién es el contenido?</label>
+    <div class="chips" id="purpose">
+      <span class="chip on" data-p="local">Para el Instagram del local</span>
+      <span class="chip" data-p="caso">Para mi Instagram (mostrar mi trabajo)</span>
+    </div>
+    <div class="row"><div><label class="f">Nombre del local</label><input type="text" id="l-name"></div><div><label class="f">Rubro</label><input type="text" id="l-rubro" placeholder="Panadería, barbería…"></div></div>
+    <div class="row"><div><label class="f">Instagram</label><input type="text" id="l-ig" placeholder="@local o link"></div><div><label class="f">TikTok</label><input type="text" id="l-tiktok" placeholder="@local o link"></div></div>
+    <div class="row"><div><label class="f">WhatsApp</label><input type="text" id="l-wa"></div><div><label class="f">Web (opcional)</label><input type="text" id="l-web"></div></div>
+    <label class="f">Dirección</label><input type="text" id="l-address">
+    <label class="f">Horarios</label><input type="text" id="l-hours" placeholder="Lun a Sáb de 8 a 20 hs">
+    <label class="f">Descripción / bio <span style="font-weight:400">(copiala del Instagram)</span></label><textarea id="l-bio"></textarea>
+    <label class="f">Productos o servicios <span style="font-weight:400">(uno por línea · <i>Nombre: precio o detalle</i>)</span></label><textarea id="l-items" rows="4"></textarea>
+    <label class="f">Promo u oferta (opcional)</label><input type="text" id="l-promo" placeholder="Martes 2x1 en facturas">
+    <div data-show="caso"><label class="f">¿Qué le hiciste?</label><input type="text" id="l-work" placeholder="Página web con catálogo y pedidos por WhatsApp"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn pri hidden" id="lGenAI">✨ Escribir con IA</button>
+      <button class="btn" id="lGenAuto">⚡ Armar contenido</button>
+    </div>
+    <div class="status" id="lStatus"></div>
+  </div>
+
+  <!-- Proyecto (mi app/web, o la web que le hice al local) -->
+  <div class="card" data-show="devlike">
+    <h2><span class="step"></span> <span id="projTitle">Tu proyecto</span></h2>
     <div class="tabs" id="srcTabs">
-      <button class="tab on" data-src="zip">ZIP</button>
+      <button class="tab on" data-src="zip">Archivos</button>
       <button class="tab" data-src="folder">Carpeta</button>
-      <button class="tab" data-src="github">GitHub</button>
+      <button class="tab" data-src="github">Link (GitHub o web)</button>
       <button class="tab" data-src="text">Solo texto</button>
     </div>
     <div data-srcpane="zip">
-      <div class="drop" id="dropZip"><b>Arrastrá el .zip acá</b><br>o hacé clic para elegirlo</div>
-      <input type="file" id="inZip" accept=".zip,application/zip" hidden>
+      <div class="drop" id="dropZip"><b>Arrastrá acá un .zip, un index.html</b><br>o varios archivos (html, css, imágenes) · clic para elegir</div>
+      <input type="file" id="inZip" accept=".zip,application/zip,.html,.htm,.css,.js,.json,.md,image/*" multiple hidden>
     </div>
     <div data-srcpane="folder" class="hidden">
       <div class="drop" id="dropFolder"><b>Elegí la carpeta del proyecto</b><br>se lee en tu navegador, no se sube a ningún lado</div>
@@ -117,21 +155,19 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-top:10px
     </div>
     <div data-srcpane="github" class="hidden">
       <div class="row">
-        <input type="url" id="ghUrl" placeholder="https://github.com/usuario/repositorio">
+        <input type="url" id="ghUrl" placeholder="github.com/usuario/repo · usuario.github.io/web · mi-web.vercel.app">
         <button class="btn pri" id="ghGo" style="flex:0 0 auto">Traer</button>
       </div>
-      <p class="hint" id="ghHint">Trae el README, package.json, index.html y las imágenes del repo.</p>
+      <p class="hint" id="ghHint">Sirve un repo de GitHub, una página de GitHub Pages, una web en Vercel o cualquier dominio. De una web saca los textos, los colores y capturas de compu y de celu.</p>
+      <div class="status show hidden" id="offlineHelp" style="line-height:1.55"></div>
     </div>
     <div data-srcpane="text" class="hidden">
       <p class="hint" style="margin-top:0">Describí el proyecto en "Contexto extra" y completá los textos del paso 2 (o generalos con IA).</p>
     </div>
     <div class="status" id="status"></div>
 
-    <label class="f">Capturas de pantalla <span style="font-weight:400">(clic = activar/desactivar · ★ = portada)</span></label>
-    <div class="shots" id="shots"></div>
-    <button class="btn sm" id="addShots" style="margin-top:8px">+ Agregar capturas</button>
-    <input type="file" id="inShots" accept="image/*" multiple hidden>
 
+    <div data-show="dev">
     <label class="f">Contexto extra (opcional)</label>
     <textarea id="ctx" placeholder="Ej: lo hice para un taller mecánico de Junín; los clientes reciben aviso por WhatsApp cuando el auto está listo."></textarea>
     <div class="row">
@@ -145,11 +181,30 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-top:10px
       <button class="btn" id="genAuto">⚡ Generar automático</button>
     </div>
     <p class="hint" id="aiHint">El modo automático arma los textos leyendo el README y el código. Después podés editar todo.</p>
+    </div>
   </div>
 
-  <!-- 2. Textos -->
+  <!-- Imágenes -->
   <div class="card">
-    <h2><span class="step">2</span> Textos <span class="demo-badge" id="demoBadge">ejemplo</span></h2>
+    <h2><span class="step"></span> <span id="imgTitle">Capturas de pantalla</span></h2>
+    <div data-show="local">
+      <label class="f" style="margin-top:0">Logo del local</label>
+      <div class="row" style="align-items:center;flex:0">
+        <div class="logo-slot" id="logoSlot">sin logo</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" id="addLogo">Subir logo</button><button class="btn sm hidden" id="delLogo">Quitar</button></div>
+      </div>
+      <input type="file" id="inLogo" accept="image/*" hidden>
+      <label class="f">Fotos (productos, el local, la gente)</label>
+    </div>
+    <div class="shots" id="shots"></div>
+    <p class="hint" style="margin-top:6px">Clic = usar o no usar · doble clic = poner de portada</p>
+    <button class="btn sm" id="addShots" style="margin-top:8px">+ Agregar imágenes</button>
+    <input type="file" id="inShots" accept="image/*" multiple hidden>
+  </div>
+
+  <!-- Textos: mi proyecto / caso -->
+  <div class="card" data-show="devlike">
+    <h2><span class="step"></span> Textos <span class="demo-badge" id="demoBadge">ejemplo</span></h2>
     <label class="f">Nombre del proyecto</label><input type="text" id="f-name">
     <label class="f">Etiqueta chica (arriba)</label><input type="text" id="f-kicker">
     <label class="f">Gancho (frase grande de portada)</label><input type="text" id="f-hook">
@@ -161,20 +216,43 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-top:10px
     <label class="f">Llamado a la acción</label><input type="text" id="f-cta">
   </div>
 
-  <!-- 3. Estilo -->
+  <!-- Textos: post del local -->
+  <div class="card" data-show="lp-local">
+    <h2><span class="step"></span> Textos de la portada</h2>
+    <label class="f" style="margin-top:0">Etiqueta (arriba)</label><input type="text" id="lf-kicker" placeholder="PANADERÍA">
+    <label class="f">Frase principal</label><input type="text" id="lf-hook">
+    <label class="f">Bajada corta</label><input type="text" id="lf-sub">
+    <label class="f">Llamado a la acción</label><input type="text" id="lf-cta" placeholder="Pedí por WhatsApp">
+  </div>
+
+  <!-- Estilo -->
   <div class="card">
-    <h2><span class="step">3</span> Estilo y marca</h2>
-    <label class="f">Tema</label>
+    <h2><span class="step"></span> Estilo y marca</h2>
+    <label class="f" style="margin-top:0">Colores</label>
     <div class="chips" id="themes">
+      <span class="chip" data-t="auto" title="Copia los colores de la web/app o del logo">Automático</span>
       <span class="chip on" data-t="noche">Noche</span>
       <span class="chip" data-t="claro">Claro</span>
-      <span class="chip" data-t="marca">Color de la app</span>
+      <span class="chip" data-t="marca">Fondo de color</span>
     </div>
+    <p class="hint" id="autoInfo"></p>
     <div class="row" style="align-items:end">
       <div><label class="f">Color de acento</label><input type="color" id="accent" value="#c6ff3d" style="width:100%;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);padding:3px"></div>
-      <div><button class="btn sm" id="useDetected" style="width:100%;height:40px" disabled>Usar color detectado</button></div>
+      <div><button class="btn sm" id="useDetected" style="width:100%;height:40px" disabled>Restaurar detectados</button></div>
     </div>
-    <label class="f">Tu marca</label><input type="text" id="b-brand">
+    <label class="f">Tipografía</label>
+    <select id="fontSel">
+      <option value="auto">Automática (la de la web/app)</option>
+      <option value="grotesk">Space Grotesk + Inter (moderna)</option>
+      <option value="poppins">Poppins (redondeada)</option>
+      <option value="montserrat">Montserrat (clásica web)</option>
+      <option value="playfair">Playfair Display (elegante)</option>
+      <option value="fraunces">Fraunces (cálida, gastronómica)</option>
+      <option value="bebas">Bebas Neue (impacto)</option>
+      <option value="nunito">Nunito (amigable)</option>
+    </select>
+    <p class="hint" id="fontInfo"></p>
+    <label class="f" id="brandLabel">Tu marca</label><input type="text" id="b-brand">
     <div class="row">
       <div><label class="f">WhatsApp</label><input type="text" id="b-wa"></div>
       <div><label class="f">Instagram</label><input type="text" id="b-ig" placeholder="@tuusuario"></div>
@@ -277,7 +355,7 @@ let debT; function debounce(fn, ms=220){ clearTimeout(debT); debT=setTimeout(fn,
 /* ============ capacidades (IA / descargas) ============ */
 let AI = null, DL = null;
 if (window.claude && typeof window.claude.use === 'function') {
-  window.claude.use('sample').then(s => { AI = s; if (s) { $('#genAI').classList.remove('hidden'); $('#aiHint').textContent = 'Con IA escribe textos con gancho a partir del código. El automático no usa IA. Después podés editar todo.'; } }).catch(()=>{});
+  window.claude.use('sample').then(s => { AI = s; if (s) { $('#genAI').classList.remove('hidden'); $('#lGenAI').classList.remove('hidden'); $('#aiHint').textContent = 'Con IA escribe textos con gancho a partir del código. El automático no usa IA. Después podés editar todo.'; } }).catch(()=>{});
   window.claude.use('downloads').then(d => { DL = d; }).catch(()=>{});
 }
 async function saveFile(name, blob){
@@ -295,7 +373,7 @@ async function saveFile(name, blob){
 const canvasBlob = c => new Promise(r => c.toBlob(r, 'image/png'));
 
 /* ============ estado ============ */
-const S = { shots: [], detected: null, theme: store.get('theme','noche'), raw: null, isDemo: true };
+const S = { shots: [], detected: null, theme: store.get('theme','noche'), raw: null, isDemo: true, mode: 'dev', purpose: 'local', logo: null, logoBg: null, auto: null, autoOrig: null, sets: { dev: [], local: [] }, rawSets: { dev: null, local: null } };
 
 const BRAND_DEFAULT = { brand:'F-C Web Studio', wa:'2944242906', ig:'', web:'f-cwebstudio.vercel.app', city:'San Martín de los Andes' };
 const DEMO = {
@@ -343,26 +421,91 @@ function fromFolder(files){
   const out = [...files].map(f => ({ path:f.webkitRelativePath||f.name, size:f.size, text:()=>f.text(), blob:async()=>f }));
   return stripRoot(out);
 }
-async function fromGithub(url){
-  const m = url.trim().match(/github\.com\/([^\/\s]+)\/([^\/\s#?]+)/i);
-  if (!m) throw new Error('Ese enlace no parece de un repositorio de GitHub.');
-  const owner = m[1], repo = m[2].replace(/\.git$/,'');
+/* ---- red: proxy propio (/api/fetch en Vercel) → directo ---- */
+const PROXY = 'api/fetch?url=';
+let proxyOk = null; // null = sin probar
+async function netFetch(url, asText){
+  const tries = [];
+  if (proxyOk !== false) tries.push(() => fetch(PROXY + encodeURIComponent(url)).then(r => { if (r.headers.get('x-igstudio') !== '1') { proxyOk = false; throw 0; } proxyOk = true; return r; }));
+  tries.push(() => fetch(url));
+  for (const t of tries) {
+    try { const r = await withTimeout(t(), 25000); if (r && r.ok) return asText ? await r.text() : await r.blob(); } catch {}
+  }
+  return null;
+}
+function withTimeout(p, ms){ return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]); }
+function blockedErr(extra){ const e = new Error('blocked'); e.blocked = true; Object.assign(e, extra); return e; }
+function normUrl(u){ u = u.trim(); if (!/^https?:\/\//i.test(u)) u = 'https://' + u; return new URL(u); }
+const shotUrl = (url, mobile) => 'https://api.microlink.io/?url=' + encodeURIComponent(url) + '&screenshot=true&meta=false&embed=screenshot.url&waitForTimeout=1500' +
+  (mobile ? '&viewport.width=390&viewport.height=844&viewport.deviceScaleFactor=2&viewport.isMobile=true' : '&viewport.width=1366&viewport.height=860');
+function liveShotEntries(url){
+  return [
+    { path: 'screenshot-desktop.png', size: 0, text: async () => '', blob: () => netFetch(shotUrl(url, false)) },
+    { path: 'screenshot-movil.png', size: 0, text: async () => '', blob: () => netFetch(shotUrl(url, true)) }
+  ];
+}
+
+async function fromLink(input){
+  let U; try { U = normUrl(input); } catch { throw new Error('Ese link no es válido.'); }
+  const host = U.hostname.toLowerCase();
+  const gh = input.match(/github\.com\/([^\/\s]+)\/([^\/\s#?]+)/i);
+  if (gh) return fromGithub(gh[1], gh[2].replace(/\.git$/,''), null);
+  const pages = host.match(/^([a-z0-9-]+)\.github\.io$/);
+  if (pages) {
+    const owner = pages[1], seg = U.pathname.split('/').filter(Boolean)[0];
+    const repo = seg || `${owner}.github.io`;
+    try { return await fromGithub(owner, repo, U.href); }
+    catch (e) {
+      if (e.blocked) throw blockedErr({ zip: `https://github.com/${owner}/${repo}/archive/HEAD.zip`, site: U.href });
+      return fromWebsite(U.href); // repo con otro nombre o privado: tratarlo como web
+    }
+  }
+  return fromWebsite(U.href);
+}
+
+async function fromWebsite(url){
+  const U = new URL(url);
+  const html = await netFetch(U.href, true);
+  if (!html) {
+    // último recurso: lector de texto público
+    const md = await netFetch('https://r.jina.ai/' + U.href, true);
+    if (!md) throw blockedErr({ site: U.href });
+    const list = [{ path: 'README.md', size: md.length, text: async () => md, blob: async () => new Blob([md]) }, ...liveShotEntries(U.href)];
+    return { list, root: U.hostname, site: { url: U.href, host: U.hostname } };
+  }
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const abs = h => { try { return new URL(h, U.href).href; } catch { return null; } };
+  const list = [{ path: 'index.html', size: html.length, text: async () => html, blob: async () => new Blob([html]) }];
+  // hojas de estilo (para detectar colores)
+  [...doc.querySelectorAll('link[rel~=stylesheet][href]')].slice(0, 4).forEach((l, i) => { const h = abs(l.getAttribute('href')); if (h) list.push({ path: `css/estilo${i}.css`, size: 1, text: () => netFetch(h, true).then(t => t || ''), blob: async () => new Blob([]) }); });
+  const man = doc.querySelector('link[rel=manifest][href]'); if (man) { const h = abs(man.getAttribute('href')); if (h) list.push({ path: 'manifest.json', size: 1, text: () => netFetch(h, true).then(t => t || ''), blob: async () => new Blob([]) }); }
+  // capturas en vivo + imagen de vista previa + imágenes grandes de la página
+  list.push(...liveShotEntries(U.href));
+  const og = doc.querySelector('meta[property="og:image"]'); if (og && og.content) { const h = abs(og.content); if (h) list.push({ path: 'og-preview.jpg', size: 0, text: async () => '', blob: () => netFetch(h) }); }
+  [...doc.querySelectorAll('img[src]')].map(i => abs(i.getAttribute('src'))).filter(h => h && /^https?:/.test(h) && !/\.svg(\?|$)/i.test(h)).slice(0, 6)
+    .forEach((h, i) => list.push({ path: `img/pagina-${i}.${(h.match(/\.(png|jpe?g|webp)(\?|$)/i) || [, 'jpg'])[1]}`, size: 0, text: async () => '', blob: () => netFetch(h) }));
+  return { list, root: U.hostname, site: { url: U.href, host: U.hostname } };
+}
+
+async function fromGithub(owner, repo, liveUrl){
   let info;
   try {
-    const r = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
+    const r = await withTimeout(fetch(`https://api.github.com/repos/${owner}/${repo}`), 15000);
     if (r.status === 404) throw new Error('El repositorio no existe o es privado.');
     if (!r.ok) throw new Error('GitHub respondió '+r.status);
     info = await r.json();
   } catch (e) {
     if (e.message && /no existe|respondió/.test(e.message)) throw e;
-    const err = new Error('blocked'); err.blocked = true; err.zip = `https://github.com/${owner}/${repo}/archive/HEAD.zip`; throw err;
+    throw blockedErr({ zip: `https://github.com/${owner}/${repo}/archive/HEAD.zip`, site: liveUrl || info?.homepage || null });
   }
+  if (!liveUrl && info.homepage) liveUrl = /^https?:/.test(info.homepage) ? info.homepage : 'https://' + info.homepage;
   const branch = info.default_branch || 'main';
   const tr = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`).then(r=>r.json());
   const raw = p => `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${p.split('/').map(encodeURIComponent).join('/')}`;
   const list = (tr.tree||[]).filter(t=>t.type==='blob').map(t=>({ path:t.path, size:t.size||0,
     text:()=>fetch(raw(t.path)).then(r=>r.ok?r.text():''), blob:()=>fetch(raw(t.path)).then(r=>r.blob()) }));
   const res = stripRoot(list); res.root = repo; res.gh = { description: info.description||'', homepage: info.homepage||'', topics: info.topics||[], language: info.language||'' };
+  if (liveUrl) { try { const L = new URL(liveUrl); res.list.unshift(...liveShotEntries(L.href)); res.site = { url: L.href, host: L.hostname }; } catch {} }
   return res;
 }
 
@@ -373,7 +516,7 @@ async function analyze(src){
   const find = re => byDepth(L.filter(e => re.test(e.path.split('/').pop())))[0];
   const readme = find(/^readme(\.(md|markdown|txt))?$/i);
   const pkg = L.find(e => e.path === 'package.json') || find(/^package\.json$/);
-  const html = find(/^index\.html?$/i);
+  const html = find(/^index\.html?$/i) || find(/\.html?$/i);
   const manifest = find(/(^manifest\.json$|\.webmanifest$)/i);
   const cssFiles = byDepth(L.filter(e => /\.(css|scss)$/i.test(e.path) && e.size < 400000)).slice(0,8);
   const safeText = async e => { try { return e ? (await e.text()) : ''; } catch { return ''; } };
@@ -381,22 +524,31 @@ async function analyze(src){
   raw.readme = (await safeText(readme)).slice(0, 20000);
   raw.pkgText = (await safeText(pkg)).slice(0, 8000);
   try { raw.pkg = raw.pkgText ? JSON.parse(raw.pkgText) : null; } catch { raw.pkg = null; }
-  raw.html = (await safeText(html)).slice(0, 60000);
+  const fullHtml = await safeText(html);
+  raw.html = fullHtml.slice(0, 60000);
+  raw.site = src.site || null;
   raw.manifest = null; try { const t = await safeText(manifest); raw.manifest = t ? JSON.parse(t) : null; } catch {}
-  let css = ''; for (const c of cssFiles) css += (await safeText(c)).slice(0, 80000);
-  raw.css = css;
-  // imágenes
+  const cssTexts = await Promise.all(cssFiles.map(c => safeText(c)));
+  raw.css = cssTexts.map(t => t.slice(0, 80000)).join('\n') + '\n' + (fullHtml.match(/<style[^>]*>[\s\S]*?<\/style>/gi) || []).join('\n').slice(0, 80000);
+  // imágenes de archivos / remotas
   const imgs = L.filter(e => /\.(png|jpe?g|webp)$/i.test(e.path) && (e.size === 0 || e.size > 3000) && !/(favicon|icon[-_]?\d*|apple-touch|sprite|logo)/i.test(e.path.split('/').pop()));
   const prio = e => (/(screen|captura|preview|demo|mockup|shot)/i.test(e.path) ? 0 : 1);
   imgs.sort((a,b) => prio(a)-prio(b) || b.size-a.size);
-  const found = [];
-  for (const e of imgs.slice(0, 14)) {
-    try { const b = await e.blob(); const sh = await makeShot(b, e.path.split('/').pop()); if (sh && sh.w >= 380 && sh.h >= 300) found.push(sh); } catch {}
-    if (found.length >= 8) break;
-  }
+  // imágenes incrustadas en el HTML (apps de un solo archivo)
+  const embedded = (fullHtml.match(/data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+\/=]{3000,}/g) || []).slice(0, 6).map((d, i) => ({ path: `embebida-${i}.png`, size: d.length, blob: async () => dataUrlBlob(d) }));
+  const cands = [...imgs.slice(0, 12), ...embedded];
+  const results = await Promise.all(cands.map(async e => {
+    try { const b = await e.blob(); if (!b || !b.size) return null; const sh = await makeShot(b, e.path.split('/').pop()); return sh && sh.w >= 380 && sh.h >= 300 ? sh : null; } catch { return null; }
+  }));
+  const found = results.filter(Boolean).slice(0, 8);
   return { raw, shots: found };
 }
 
+function dataUrlBlob(d){
+  const [head, b64] = d.split(','); const mime = (head.match(/data:([^;]+)/) || [, 'image/png'])[1];
+  const bin = atob(b64); const arr = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
 /* ============ capturas ============ */
 async function makeShot(blob, name){
   const url = URL.createObjectURL(blob);
@@ -436,6 +588,12 @@ function detectTech(raw){
   const cnt = {}; raw.tree.forEach(p => { const x = (p.split('.').pop()||'').toLowerCase(); if (EXT[x]) cnt[EXT[x]] = (cnt[EXT[x]]||0)+1; });
   Object.entries(cnt).sort((a,b)=>b[1]-a[1]).forEach(([t]) => add(t));
   if (raw.gh && raw.gh.language) add(raw.gh.language);
+  const h = raw.html || '';
+  [[/__NEXT_DATA__|\/_next\//, 'Next.js'], [/data-reactroot|react-dom/, 'React'], [/wp-content|wordpress/i, 'WordPress'], [/cdn\.shopify|Shopify\./, 'Shopify'], [/tailwind/i, 'Tailwind'], [/bootstrap(\.min)?\.(css|js)/i, 'Bootstrap'],
+   [/supabase/i, 'Supabase'], [/firebase/i, 'Firebase'], [/leaflet/i, 'Mapas'], [/wa\.me\/|api\.whatsapp\.com/i, 'Botón de WhatsApp'], [/serviceWorker\.register/, 'PWA'], [/<meta[^>]+viewport/i, 'Adaptada a celular']].forEach(([re, t]) => { if (re.test(h)) add(t); });
+  if (raw.site && /vercel\.app$/.test(raw.site.host)) add('Vercel');
+  if (raw.site && /github\.io$/.test(raw.site.host)) add('GitHub Pages');
+  if (h && !out.length) ['HTML', 'CSS', 'JavaScript'].forEach(add);
   return out.slice(0, 6);
 }
 function detectColor(raw){
@@ -462,9 +620,20 @@ function featuresFrom(raw){
     }
   }
   if (!pick.length) pick = lines.filter(isBullet).map(clean).filter(l => !bad(l));
-  if (!pick.length && raw.html) {
+  if (raw.html && (!pick.length || raw.site)) {
     try { const doc = new DOMParser().parseFromString(raw.html, 'text/html');
-      pick = [...doc.querySelectorAll('h2,h3')].map(n => n.textContent.replace(/\s+/g,' ').trim()).filter(t => t.length > 3 && t.length < 70); } catch {}
+      doc.querySelectorAll('script,style,noscript,nav,footer,svg').forEach(n => n.remove());
+      const tx = n => (n ? n.textContent : '').replace(/\s+/g, ' ').trim();
+      const NAV = /^(inicio|home|contacto|contact|men[uú]|nosotros|servicios|blog|faq|preguntas frecuentes|ingresar|login)$/i;
+      let hs = [...doc.querySelectorAll('h3')]; if (hs.length < 3) hs = [...doc.querySelectorAll('h2,h3')];
+      const fromHtml = hs.map(hn => {
+        const t = tx(hn); if (t.length < 3 || t.length > 70 || NAV.test(t)) return null;
+        let p = hn.nextElementSibling; while (p && !tx(p)) p = p.nextElementSibling;
+        const d = p && /^(P|SPAN|DIV|SMALL)$/.test(p.tagName) ? tx(p) : '';
+        return d && d.length > 8 && d.length < 170 && !/^h\d$/i.test(p.tagName) ? `${t.replace(/[:.]$/, '')}: ${d}` : t;
+      }).filter(Boolean);
+      if (fromHtml.length >= 2 || !pick.length) pick = fromHtml;
+    } catch {}
   }
   return pick.slice(0, 5).map(t => {
     const m = t.match(/^(.{3,45}?)\s*(?:[:—–]|\s-\s)\s*(.+)$/);
@@ -476,16 +645,23 @@ function featuresFrom(raw){
 function heuristic(raw){
   let name = (raw.pkg && raw.pkg.displayName) || '';
   const h1 = (raw.readme.match(/^#\s+(.+)$/m) || [])[1];
-  let htmlTitle = '', metaDesc = '';
-  if (raw.html) { try { const d = new DOMParser().parseFromString(raw.html,'text/html'); htmlTitle = (d.title||'').trim(); metaDesc = (d.querySelector('meta[name=description]')||{}).content || ''; } catch {} }
+  let htmlTitle = '', metaDesc = '', siteName = '', heroP = '', htmlH1 = '';
+  if (raw.html) { try { const d = new DOMParser().parseFromString(raw.html,'text/html'); htmlTitle = (d.title||'').trim();
+    const meta = sel => ((d.querySelector(sel) || {}).content || '').trim();
+    metaDesc = meta('meta[name=description]') || meta('meta[property="og:description"]'); siteName = meta('meta[property="og:site_name"]');
+    d.querySelectorAll('script,style,nav').forEach(n => n.remove());
+    htmlH1 = ((d.querySelector('h1') || {}).textContent || '').replace(/\s+/g, ' ').trim();
+    heroP = [...d.querySelectorAll('header p, section p, main p, p')].map(p => p.textContent.replace(/\s+/g, ' ').trim()).find(t => t.length > 30 && t.length < 220) || '';
+  } catch {} }
   const short = s => (s || '').split(/\s[|\-–—:]\s/)[0].trim();
-  name = name || (raw.manifest && (raw.manifest.short_name || raw.manifest.name)) || (h1 && short(stripMd(h1))) || short(htmlTitle) || (raw.pkg && raw.pkg.name) || raw.root || 'Mi proyecto';
+  const fromSite = !!raw.site && !raw.gh;
+  name = name || siteName || (raw.manifest && (raw.manifest.short_name || raw.manifest.name)) || (h1 && short(stripMd(h1))) || short(htmlTitle) || (htmlH1.length < 40 && htmlH1) || (raw.pkg && raw.pkg.name) || (raw.site && raw.site.host.split('.')[0]) || raw.root || 'Mi proyecto';
   name = name.replace(/[-_]/g, m => name.includes(' ') ? m : ' ').replace(/\s+/g,' ').trim();
   if (name === name.toLowerCase()) name = name.replace(/\b\w/g, c => c.toUpperCase());
   let para = '';
   const rl = raw.readme.split('\n');
   for (const l of rl) { const t = stripMd(l); if (!/^#/.test(l.trim()) && t.length > 30 && !/^\s*([-*+]|\d+\.)\s/.test(l) && !/badge|shields\.io/i.test(l)) { para = t; break; } }
-  let tagline = (raw.gh && raw.gh.description) || (raw.pkg && raw.pkg.description) || metaDesc || (raw.manifest && raw.manifest.description) || para || '';
+  let tagline = (raw.gh && raw.gh.description) || (raw.pkg && raw.pkg.description) || metaDesc || (raw.manifest && raw.manifest.description) || para || heroP || (htmlH1.length >= 40 ? htmlH1 : '') || '';
   tagline = tagline.split(/(?<=[.!?])\s/)[0].replace(/\.$/,'');
   if (tagline.length > 110) tagline = tagline.slice(0, 107).replace(/\s\S*$/,'') + '…';
   const feats = featuresFrom(raw);
@@ -493,13 +669,13 @@ function heuristic(raw){
   const words = tagline.split(' ').length;
   const goal = $('#goal').value;
   return {
-    name, kicker: goal.startsWith('Lanzar') ? 'YA DISPONIBLE' : (goal.startsWith('Mostrar') ? 'PROYECTO' : 'NUEVO PROYECTO'),
-    hook: tagline && words <= 9 ? tagline : `Conocé ${name}`,
+    name, kicker: goal.startsWith('Lanzar') ? 'YA DISPONIBLE' : (goal.startsWith('Mostrar') ? 'PROYECTO' : (fromSite ? 'NUEVA WEB' : 'NUEVO PROYECTO')),
+    hook: tagline && words <= 9 ? tagline : (htmlH1 && htmlH1.split(' ').length <= 9 && htmlH1 !== name ? htmlH1 : `Conocé ${name}`),
     tagline: tagline || 'Una herramienta hecha a medida',
     problem: '¿Seguís haciendo todo a mano, con papel y planillas?',
     audience: 'Negocios y emprendimientos que quieren ordenarse',
     features: feats.length ? feats : [{title:'Hecho a medida', desc:'Se adapta a cómo trabaja tu negocio'},{title:'Desde el celular', desc:'Funciona en cualquier dispositivo'},{title:'Fácil de usar', desc:'Sin capacitaciones largas'}],
-    tech, cta: goal.startsWith('Mostrar') ? '¿Tenés un proyecto en mente? Hablemos' : '¿Querés una app así para tu negocio?'
+    tech, cta: goal.startsWith('Mostrar') ? '¿Tenés un proyecto en mente? Hablemos' : (fromSite ? '¿Querés una web así para tu negocio?' : '¿Querés una app así para tu negocio?')
   };
 }
 
@@ -513,10 +689,11 @@ async function generateAI(){
   const prompt = `Sos redactor de marketing para Instagram de un desarrollador freelance argentino (${brand.brand || 'freelancer'}, ${brand.city || 'Argentina'}) que hace apps y webs para negocios.
 Escribí en español rioplatense (voseo), claro, sin tecnicismos salvo que el tono sea técnico. Nada inventado: basate en lo que muestra el proyecto. No uses emojis en los campos cortos.
 Tono: ${$('#tone').value}. Objetivo: ${$('#goal').value}.
-Contexto que dio el autor: ${$('#ctx').value.trim() || '(ninguno)'}
+Contexto que dio el autor: ${$('#ctx').value.trim() || '(ninguno)'}${S.mode === 'local' ? `\nIMPORTANTE: es un CASO DE CLIENTE para el Instagram del desarrollador. Cliente: ${$('#l-name').value} (${$('#l-rubro').value}). Lo que se le hizo: ${$('#l-work').value || 'una web'}. Datos del cliente: ${$('#l-bio').value}. El 'name' es el nombre del cliente, 'kicker' debe ser tipo TRABAJO PARA CLIENTE y el hook debe contar qué se le hizo.` : ''}
 
 DATOS DEL PROYECTO
-Nombre de carpeta/repo: ${raw.root || '-'}
+Nombre de carpeta/repo/dominio: ${raw.root || '-'}
+${raw.site ? 'Web publicada: ' + raw.site.url + (raw.gh ? '' : ' (es una página web: promocionala como trabajo de diseño/desarrollo web)') : ''}
 ${raw.gh ? 'Descripción en GitHub: ' + raw.gh.description + '\nTemas: ' + raw.gh.topics.join(', ') : ''}
 Archivos (parcial):
 ${raw.tree.slice(0,120).join('\n')}
@@ -588,6 +765,15 @@ function alpha(h, a){ const [r,g,b] = rgb(h); return `rgba(${r},${g},${b},${a})`
 function themeColors(){
   const acc = $('#accent').value || '#c6ff3d';
   const accInk = lum(acc) > 0.45 ? '#0c0e14' : '#ffffff';
+  if (S.theme === 'auto') {
+    const a = S.auto || {};
+    const bg = a.bg || mix(acc, '#000000', 0.84);
+    const dark = lum(bg) < 0.3;
+    const ink = a.ink && contrast(a.ink, bg) >= 4.5 ? a.ink : (dark ? '#ffffff' : '#16181d');
+    const accTxt = contrast(acc, bg) >= 3 ? acc : (dark ? mix(acc, '#ffffff', 0.55) : mix(acc, '#000000', 0.55));
+    const card = dark ? mix(bg, '#ffffff', 0.08) : (lum(bg) > 0.85 ? mix(bg, '#000000', 0.05) : mix(bg, '#ffffff', 0.55));
+    return { bg, bg2: mix(bg, ink, 0.05), ink, muted: mix(ink, bg, 0.36), card, line: mix(bg, ink, 0.16), acc, accInk, accTxt, glow: dark ? 0.3 : 0.16, dark };
+  }
   if (S.theme === 'claro') {
     const accTxt = lum(acc) > 0.45 ? mix(acc, '#000000', 0.55) : acc;
     return { bg:'#f5f2ea', bg2:'#ebe5d8', ink:'#15171c', muted:'#5b616d', card:'#ffffff', line:'#ddd6c6', acc, accInk, accTxt, glow:0.22, dark:false };
@@ -597,7 +783,7 @@ function themeColors(){
 }
 
 /* ============ motor de dibujo ============ */
-const FH = "'Space Grotesk', Inter, sans-serif", FB = "Inter, system-ui, sans-serif";
+let FH = "'Space Grotesk', Inter, sans-serif", FB = "Inter, system-ui, sans-serif";
 const ease = t => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
 function rr(ctx, x, y, w, h, r){ r = Math.min(r, w/2, h/2); ctx.beginPath(); ctx.moveTo(x+r, y); ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r); ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r); ctx.closePath(); }
 function wrap(ctx, text, maxW){
@@ -706,7 +892,7 @@ function drawShot(ctx, shot, x, y, w, h, T, u, b, seed){
     ['#ff5f57','#febc2e','#28c840'].forEach((c, i) => { ctx.beginPath(); ctx.arc(fx + 34*u + i*30*u, fy + bar/2, 9*u, 0, 7); ctx.fillStyle = c; ctx.fill(); });
     rr(ctx, fx + 140*u, fy + 12*u, fw - 180*u, bar - 24*u, (bar-24*u)/2); ctx.fillStyle = T.dark ? '#121621' : '#efede6'; ctx.fill();
     ctx.font = `500 ${21*u}px ${FB}`; ctx.fillStyle = T.dark ? '#8a93a5' : '#6b707b'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
-    ctx.fillText((b && b.web) || 'tu-app.com', fx + 140*u + (fw - 180*u)/2, fy + bar/2 + 1); ctx.textBaseline = 'alphabetic';
+    ctx.fillText((S.raw && S.raw.site && S.raw.site.host) || (b && b.web) || 'tu-app.com', fx + 140*u + (fw - 180*u)/2, fy + bar/2 + 1); ctx.textBaseline = 'alphabetic';
     ctx.save(); ctx.beginPath(); ctx.moveTo(fx, fy+bar); ctx.lineTo(fx+fw, fy+bar); ctx.lineTo(fx+fw, fy+fh-rad); ctx.arcTo(fx+fw, fy+fh, fx+fw-rad, fy+fh, rad); ctx.lineTo(fx+rad, fy+fh); ctx.arcTo(fx, fy+fh, fx, fy+fh-rad, rad); ctx.closePath(); ctx.clip();
     if (shot) { const sh = fw * shot.h / shot.w; ctx.drawImage(shot.img, fx, fy + bar, fw, sh); }
     else codeArt(ctx, fx, fy + bar, fw, ih, T, u, seed || 0);
@@ -909,13 +1095,22 @@ function drawStory(ctx, W, H, m, b, T){
 
 /* ---- reel ---- */
 function reelScenes(){
+  if (isLocalOwn()) {
+    const L = readLocal(), b = readBrand(), T = themeColors();
+    const slides = buildLocalSlides(L);
+    const items = slides.filter(z => z.type === 'litem').slice(0, 4), photos = slides.filter(z => z.type === 'lphoto').slice(0, 3);
+    const order = [slides.find(z => z.type === 'lcover'), slides.find(z => z.type === 'lpromo'), ...items, ...photos, slides.find(z => z.type === 'linfo'), slides.find(z => z.type === 'lcta')].filter(Boolean);
+    const dur = { lcover: 3.2, lpromo: 2.6, litem: 2.6, lphoto: 2.4, linfo: 3.0, lcta: 3.4 };
+    let t = 0; const scenes = order.map((z, i) => { const d = dur[z.type]; const sc = { slide: z, start: t, dur: d, index: i }; t += d; return sc; });
+    return { scenes, total: t, draw: (ctx, W, H, sl, fmt, o, bb, TT) => drawLocalSlide(ctx, W, H, sl, fmt, L, bb, TT, o) };
+  }
   const m = readModel();
   const slides = buildSlides(m);
   const feats = slides.filter(s => s.type === 'feature').slice(0, 3);
   const order = [slides.find(s=>s.type==='cover'), slides.find(s=>s.type==='problem'), ...feats, slides.find(s=>s.type==='tech'), slides.find(s=>s.type==='cta')].filter(Boolean);
   const dur = { cover: 3.4, problem: 3.0, feature: 2.8, tech: 2.6, cta: 3.6 };
   let t = 0; const scenes = order.map((s, i) => { const d = dur[s.type]; const sc = { slide: s, start: t, dur: d, index: i }; t += d; return sc; });
-  return { scenes, total: t, m };
+  return { scenes, total: t, draw: (ctx, W, H, sl, fmt, o, bb, TT) => drawSlide(ctx, W, H, sl, fmt, m, bb, TT, o) };
 }
 function drawReelFrame(ctx, R, t, b, T){
   const W = 1080, H = 1920;
@@ -923,7 +1118,7 @@ function drawReelFrame(ctx, R, t, b, T){
   for (const s of R.scenes) if (t >= s.start && t < s.start + s.dur) { sc = s; break; }
   const local = t - sc.start;
   ctx.save();
-  drawSlide(ctx, W, H, sc.slide, 'reel', R.m, b, T, { tt: local, index: sc.index });
+  R.draw(ctx, W, H, sc.slide, 'reel', { tt: local, index: sc.index }, b, T);
   // salida
   const outT = sc.dur - local;
   if (outT < 0.28 && sc !== R.scenes[R.scenes.length - 1]) { ctx.fillStyle = T.bg; ctx.globalAlpha = 1 - outT / 0.28; ctx.fillRect(0, 0, W, H); }
@@ -937,6 +1132,446 @@ function drawReelFrame(ctx, R, t, b, T){
   });
 }
 
+/* ============ diseño automático ============ */
+function hslToHex(h, s, l){ const a = s * Math.min(l, 1 - l); const f = n => { const k = (n + h / 30) % 12; const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); return Math.round(c * 255).toString(16).padStart(2, '0'); }; return '#' + f(0) + f(8) + f(4); }
+function parseColor(v){
+  if (!v) return null; v = String(v).trim();
+  let m = v.match(/#([0-9a-f]{6}|[0-9a-f]{3})(?![0-9a-f])/i); if (m) return normHex(m[0]);
+  m = v.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:\s*[,\/]\s*([\d.]+)(%?))?/i);
+  if (m) { if (m[4] !== undefined && (m[5] ? +m[4] < 50 : +m[4] < 0.5)) return null; return '#' + [m[1], m[2], m[3]].map(x => Math.min(255, +x).toString(16).padStart(2, '0')).join(''); }
+  m = v.match(/hsla?\(\s*([\d.]+)(?:deg)?[,\s]+([\d.]+)%[,\s]+([\d.]+)%/i); if (m) return hslToHex(+m[1], +m[2] / 100, +m[3] / 100);
+  m = v.match(/^(white|black)$/i); if (m) return m[1].toLowerCase() === 'white' ? '#ffffff' : '#000000';
+  return null;
+}
+function contrast(a, b){ const A = lum(a), B = lum(b); return (Math.max(A, B) + .05) / (Math.min(A, B) + .05); }
+function cdist(a, b){ const A = rgb(a), B = rgb(b); return Math.abs(A[0]-B[0]) + Math.abs(A[1]-B[1]) + Math.abs(A[2]-B[2]); }
+
+function imagePalette(img){
+  const c = document.createElement('canvas'), n = 56; c.width = n; c.height = n;
+  const x = c.getContext('2d', { willReadFrequently: true });
+  x.drawImage(img, 0, 0, n, n);
+  let d; try { d = x.getImageData(0, 0, n, n).data; } catch { return {}; }
+  const counts = {}; let tot = 0;
+  for (let i = 0; i < d.length; i += 4) { if (d[i+3] < 128) continue; tot++; const k = ((d[i] >> 4) << 8) | ((d[i+1] >> 4) << 4) | (d[i+2] >> 4); counts[k] = (counts[k] || 0) + 1; }
+  const hex = k => '#' + [(k >> 8) & 15, (k >> 4) & 15, k & 15].map(v => (v * 16 + 8).toString(16).padStart(2, '0')).join('');
+  const list = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, c]) => ({ hex: hex(+k), c }));
+  if (!list.length) return {};
+  const sat = list.filter(e => { const h = hsl(e.hex); return h.s > 0.35 && h.l > 0.18 && h.l < 0.82 && e.c > tot * 0.008; });
+  const acc = sat[0] && sat[0].hex;
+  const second = sat.find(e => acc && cdist(e.hex, acc) > 110);
+  return { dominant: list[0].hex, share: list[0].c / tot, acc, second: second && second.hex, opaque: tot / (n * n) };
+}
+function designFromImage(img, isLogo){
+  const p = imagePalette(img);
+  let bg = null, acc = p.acc || null;
+  if (isLogo && p.dominant && p.share > 0.3 && p.opaque > 0.85 && hsl(p.dominant).l < 0.9) bg = p.dominant;
+  if (!acc && p.dominant && hsl(p.dominant).s > 0.3) acc = p.dominant;
+  if (bg && acc && cdist(bg, acc) < 110) acc = p.second || (lum(bg) < 0.3 ? '#ffffff' : '#111111');
+  return { bg, ink: null, acc, head: null, body: null, from: isLogo ? 'el logo' : 'las fotos' };
+}
+function extractDesign(raw, shots){
+  const css = raw.css || '';
+  const vars = {};
+  (css.match(/--[\w-]+\s*:\s*[^;}]+/g) || []).forEach(dc => { const i = dc.indexOf(':'); const k = dc.slice(0, i).trim(); if (!(k in vars)) vars[k] = dc.slice(i + 1).trim(); });
+  const resolve = (v, n = 0) => { if (!v) return null; const m = v.match(/var\(\s*(--[\w-]+)\s*(?:,\s*([^)]+))?\)/); if (m && n < 6) return resolve(vars[m[1]] || m[2], n + 1); return parseColor(v); };
+  const blocks = []; css.replace(/([^{}]+)\{([^{}]*)\}/g, (_, sel, body) => { blocks.push({ sels: sel.split(',').map(z => z.trim().toLowerCase()), body }); return ''; });
+  const prop = (selRe, p) => { const out = []; const re = new RegExp('(?:^|[;\\s{])' + p + '\\s*:\\s*([^;]+)', 'i'); for (const bl of blocks) if (bl.sels.some(z => selRe.test(z))) { const m = bl.body.match(re); if (m) out.push(m[1]); } return out; };
+  const firstColor = arr => { for (const v of arr) { const c = resolve(v); if (c) return c; } return null; };
+  const varBy = re => { for (const k of Object.keys(vars)) if (re.test(k)) { const c = resolve(vars[k]); if (c) return c; } return null; };
+  let bg = firstColor(prop(/^(html|body)$/, 'background-color')) || firstColor(prop(/^(html|body)$/, 'background'))
+        || varBy(/^--(color-)?(bg|background|fondo|surface|base|body-bg|bg-color|page-bg)(-color)?$/i)
+        || firstColor(prop(/^(:root|main|#app|#root|\.app|\.wrapper|\.page)$/, 'background(?:-color)?'));
+  let ink = firstColor(prop(/^(html|body)$/, 'color')) || varBy(/^--(color-)?(text|fg|ink|foreground|texto|body-color|text-color)(-color)?$/i);
+  let acc = varBy(/^--(color-)?(primary|accent|brand|main|acento|primario|principal|secondary)(-color)?(-500|-600)?$/i);
+  if (acc && hsl(acc).s < 0.25) acc = null;
+  acc = acc || detectColor(raw);
+  const shot = (shots || []).find(z => /desktop|screen|captura/i.test(z.name)) || (shots || [])[0];
+  if (shot && (!bg || !acc)) { const p = imagePalette(shot.img); if (!bg && p.dominant) bg = p.dominant; if (!acc) acc = p.acc || null; }
+  if (bg && ink && contrast(bg, ink) < 3) ink = null;
+  // tipografías
+  const gf = [];
+  const grab = q => q.replace(/&amp;/g, '&').split('&').forEach(pp => { if (pp.startsWith('family=')) gf.push(decodeURIComponent(pp.slice(7).split(':')[0]).replace(/\+/g, ' ').trim()); });
+  ((raw.html || '') + '\n' + css).replace(/fonts\.googleapis\.com\/css2?\?([^"'\s)>]+)/g, (_, q) => { grab(q); return ''; });
+  const GENERIC = /^(system-ui|sans-serif|serif|monospace|cursive|inherit|initial|-apple-system|blinkmacsystemfont|ui-sans-serif|ui-serif|ui-monospace|arial|helvetica|helvetica neue|segoe ui|times new roman|times|georgia|verdana|tahoma|courier new)$/i;
+  const fam = re => { for (const v of prop(re, 'font-family')) { let f = v; const fv = f.match(/var\((--[\w-]+)/); if (fv) f = vars[fv[1]] || ''; f = f.split(',')[0].replace(/['"]/g, '').replace(/!important/, '').trim(); if (f && !GENERIC.test(f)) return f; } return null; };
+  const bodyF = fam(/^(html|body|:root)$/);
+  const head = fam(/^(h1|h2|\.title|\.hero h1|\.hero-title|header h1)$/) || gf.find(f => f !== bodyF) || bodyF || gf[0] || null;
+  const body = bodyF || gf.find(f => f !== head) || head || null;
+  return { bg, ink, acc, head, body, from: raw.site && !raw.gh ? raw.site.host : 'el proyecto' };
+}
+
+const FONT_SETS = { grotesk: ['Space Grotesk', 'Inter'], poppins: ['Poppins', 'Poppins'], montserrat: ['Montserrat', 'Montserrat'], playfair: ['Playfair Display', 'Inter'], fraunces: ['Fraunces', 'Inter'], bebas: ['Bebas Neue', 'Inter'], nunito: ['Nunito', 'Nunito'] };
+const fontCache = {};
+function loadGoogleFont(name){
+  if (!name) return Promise.resolve(false);
+  if (/^(Space Grotesk|Inter)$/.test(name)) return Promise.resolve(true);
+  if (fontCache[name]) return fontCache[name];
+  const fam = encodeURIComponent(name).replace(/%20/g, '+');
+  ['', ':wght@400;700', ':wght@400;600;700;800'].forEach(w => { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = `https://fonts.googleapis.com/css2?family=${fam}${w}&display=swap`; document.head.appendChild(l); });
+  fontCache[name] = (async () => {
+    for (let i = 0; i < 25; i++) {
+      await sleep(160);
+      try { await withTimeout(Promise.all(['400', '700'].map(w => document.fonts.load(`${w} 40px "${name}"`))), 3000); } catch {}
+      if ([...document.fonts].some(f => f.family.replace(/['"]/g, '') === name && f.status === 'loaded')) return true;
+    }
+    return false;
+  })();
+  return fontCache[name];
+}
+async function applyFontChoice(){
+  const k = $('#fontSel').value;
+  let pair = FONT_SETS[k];
+  if (!pair) pair = [(S.auto && S.auto.head) || 'Space Grotesk', (S.auto && S.auto.body) || (S.auto && S.auto.head) || 'Inter'];
+  const ok = await Promise.all(pair.map(loadGoogleFont));
+  const head = ok[0] ? pair[0] : 'Space Grotesk', body = ok[1] ? pair[1] : 'Inter';
+  FH = `'${head}', 'Space Grotesk', Inter, sans-serif`;
+  FB = `'${body}', Inter, system-ui, sans-serif`;
+  const miss = pair.filter((f, i) => !ok[i]);
+  $('#fontInfo').textContent = k === 'auto' ? `Usando ${head}${body !== head ? ' + ' + body : ''}` + (miss.length ? ` (no encontré ${miss.join(', ')} en Google Fonts)` : '') : '';
+}
+function setTheme(t){ S.theme = t; store.set('theme', t); $$('#themes .chip').forEach(x => x.classList.toggle('on', x.dataset.t === t)); }
+async function applyAuto(d){
+  if (!d) return;
+  S.auto = d; S.autoOrig = { ...d };
+  if (d.acc) { $('#accent').value = d.acc; store.set('accent', d.acc); }
+  $('#useDetected').disabled = false;
+  setTheme('auto');
+  const parts = [d.bg && 'fondo', d.ink && 'texto', d.acc && 'acento', d.head && 'tipografía'].filter(Boolean);
+  $('#autoInfo').textContent = parts.length ? `Automático: tomé ${parts.join(', ')} ${/^el /.test(d.from) ? 'del ' + d.from.slice(3) : 'de ' + d.from}.` : '';
+  await applyFontChoice();
+  renderAll();
+}
+
+/* ============ modo local ============ */
+const LFIELDS = ['name', 'rubro', 'ig', 'tiktok', 'wa', 'web', 'address', 'hours', 'bio', 'items', 'promo', 'work'];
+const LTF = ['kicker', 'hook', 'sub', 'cta'];
+const LDEMO = { name: 'Panadería La Espiga', rubro: 'Panadería', ig: '@laespiga.sma', tiktok: '', wa: '2944000000', web: '', address: 'Av. San Martín 123', hours: 'Lun a Sáb de 7 a 21 hs',
+  bio: 'Pan de masa madre y facturas recién hechas, todos los días.', items: 'Pan de masa madre: $3.500 el kilo\nMedialunas de manteca: $6.000 la docena\nTorta de ricota: $12.000', promo: 'Martes 2x1 en facturas', work: '' };
+const isLocal = () => S.mode === 'local';
+const isLocalOwn = () => S.mode === 'local' && S.purpose === 'local';
+function handleOf(v){ v = (v || '').trim(); if (!v) return ''; const m = v.match(/(?:instagram\.com|tiktok\.com)\/@?([A-Za-z0-9._]+)/i); if (m) return '@' + m[1]; return v.startsWith('@') ? v.replace(/\s+/g, '') : '@' + v.replace(/\s+/g, ''); }
+const cap1 = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+function readLocal(){
+  const L = {}; LFIELDS.forEach(k => L[k] = $('#l-' + k).value.trim()); LTF.forEach(k => L[k] = $('#lf-' + k).value.trim());
+  L.igH = handleOf(L.ig); L.ttH = handleOf(L.tiktok);
+  L.itemList = L.items.split('\n').map(z => z.trim()).filter(Boolean).map(line => { const i = line.indexOf(':'); return i > 0 && i < 50 ? { title: line.slice(0, i).trim(), detail: line.slice(i + 1).trim() } : { title: line, detail: '' }; }).slice(0, 6);
+  L.kicker = L.kicker || (L.rubro || '').toUpperCase();
+  L.hook = L.hook || L.name || 'Tu local';
+  L.cta = L.cta || (L.wa ? 'Pedí por WhatsApp' : 'Vení a visitarnos');
+  return L;
+}
+function lstatus(msg, err){ const z = $('#lStatus'); z.textContent = msg; z.classList.toggle('show', !!msg); z.classList.toggle('err', !!err); }
+function localAutoTexts(force){
+  const L = readLocal();
+  const sentences = (L.bio || '').split(/(?<=[.!?])\s+|\n+/).map(z => z.trim()).filter(Boolean);
+  const first = sentences[0] || '';
+  const set = (id, v) => { if (force || !$(id).value.trim()) $(id).value = v || ''; };
+  set('#lf-kicker', (L.rubro || '').toUpperCase());
+  set('#lf-hook', first && first.split(' ').length <= 9 ? first.replace(/[.!]$/, '') : (L.name || ''));
+  set('#lf-sub', first && first.split(' ').length > 9 ? first : (sentences[1] || [L.rubro, L.address].filter(Boolean).join(' · ')));
+  set('#lf-cta', L.wa ? 'Pedí por WhatsApp' : (L.igH ? 'Seguinos en Instagram' : 'Vení a visitarnos'));
+}
+function caseFromLocal(){
+  const L = readLocal();
+  const base = S.raw ? heuristic(S.raw) : null;
+  const work = L.work || (base ? 'Web' : 'Página web');
+  let hook = `${cap1(work)} para ${L.name || 'un cliente'}`;
+  if (hook.split(' ').length > 10) hook = `Nuevo trabajo para ${L.name}`;
+  writeModel({
+    name: L.name || (base && base.name) || 'Cliente', kicker: 'TRABAJO PARA CLIENTE', hook,
+    tagline: [L.rubro, L.address].filter(Boolean).join(' · ') || (base && base.tagline) || '',
+    problem: `¿Tu ${(L.rubro || 'negocio').toLowerCase()} todavía depende solo de Instagram y WhatsApp?`,
+    audience: L.rubro ? `${cap1(L.rubro)} y comercios de la zona` : 'Comercios y emprendimientos',
+    features: base && base.features && base.features.length ? base.features : [
+      { title: 'Diseño a medida', desc: `con los colores y el estilo de ${L.name || 'la marca'}` },
+      { title: 'Pensada para el celular', desc: 'la mayoría de los clientes entra desde el teléfono' },
+      { title: 'Contacto directo', desc: 'botón de WhatsApp para consultar o pedir' } ],
+    tech: (base && base.tech) || ['HTML', 'CSS', 'JavaScript'],
+    cta: '¿Querés algo así para tu negocio?'
+  });
+}
+async function tiktokInfo(L){
+  if (!L.tiktok) return null;
+  let url; try { url = /tiktok\.com/i.test(L.tiktok) ? normUrl(L.tiktok).href : `https://www.tiktok.com/${handleOf(L.tiktok)}`; } catch { return null; }
+  const txt = await netFetch('https://www.tiktok.com/oembed?url=' + encodeURIComponent(url), true);
+  if (!txt) return { blocked: true };
+  try {
+    const j = JSON.parse(txt); const out = { author: j.author_name || '', title: j.title || '' };
+    if (j.thumbnail_url) { const bl = await netFetch(j.thumbnail_url); if (bl && bl.size) { const sh = await makeShot(bl, 'tiktok.jpg'); if (sh) { sh.manual = true; S.shots.push(sh); out.thumb = true; } } }
+    return out;
+  } catch { return null; }
+}
+async function buildLocal(){
+  const L = readLocal();
+  if (!L.name && !L.bio && !L.items) { lstatus('Completá al menos el nombre del local.', true); return; }
+  $('#lDemoBadge').classList.add('hidden');
+  let msg = '';
+  if (L.tiktok) {
+    lstatus('Buscando el TikTok…');
+    const t = await tiktokInfo(L);
+    if (t && t.blocked) msg = ' (TikTok: desde acá no se puede leer; en tu versión de Vercel sí.)';
+    else if (t) { if (!$('#l-name').value.trim() && t.author) $('#l-name').value = t.author; msg = t.thumb ? ' Sumé la miniatura del TikTok.' : ''; renderShotList(); }
+  }
+  if (S.purpose === 'caso') { caseFromLocal(); makeCaption(); S.isDemo = false; $('#demoBadge').classList.add('hidden'); }
+  else { localAutoTexts(false); makeLocalCaption(); }
+  if (!S.logo && !S.auto && activeShots()[0]) await applyAuto(designFromImage(activeShots()[0].img, false));
+  lstatus('Listo. Revisá los textos y las imágenes.' + (activeShots().length ? '' : ' Subí fotos del local: es lo que más vende.') + msg);
+  renderAll();
+}
+function makeLocalCaption(){
+  const L = readLocal(), b = readBrand();
+  const out = [`${L.hook}${L.name && L.hook !== L.name ? ' | ' + L.name : ''}`];
+  if (L.bio) out.push('', L.bio);
+  if (L.itemList.length) { out.push(''); L.itemList.forEach(i => out.push(`✨ ${i.title}${i.detail ? ' — ' + i.detail : ''}`)); }
+  if (L.promo) out.push('', `🔥 ${L.promo}`);
+  const info = [L.address && `📍 ${L.address}`, L.hours && `🕒 ${L.hours}`, L.wa && `📲 WhatsApp ${fmtWa(L.wa)}`, L.web && `🌐 ${L.web}`].filter(Boolean);
+  if (info.length) out.push('', ...info);
+  out.push('', `${L.cta} 👇`);
+  $('#f-caption').value = out.join('\n').trim();
+  const slug = z => (z || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  const city = slug(b.city);
+  const tags = [slug(L.name), slug(L.rubro), city && slug(L.rubro) + city, city, 'comerciolocal', 'apoyaloslocal', 'emprendedores', 'argentina', ...L.itemList.slice(0, 3).map(i => slug(i.title.split(' ')[0])).filter(z => z.length >= 5)];
+  $('#f-hashtags').value = [...new Set(tags)].filter(z => z && z.length > 2).slice(0, 15).map(z => '#' + z).join(' ');
+}
+async function shrinkBlob(img, max){
+  const s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return new Promise(r => c.toBlob(r, 'image/jpeg', 0.82));
+}
+async function generateLocalAI(){
+  if (!AI) return;
+  const L = readLocal(), b = readBrand();
+  const btn = $('#lGenAI'); btn.disabled = true; const old = btn.textContent; btn.textContent = 'Escribiendo…';
+  lstatus('La IA está escribiendo…');
+  try {
+    let images = [];
+    try { const lim = typeof AI.limits === 'function' ? await AI.limits() : null; if (lim && lim.images) { for (const sh of activeShots().slice(0, 4)) { const bl = await shrinkBlob(sh.img, 768); if (bl) images.push(bl); } } } catch {}
+    const prompt = `Sos community manager de comercios argentinos. Escribí en español rioplatense (voseo), cálido y vendedor, sin exagerar.
+Armá los textos de un carrusel de Instagram PARA EL PROPIO LOCAL (lo publica el local en su cuenta).
+No inventes precios, horarios, direcciones ni datos: usá solo lo que está acá${images.length ? ' y lo que se ve en las fotos adjuntas' : ''}.
+
+Local: ${L.name || '-'}
+Rubro: ${L.rubro || '-'}
+Bio / descripción: ${L.bio || '-'}
+Productos/servicios que pasó el dueño:
+${L.items || '(ninguno)'}
+Promo: ${L.promo || '(ninguna)'}
+Dirección: ${L.address || '-'} · Horarios: ${L.hours || '-'} · WhatsApp: ${L.wa || '-'} · Instagram: ${L.igH || '-'} · Ciudad: ${b.city || '-'}
+
+Respondé SOLO con JSON:
+{"kicker":"rubro o etiqueta en MAYÚSCULAS, 1-3 palabras",
+ "hook":"frase de portada, máximo 7 palabras, que dé ganas",
+ "sub":"bajada de máximo 14 palabras",
+ "cta":"llamado a la acción de máximo 5 palabras",
+ "items":[{"title":"máx 5 palabras","detail":"el precio tal cual lo pasó el dueño, o un detalle corto si no hay precio"}],
+ "promo":"la promo reescrita con gancho (máx 10 palabras) o cadena vacía si no hay",
+ "caption":"texto del posteo de 400-900 caracteres con saltos de línea y algunos emojis, cerrando con cómo comprar/contactar. Sin hashtags.",
+ "hashtags":["12 a 15 hashtags sin #, del rubro y la ciudad"]}
+Si el dueño pasó productos, mantené esos (podés mejorar el nombre, nunca el precio). Si no pasó ninguno y hay fotos, describí hasta 4 cosas que se ven, sin precio.`;
+    const opts = { modelTier: 'default' }; if (images.length) opts.images = images;
+    let val = null;
+    if (typeof AI.json === 'function') { try { val = await AI.json(prompt, opts); } catch (e) { if (e && (e.code === 'not_granted' || e.code === 'rate_limited')) throw e; } }
+    if (!val) { const r = await AI(prompt, opts); const m = (r.text || '').match(/\{[\s\S]*\}/); val = m ? JSON.parse(m[0]) : null; }
+    if (!val) throw new Error('Respuesta vacía');
+    ['kicker', 'hook', 'sub', 'cta'].forEach(k => { if (val[k]) $('#lf-' + k).value = val[k]; });
+    if (Array.isArray(val.items) && val.items.length) $('#l-items').value = val.items.map(i => i.detail ? `${i.title}: ${i.detail}` : i.title).join('\n');
+    if (L.promo && val.promo) $('#l-promo').value = val.promo;
+    if (val.caption) $('#f-caption').value = val.caption; else makeLocalCaption();
+    if (Array.isArray(val.hashtags)) $('#f-hashtags').value = val.hashtags.map(h => '#' + String(h).replace(/^#/, '').replace(/\s+/g, '')).join(' ');
+    $('#lDemoBadge').classList.add('hidden');
+    lstatus('Listo. Revisá los textos antes de publicar.');
+    renderAll();
+  } catch (e) {
+    if (e && e.code === 'not_granted') { $('#lGenAI').classList.add('hidden'); lstatus('La IA no está disponible acá; usá "Armar contenido".', true); }
+    else if (e && e.code === 'rate_limited') lstatus('Muchos pedidos seguidos, esperá un minuto.', true);
+    else lstatus('No se pudo generar con IA (' + (e.message || e.code || 'error') + ').', true);
+  } finally { btn.disabled = false; btn.textContent = old; }
+}
+
+/* ---- dibujo de los posts del local ---- */
+function photoFill(ctx, img, x, y, w, h, zoom, fy){
+  const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+  const s = Math.max(w / iw, h / ih) * (zoom || 1); const dw = iw * s, dh = ih * s;
+  ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) * (fy == null ? 0.5 : fy), dw, dh);
+}
+function drawContain(ctx, img, x, y, w, h){
+  const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+  const s = Math.min(w / iw, h / ih); ctx.drawImage(img, x + (w - iw * s) / 2, y + (h - ih * s) / 2, iw * s, ih * s);
+}
+function logoCircle(ctx, x, y, d){
+  if (!S.logo) return;
+  ctx.save(); ctx.beginPath(); ctx.arc(x + d/2, y + d/2, d/2, 0, 7); ctx.fillStyle = S.logoBg || '#ffffff'; ctx.fill(); ctx.clip();
+  drawContain(ctx, S.logo.img, x + d * 0.1, y + d * 0.1, d * 0.8, d * 0.8); ctx.restore();
+}
+function localHeader(ctx, W, T, u, top, counter, L, tone){
+  const y = top - 70*u, h = 64*u;
+  ctx.font = `700 ${30*u}px ${FB}`;
+  const name = L.name || '';
+  const tw = ctx.measureText(name).width;
+  const lead = S.logo ? h + 6*u : 24*u;
+  if (name || S.logo) {
+    rr(ctx, 80*u, y, lead + tw + 28*u, h, h/2);
+    ctx.fillStyle = tone === 'photo' ? 'rgba(0,0,0,.42)' : tone === 'acc' ? alpha(T.accInk, 0.12) : (T.dark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.06)'); ctx.fill();
+    if (S.logo) logoCircle(ctx, 80*u + 5*u, y + 5*u, h - 10*u);
+    ctx.fillStyle = tone === 'photo' ? '#ffffff' : tone === 'acc' ? T.accInk : T.ink;
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText(name, 80*u + lead, y + h/2 + 1);
+  }
+  if (counter) { ctx.font = `600 ${28*u}px ${FB}`; ctx.fillStyle = tone === 'photo' ? 'rgba(255,255,255,.85)' : tone === 'acc' ? T.accInk : T.muted; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(counter, W - 80*u, y + h/2); }
+  ctx.textBaseline = 'alphabetic';
+}
+function localFooter(ctx, W, H, T, u, bottom, L, swipe, tone){
+  const y = H - bottom + 46*u;
+  const col = tone === 'acc' ? T.accInk : (tone === 'photo' ? alpha(T.ink, .85) : T.muted);
+  ctx.font = `600 ${27*u}px ${FB}`; ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText([L.igH, L.ttH && L.ttH !== L.igH ? 'TikTok ' + L.ttH : ''].filter(Boolean).join('   ·   ') || (L.wa ? 'WhatsApp ' + fmtWa(L.wa) : ''), 80*u, y);
+  if (swipe) { ctx.textAlign = 'right'; ctx.fillStyle = tone === 'acc' ? T.accInk : T.ink; ctx.font = `700 ${28*u}px ${FB}`; ctx.fillText('Deslizá  →', W - 80*u, y); }
+  ctx.textBaseline = 'alphabetic';
+}
+function photoBackdrop(ctx, W, H, T, img, zoom, from){
+  ctx.fillStyle = T.bg; ctx.fillRect(0, 0, W, H);
+  photoFill(ctx, img, 0, 0, W, H, zoom, 0.45);
+  const g = ctx.createLinearGradient(0, H * (from || 0.35), 0, H);
+  g.addColorStop(0, alpha(T.bg, 0)); g.addColorStop(0.55, alpha(T.bg, 0.8)); g.addColorStop(1, alpha(T.bg, 0.97));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const g2 = ctx.createLinearGradient(0, 0, 0, 300 * W / 1080); g2.addColorStop(0, 'rgba(0,0,0,.45)'); g2.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g2; ctx.fillRect(0, 0, W, 300 * W / 1080);
+}
+function priceChip(ctx, text, xRight, y, u, T, maxW){
+  const F = fit(ctx, text, { maxW: maxW - 64*u, maxH: 60*u, size: 44*u, min: 24*u, weight: 800, family: FB, maxLines: 1 });
+  ctx.font = F.font; const pw = ctx.measureText(F.lines[0]).width + 64*u;
+  rr(ctx, xRight - pw, y, pw, 80*u, 40*u); ctx.fillStyle = T.acc; ctx.fill();
+  ctx.fillStyle = T.accInk; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText(F.lines[0], xRight - pw + 32*u, y + 42*u); ctx.textBaseline = 'alphabetic';
+}
+function buildLocalSlides(L){
+  const ph = activeShots();
+  const s = [{ type: 'lcover', photo: ph[0] || null }];
+  let k = 1; const next = () => ph.length > 1 ? ph[(k++) % ph.length] : null;
+  if (L.promo) s.push({ type: 'lpromo', photo: next() });
+  L.itemList.slice(0, 5).forEach((it, i) => s.push({ type: 'litem', it, n: i + 1, photo: next() }));
+  if (!L.itemList.length) ph.slice(1, 4).forEach(p => s.push({ type: 'lphoto', photo: p }));
+  if (L.address || L.hours) s.push({ type: 'linfo' });
+  s.push({ type: 'lcta' });
+  return s;
+}
+function drawLocalSlide(ctx, W, H, slide, fmt, L, b, T, opts){
+  const u = W / 1080, P = 80*u, sf = SAFE[fmt], top = sf.top*u, bottom = sf.bottom*u, maxW = W - 2*P;
+  const tt = opts.tt == null ? 99 : opts.tt, isVideo = opts.tt != null;
+  const A = (d, dur = 0.55) => ease((tt - d) / dur);
+  const kb = isVideo ? 1.02 + Math.min(tt, 4) * 0.02 : 1;
+  const counter = isVideo ? '' : opts.counter;
+  const t = slide.type;
+  const avail = H - bottom - top;
+  let tone = '';
+
+  if (t === 'lcover' || t === 'lphoto') {
+    if (slide.photo) { photoBackdrop(ctx, W, H, T, slide.photo.img, kb, t === 'lcover' ? 0.32 : 0.45); tone = 'photo'; }
+    else drawBg(ctx, W, H, T, opts.index || 0, opts.tt);
+    localHeader(ctx, W, T, u, top, counter, L, tone);
+    const textBottom = H - bottom - 10*u;
+    if (t === 'lcover') {
+      const F = fit(ctx, L.hook, { maxW, maxH: avail * 0.3, size: 118*u, min: 56*u, weight: 700, lh: 1.03 });
+      const sub = L.sub ? fit(ctx, L.sub, { maxW, maxH: 110*u, size: 38*u, min: 26*u, weight: 400, family: FB, lh: 1.3, maxLines: 2 }) : null;
+      let y = textBottom - F.h - (sub ? sub.h + 24*u : 0) - (L.kicker ? 82*u : 0);
+      if (!slide.photo && S.logo) { const d = Math.min(380*u, y - top - 80*u); if (d > 140*u) { const ly = top + (y - top - d) / 2; anim(ctx, A(0.05), 30*u, () => { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 50*u; ctx.beginPath(); ctx.arc(W/2, ly + d/2, d/2, 0, 7); ctx.fillStyle = S.logoBg || '#fff'; ctx.fill(); ctx.restore(); logoCircle(ctx, (W - d)/2, ly, d); }); } }
+      if (L.kicker) { const yy = y; anim(ctx, A(0.1), 30*u, () => pill(ctx, L.kicker, P, yy, u, T, true)); y += 82*u; }
+      const y1 = y; anim(ctx, A(0.2), 50*u, () => draw(ctx, F, P, y1, T.ink)); y += F.h + 24*u;
+      if (sub) { const y2 = y; anim(ctx, A(0.35), 30*u, () => draw(ctx, sub, P, y2, tone ? alpha(T.ink, .82) : T.muted)); }
+    } else {
+      const cap = slide.caption || L.sub || L.bio || '';
+      if (cap) { const F = fit(ctx, cap, { maxW, maxH: 300*u, size: 66*u, min: 34*u, weight: 700, lh: 1.08, maxLines: 4 }); anim(ctx, A(0.2), 40*u, () => draw(ctx, F, P, textBottom - F.h, T.ink)); }
+    }
+  }
+  else if (t === 'litem') {
+    drawBg(ctx, W, H, T, opts.index || 0, opts.tt); localHeader(ctx, W, T, u, top, counter, L, '');
+    let y = top + 20*u;
+    const it = slide.it, isPrice = /\$|\d/.test(it.detail || '');
+    if (slide.photo) {
+      const ph = avail * 0.6;
+      anim(ctx, A(0.05, 0.7), 80*u, () => { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 50*u; ctx.shadowOffsetY = 20*u; rr(ctx, P, y, maxW, ph, 36*u); ctx.fillStyle = T.card; ctx.fill(); ctx.restore(); ctx.save(); rr(ctx, P, y, maxW, ph, 36*u); ctx.clip(); photoFill(ctx, slide.photo.img, P, y, maxW, ph, kb, 0.5); ctx.restore(); });
+      if (isPrice && it.detail) { const yy = y + ph - 110*u; anim(ctx, A(0.45), 20*u, () => priceChip(ctx, it.detail, W - P - 28*u, yy, u, T, maxW * 0.8)); }
+      y += ph + 46*u;
+    } else {
+      ctx.save(); ctx.font = `700 ${320*u}px ${FH}`; ctx.fillStyle = alpha(T.acc, 0.13); ctx.textAlign = 'right'; ctx.fillText(String(slide.n).padStart(2, '0'), W - 40*u, top + 320*u); ctx.restore();
+      y += avail * 0.28;
+    }
+    const F = fit(ctx, it.title, { maxW, maxH: slide.photo ? 200*u : 380*u, size: slide.photo ? 82*u : 108*u, min: 44*u, weight: 700, lh: 1.05, maxLines: 3 });
+    const y1 = y; anim(ctx, A(0.2), 40*u, () => draw(ctx, F, P, y1, T.ink)); y += F.h + 22*u;
+    if (it.detail && !(isPrice && slide.photo)) { const D = fit(ctx, it.detail, { maxW, maxH: 150*u, size: isPrice ? 60*u : 40*u, min: 28*u, weight: isPrice ? 800 : 400, family: FB, lh: 1.3, maxLines: 3 }); const y2 = y; anim(ctx, A(0.32), 30*u, () => draw(ctx, D, P, y2, isPrice ? T.accTxt : T.muted)); }
+  }
+  else if (t === 'lpromo') {
+    ctx.fillStyle = T.acc; ctx.fillRect(0, 0, W, H); tone = 'acc';
+    ctx.save(); ctx.strokeStyle = alpha(T.accInk, 0.07); ctx.lineWidth = 40*u; for (let i = -H; i < W + H; i += 120*u) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + H * 0.6, H); ctx.stroke(); } ctx.restore();
+    localHeader(ctx, W, T, u, top, counter, L, 'acc');
+    let y = top + 30*u;
+    anim(ctx, A(0.05), 30*u, () => { ctx.font = `800 ${30*u}px ${FB}`; const tw = ctx.measureText('PROMO').width; rr(ctx, P, y, tw + 48*u, 56*u, 28*u); ctx.fillStyle = T.accInk; ctx.fill(); ctx.fillStyle = T.acc; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText('PROMO', P + 24*u, y + 29*u); ctx.textBaseline = 'alphabetic'; });
+    y += 96*u;
+    const room = H - bottom - y - (slide.photo ? avail * 0.42 : 0);
+    const F = fit(ctx, L.promo, { maxW, maxH: room - 30*u, size: 132*u, min: 56*u, weight: 700, lh: 1.02 });
+    const y1 = y; anim(ctx, A(0.15), 50*u, () => draw(ctx, F, P, y1, T.accInk)); y += F.h + 44*u;
+    if (slide.photo) { const ph = H - bottom - y - 10*u; if (ph > 160*u) { const y2 = y; anim(ctx, A(0.35, 0.7), 80*u, () => { ctx.save(); rr(ctx, P, y2, maxW, ph, 36*u); ctx.clip(); photoFill(ctx, slide.photo.img, P, y2, maxW, ph, kb, 0.5); ctx.restore(); }); } }
+    else if (L.hours) { const H2 = fit(ctx, L.hours, { maxW, maxH: 80*u, size: 40*u, min: 26*u, weight: 600, family: FB, maxLines: 2 }); const y2 = y; anim(ctx, A(0.35), 30*u, () => draw(ctx, H2, P, y2, alpha(T.accInk, .8))); }
+  }
+  else if (t === 'linfo') {
+    drawBg(ctx, W, H, T, opts.index || 0, opts.tt); localHeader(ctx, W, T, u, top, counter, L, '');
+    let y = top + 30*u;
+    anim(ctx, A(0.05), 30*u, () => pill(ctx, 'VENÍ A VISITARNOS', P, y, u, T, false)); y += 52*u + 40*u;
+    const F = fit(ctx, L.name || 'Dónde estamos', { maxW, maxH: avail * 0.22, size: 96*u, min: 50*u, weight: 700, lh: 1.04, maxLines: 2 });
+    const y0 = y; anim(ctx, A(0.15), 40*u, () => draw(ctx, F, P, y0, T.ink)); y += F.h + 50*u;
+    const rows = [['DIRECCIÓN', L.address], ['HORARIOS', L.hours], ['WHATSAPP', fmtWa(L.wa)], ['INSTAGRAM', L.igH]].filter(r => r[1]);
+    rows.forEach((r, i) => {
+      const V = fit(ctx, r[1], { maxW: maxW - 80*u, maxH: 110*u, size: 44*u, min: 28*u, weight: 700, family: FB, lh: 1.2, maxLines: 2 });
+      const hh = 60*u + V.h + 26*u; if (y + hh > H - bottom) return;
+      const yy = y;
+      anim(ctx, A(0.3 + i * 0.1), 30*u, () => { rr(ctx, P, yy, maxW, hh, 28*u); ctx.fillStyle = T.card; ctx.fill(); ctx.font = `700 ${24*u}px ${FB}`; ctx.fillStyle = T.accTxt; ctx.textAlign = 'left'; ctx.fillText(r[0], P + 40*u, yy + 46*u); draw(ctx, V, P + 40*u, yy + 62*u, T.ink); });
+      y += hh + 18*u;
+    });
+  }
+  else if (t === 'lcta') {
+    drawBg(ctx, W, H, T, opts.index || 0, opts.tt); localHeader(ctx, W, T, u, top, counter, L, '');
+    let y = top + avail * 0.08;
+    const F = fit(ctx, L.cta, { maxW, maxH: avail * 0.3, size: 112*u, min: 56*u, weight: 700, lh: 1.03 });
+    anim(ctx, A(0.05), 50*u, () => draw(ctx, F, P, y, T.ink)); y += F.h + 54*u;
+    if (L.wa) { const yy = y; anim(ctx, A(0.25), 30*u, () => { rr(ctx, P, yy, maxW, 150*u, 34*u); ctx.fillStyle = T.acc; ctx.fill(); ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.font = `700 ${26*u}px ${FB}`; ctx.fillStyle = alpha(T.accInk, .75); ctx.fillText('WHATSAPP', P + 44*u, yy + 48*u); ctx.font = `800 ${62*u}px ${FB}`; ctx.fillStyle = T.accInk; ctx.fillText(fmtWa(L.wa), P + 44*u, yy + 102*u); ctx.textBaseline = 'alphabetic'; }); y += 172*u; }
+    const hs = [['INSTAGRAM', L.igH], ['TIKTOK', L.ttH], ['WEB', L.web]].filter(r => r[1]);
+    hs.forEach((r, i) => { const yy = y; if (yy + 110*u > H - bottom - 90*u) return; anim(ctx, A(0.4 + i * 0.1), 30*u, () => { rr(ctx, P, yy, maxW, 110*u, 28*u); ctx.fillStyle = T.card; ctx.fill(); ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.font = `700 ${24*u}px ${FB}`; ctx.fillStyle = T.muted; ctx.fillText(r[0], P + 40*u, yy + 36*u); const V = fit(ctx, r[1], { maxW: maxW - 80*u, maxH: 50*u, size: 42*u, min: 24*u, weight: 800, family: FB, maxLines: 1 }); ctx.font = V.font; ctx.fillStyle = T.ink; ctx.fillText(V.lines[0], P + 40*u, yy + 76*u); ctx.textBaseline = 'alphabetic'; }); y += 126*u; });
+    if (b.brand) anim(ctx, A(0.8), 10*u, () => { ctx.font = `500 ${24*u}px ${FB}`; ctx.fillStyle = alpha(T.ink, 0.5); ctx.textAlign = 'right'; ctx.fillText('Diseño: ' + b.brand, W - P, H - bottom - 14*u); });
+  }
+  if (!(isVideo && fmt === 'reel')) localFooter(ctx, W, H, T, u, bottom, L, opts.swipe, tone);
+}
+function drawLocalPost(ctx, W, H, L, b, T){
+  const u = W / 1080, P = 70*u, ph = activeShots()[0];
+  if (ph) photoBackdrop(ctx, W, H, T, ph.img, 1, 0.25); else drawBg(ctx, W, H, T, 0);
+  localHeader(ctx, W, T, u, 140*u, '', L, ph ? 'photo' : '');
+  if (!ph && S.logo) { const d = 300*u; logoCircle(ctx, (W - d)/2, 190*u, d); }
+  let y = H - 90*u;
+  const line = [L.wa && 'WhatsApp ' + fmtWa(L.wa), L.igH].filter(Boolean).join('  ·  ');
+  if (line) { const C = fit(ctx, line, { maxW: W - 2*P, maxH: 44*u, size: 32*u, min: 22*u, weight: 700, family: FB, maxLines: 1 }); y -= C.h; draw(ctx, C, P, y, ph ? alpha(T.ink, .85) : T.muted); y -= 30*u; }
+  if (L.promo) { ctx.font = `800 ${34*u}px ${FB}`; const P2 = fit(ctx, L.promo, { maxW: W - 2*P - 60*u, maxH: 44*u, size: 34*u, min: 22*u, weight: 800, family: FB, maxLines: 1 }); ctx.font = P2.font; const pw = ctx.measureText(P2.lines[0]).width + 56*u; y -= 70*u; rr(ctx, P, y, pw, 64*u, 32*u); ctx.fillStyle = T.acc; ctx.fill(); ctx.fillStyle = T.accInk; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText(P2.lines[0], P + 28*u, y + 33*u); ctx.textBaseline = 'alphabetic'; y -= 30*u; }
+  const F = fit(ctx, L.hook, { maxW: W - 2*P, maxH: 260*u, size: 100*u, min: 48*u, weight: 700, lh: 1.03, maxLines: 3 });
+  y -= F.h; draw(ctx, F, P, y, T.ink);
+}
+function drawLocalStory(ctx, W, H, L, b, T){
+  const u = W / 1080, P = 80*u, top = SAFE.story.top*u, bottom = SAFE.story.bottom*u, ph = activeShots()[0];
+  if (ph) photoBackdrop(ctx, W, H, T, ph.img, 1, 0.3); else drawBg(ctx, W, H, T, 2);
+  localHeader(ctx, W, T, u, top, '', L, ph ? 'photo' : '');
+  if (!ph && S.logo) { const d = 360*u; logoCircle(ctx, (W - d)/2, top + 80*u, d); }
+  let y = H - bottom;
+  // botón
+  const btnTxt = L.wa ? `${L.cta}: ${fmtWa(L.wa)}` : L.cta;
+  y -= 110*u; rr(ctx, P, y, W - 2*P, 110*u, 55*u); ctx.fillStyle = T.acc; ctx.fill();
+  const C = fit(ctx, btnTxt, { maxW: W - 2*P - 60*u, maxH: 50*u, size: 40*u, min: 22*u, weight: 800, family: FB, maxLines: 1 });
+  ctx.font = C.font; ctx.fillStyle = T.accInk; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(C.lines[0], W/2, y + 56*u); ctx.textBaseline = 'alphabetic';
+  y -= 40*u;
+  const its = L.itemList.slice(0, 3).reverse();
+  its.forEach(it => { y -= 76*u; checkIcon(ctx, P, y, 48*u, T); const R = fit(ctx, it.title + (it.detail ? '  ' + it.detail : ''), { maxW: W - 2*P - 80*u, maxH: 56*u, size: 38*u, min: 24*u, weight: 700, family: FB, maxLines: 1 }); draw(ctx, R, P + 72*u, y + 2*u, T.ink); });
+  if (its.length) y -= 30*u;
+  if (L.promo) { const P2 = fit(ctx, L.promo, { maxW: W - 2*P, maxH: 120*u, size: 54*u, min: 30*u, weight: 700, lh: 1.08, maxLines: 2 }); y -= P2.h; draw(ctx, P2, P, y, T.accTxt); y -= 24*u; }
+  const F = fit(ctx, L.hook, { maxW: W - 2*P, maxH: 330*u, size: 112*u, min: 54*u, weight: 700, lh: 1.03, maxLines: 4 });
+  y -= F.h; draw(ctx, F, P, y, T.ink);
+  if (L.kicker) { y -= 82*u; pill(ctx, L.kicker, P, y, u, T, true); }
+}
+
 /* ============ render ============ */
 let fontsReady = false;
 async function ensureFonts(){
@@ -946,14 +1581,17 @@ async function ensureFonts(){
 }
 function renderAll(){
   store.set('brand', readBrand());
-  const m = readModel(), b = readBrand(), T = themeColors();
-  // carrusel
-  const slides = buildSlides(m);
+  const b = readBrand(), T = themeColors();
+  let slides, drawOne;
+  if (isLocalOwn()) { const L = readLocal(); slides = buildLocalSlides(L); drawOne = (ctx, sl, o) => drawLocalSlide(ctx, 1080, 1350, sl, 'carousel', L, b, T, o);
+    drawLocalPost($('#cPost').getContext('2d'), 1080, 1080, L, b, T); drawLocalStory($('#cStory').getContext('2d'), 1080, 1920, L, b, T); }
+  else { const m = readModel(); slides = buildSlides(m); drawOne = (ctx, sl, o) => drawSlide(ctx, 1080, 1350, sl, 'carousel', m, b, T, o);
+    drawPost($('#cPost').getContext('2d'), 1080, 1080, m, b, T); drawStory($('#cStory').getContext('2d'), 1080, 1920, m, b, T); }
   const box = $('#carousel'); box.innerHTML = '';
-  slides.forEach((s, i) => {
+  slides.forEach((sl, i) => {
     const fr = document.createElement('div'); fr.className = 'frame';
     const c = document.createElement('canvas'); c.width = 1080; c.height = 1350; c.dataset.slide = i;
-    drawSlide(c.getContext('2d'), 1080, 1350, s, 'carousel', m, b, T, { index: i, counter: `${String(i+1).padStart(2,'0')}/${String(slides.length).padStart(2,'0')}`, swipe: i < slides.length - 1 });
+    drawOne(c.getContext('2d'), sl, { index: i, counter: `${String(i+1).padStart(2,'0')}/${String(slides.length).padStart(2,'0')}`, swipe: i < slides.length - 1 });
     fr.appendChild(c);
     const meta = document.createElement('div'); meta.className = 'meta';
     meta.innerHTML = `<span>Slide ${i+1}</span>`;
@@ -961,11 +1599,9 @@ function renderAll(){
     btn.onclick = async () => saveFile(`${fileBase()}-carrusel-${String(i+1).padStart(2,'0')}.png`, await canvasBlob(c));
     meta.appendChild(btn); fr.appendChild(meta); box.appendChild(fr);
   });
-  drawPost($('#cPost').getContext('2d'), 1080, 1080, m, b, T);
-  drawStory($('#cStory').getContext('2d'), 1080, 1920, m, b, T);
   if (!reelPlaying) { const R = reelScenes(); $('#reelLen').textContent = `1080×1920 · ${Math.round(R.total)} s`; drawReelFrame($('#cReel').getContext('2d'), R, 2.2, b, T); }
 }
-function fileBase(){ return (readModel().name || 'proyecto').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase() || 'proyecto'; }
+function fileBase(){ return ((isLocal() ? $('#l-name').value.trim() : '') || readModel().name || 'proyecto').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase() || 'proyecto'; }
 
 /* ---- vista previa del reel ---- */
 let reelPlaying = false, reelRaf = 0;
@@ -1067,17 +1703,24 @@ async function ingest(srcPromise, label){
     S.shots = [...S.shots.filter(s => s.manual), ...shots];
     renderShotList();
     S.detected = detectColor(raw);
-    $('#useDetected').disabled = !S.detected;
-    if (S.detected) { $('#useDetected').style.background = S.detected; $('#useDetected').style.color = lum(S.detected) > .45 ? '#000' : '#fff'; }
-    const m = heuristic(raw); writeModel(m); makeCaption();
+    if (isLocal()) { caseFromLocal(); } else { const m = heuristic(raw); writeModel(m); }
+    makeCaption();
+    await applyAuto(extractDesign(raw, shots));
     S.isDemo = false; $('#demoBadge').classList.add('hidden');
-    const found = [raw.readme && 'README', raw.pkg && 'package.json', raw.html && 'index.html', shots.length && `${shots.length} imagen(es)`].filter(Boolean).join(', ');
+    const found = [raw.site && !raw.gh && raw.site.host, raw.readme && !(raw.site && !raw.gh) && 'README', raw.pkg && 'package.json', raw.html && 'index.html', shots.length && `${shots.length} imagen(es)`].filter(Boolean).join(', ');
     status(`Listo: leí ${found || 'los archivos'}.${AI ? ' Tocá "Escribir con IA" para mejores textos.' : ''}${shots.length ? '' : ' No había capturas: agregá algunas para que luzca más.'}`);
     renderAll();
   } catch (e) {
     if (e.blocked) {
       status('', false);
-      $('#ghHint').innerHTML = `Desde acá no puedo conectarme a GitHub. Hacelo en 2 pasos: <a href="${e.zip}" target="_blank" rel="noopener" style="color:var(--acc)">1) bajá el ZIP del repo</a> y 2) soltalo en la pestaña ZIP.`;
+      const a = (href, txt) => `<a href="${href}" target="_blank" rel="noopener" style="color:var(--acc)">${txt}</a>`;
+      const steps = [];
+      if (e.zip) steps.push(`<b>Repo:</b> ${a(e.zip, 'bajá el ZIP del repositorio')} y soltalo en la pestaña <b>Archivos</b>.`);
+      if (e.site) steps.push(`<b>Página:</b> ${a(e.site, 'abrila')}, apretá <b>Ctrl+S</b> → "Página web, completa", y soltá el .html (y su carpeta) en <b>Carpeta</b> o <b>Archivos</b>. Sacale capturas con <b>Win+Shift+S</b> y sumalas con "+ Agregar capturas".`);
+      steps.push('<b>Automático:</b> la versión de esta herramienta subida a tu Vercel entra sola a cualquier link y saca capturas de compu y celu.');
+      const box = $('#offlineHelp');
+      box.innerHTML = 'Desde acá adentro esta herramienta no puede conectarse a internet. Opciones:<ol style="margin:6px 0 0;padding-left:18px">' + steps.map(x => '<li style="margin-bottom:4px">' + x + '</li>').join('') + '</ol>';
+      box.classList.remove('hidden', 'err');
       setSrc('github');
     } else status(e.message || 'No pude leer eso.', true);
   }
@@ -1094,7 +1737,13 @@ function dropify(zone, input, handler){
   zone.ondrop = e => { e.preventDefault(); zone.classList.remove('over'); handler(e.dataTransfer.files, e.dataTransfer); };
   input.onchange = () => { if (input.files.length) handler(input.files); input.value = ''; };
 }
-dropify($('#dropZip'), $('#inZip'), files => { const f = [...files].find(f => /\.zip$/i.test(f.name)) || files[0]; if (!f) return; ingest(fromZip(f), f.name); });
+dropify($('#dropZip'), $('#inZip'), (files, dt) => {
+  if (dt && dt.items && dt.items[0] && dt.items[0].webkitGetAsEntry) { ingest(readDropped(dt), 'los archivos'); return; }
+  const arr = [...files]; if (!arr.length) return;
+  const z = arr.find(f => /\.zip$/i.test(f.name));
+  if (z && arr.length === 1) ingest(fromZip(z), z.name);
+  else ingest(Promise.resolve(fromFolder(arr.filter(f => !/\.zip$/i.test(f.name)))), arr.length === 1 ? arr[0].name : arr.length + ' archivos');
+});
 dropify($('#dropFolder'), $('#inFolder'), (files, dt) => {
   if (dt && dt.items && dt.items[0] && dt.items[0].webkitGetAsEntry) { ingest(readDropped(dt), 'la carpeta'); return; }
   ingest(Promise.resolve(fromFolder(files)), 'la carpeta');
@@ -1110,10 +1759,17 @@ async function readDropped(dt){
   if (out.length === 1 && /\.zip$/i.test(out[0].path)) return fromZip(await out[0].blob());
   return stripRoot(out);
 }
-$('#ghGo').onclick = () => { const u = $('#ghUrl').value; if (!u) return; ingest(fromGithub(u), 'el repositorio'); };
+$('#ghGo').onclick = () => { const u = $('#ghUrl').value.trim(); if (!u) return; $('#offlineHelp').classList.add('hidden'); ingest(fromLink(u), /github\.com/i.test(u) ? 'el repositorio' : 'la página (puede tardar unos segundos)'); };
 $('#ghUrl').onkeydown = e => { if (e.key === 'Enter') $('#ghGo').click(); };
 $('#addShots').onclick = () => $('#inShots').click();
-$('#inShots').onchange = async () => { for (const f of $('#inShots').files) { const s = await makeShot(f, f.name); if (s) { s.manual = true; S.shots.unshift(s); } } $('#inShots').value = ''; renderShotList(); renderAll(); };
+$('#inShots').onchange = async () => {
+  const added = [];
+  for (const f of $('#inShots').files) { const sh = await makeShot(f, f.name); if (sh) { sh.manual = true; added.push(sh); } }
+  $('#inShots').value = '';
+  if (isLocal()) S.shots.push(...added); else S.shots.unshift(...added);
+  renderShotList();
+  if (isLocal() && !S.logo && !S.auto && added[0]) await applyAuto(designFromImage(added[0].img, false)); else renderAll();
+};
 $('#genAuto').onclick = () => {
   if (!S.raw) { const m = readModel(); if ($('#ctx').value.trim() && S.isDemo) { status('Sin archivos cargados: completá los textos del paso 2 a mano o cargá el proyecto.', true); } makeCaption(); renderAll(); return; }
   writeModel(heuristic(S.raw)); makeCaption(); renderAll(); status('Textos regenerados desde los archivos.');
@@ -1122,13 +1778,55 @@ $('#genAI').onclick = generateAI;
 FIELDS.forEach(k => $('#f-'+k).addEventListener('input', () => debounce(renderAll)));
 BFIELDS.forEach(k => $('#b-'+k).addEventListener('input', () => debounce(renderAll)));
 $('#accent').addEventListener('input', () => { store.set('accent', $('#accent').value); debounce(renderAll, 80); });
-$('#useDetected').onclick = () => { if (S.detected) { $('#accent').value = S.detected; store.set('accent', S.detected); renderAll(); } };
-$$('#themes .chip').forEach(c => c.onclick = () => { S.theme = c.dataset.t; store.set('theme', S.theme); $$('#themes .chip').forEach(x => x.classList.toggle('on', x === c)); renderAll(); });
+$('#useDetected').onclick = () => { if (S.autoOrig) applyAuto({ ...S.autoOrig }); };
+$$('#themes .chip').forEach(c => c.onclick = () => { setTheme(c.dataset.t); renderAll(); });
+$('#fontSel').onchange = async () => { store.set('font', $('#fontSel').value); await applyFontChoice(); renderAll(); };
+/* modos */
+function applyMode(){
+  const vis = k => k === 'dev' ? S.mode === 'dev' : k === 'local' ? S.mode === 'local' : k === 'caso' ? (S.mode === 'local' && S.purpose === 'caso') : k === 'lp-local' ? isLocalOwn() : k === 'devlike' ? (S.mode === 'dev' || S.purpose === 'caso') : true;
+  $$('[data-show]').forEach(el => el.classList.toggle('hidden', !vis(el.dataset.show)));
+  $$('#modes .mode').forEach(x => x.classList.toggle('on', x.dataset.mode === S.mode));
+  $$('#purpose .chip').forEach(x => x.classList.toggle('on', x.dataset.p === S.purpose));
+  $('#projTitle').textContent = S.mode === 'local' ? 'La web o app que le hiciste (opcional)' : 'Tu proyecto';
+  $('#imgTitle').textContent = S.mode === 'local' ? 'Logo y fotos' : 'Capturas de pantalla';
+  $('#brandLabel').textContent = isLocalOwn() ? 'Tu marca (sale como crédito chico: "Diseño: …")' : 'Tu marca';
+}
+function setMode(m){
+  if (m === S.mode) return;
+  S.sets[S.mode] = S.shots; S.rawSets[S.mode] = S.raw;
+  S.designSets = S.designSets || {}; S.designSets[S.mode] = { auto: S.auto, orig: S.autoOrig, theme: S.theme, acc: $('#accent').value, info: $('#autoInfo').textContent };
+  S.mode = m; S.shots = S.sets[m] || []; S.raw = S.rawSets[m] || null;
+  const ds = S.designSets[m];
+  if (ds) { S.auto = ds.auto; S.autoOrig = ds.orig; $('#accent').value = ds.acc; $('#autoInfo').textContent = ds.info; setTheme(ds.theme); }
+  else { S.auto = null; S.autoOrig = null; $('#autoInfo').textContent = ''; if (S.theme === 'auto') setTheme('noche'); }
+  $('#useDetected').disabled = !S.autoOrig;
+  applyFontChoice().then(renderAll);
+  if (m === 'local' && !LFIELDS.some(k => $('#l-' + k).value.trim())) { Object.entries(LDEMO).forEach(([k, v]) => $('#l-' + k).value = v); localAutoTexts(true); $('#lDemoBadge').classList.remove('hidden'); }
+  applyMode(); renderShotList();
+  if (isLocalOwn()) makeLocalCaption(); else makeCaption();
+  renderAll();
+}
+$$('#modes .mode').forEach(x => x.onclick = () => setMode(x.dataset.mode));
+$$('#purpose .chip').forEach(x => x.onclick = () => { S.purpose = x.dataset.p; applyMode(); if (S.purpose === 'caso') { caseFromLocal(); makeCaption(); } else makeLocalCaption(); renderAll(); });
+LFIELDS.forEach(k => $('#l-' + k).addEventListener('input', () => debounce(renderAll)));
+LTF.forEach(k => $('#lf-' + k).addEventListener('input', () => debounce(renderAll)));
+$('#lGenAuto').onclick = buildLocal;
+$('#lGenAI').onclick = () => S.purpose === 'caso' ? generateAI() : generateLocalAI();
+$('#addLogo').onclick = () => $('#inLogo').click();
+$('#inLogo').onchange = async () => {
+  const f = $('#inLogo').files[0]; $('#inLogo').value = ''; if (!f) return;
+  const sh = await makeShot(f, f.name); if (!sh) return;
+  S.logo = sh;
+  const p = imagePalette(sh.img); S.logoBg = p.opaque > 0.85 && p.dominant ? p.dominant : '#ffffff';
+  $('#logoSlot').innerHTML = `<img src="${sh.url}" alt="">`; $('#delLogo').classList.remove('hidden');
+  await applyAuto(designFromImage(sh.img, true));
+};
+$('#delLogo').onclick = () => { S.logo = null; $('#logoSlot').textContent = 'sin logo'; $('#delLogo').classList.add('hidden'); renderAll(); };
 $$('[data-dl]').forEach(btn => btn.onclick = async () => { const k = btn.dataset.dl; const c = k === 'post' ? $('#cPost') : $('#cStory'); saveFile(`${fileBase()}-${k === 'post' ? 'post' : 'historia'}.png`, await canvasBlob(c)); });
 $('#reelPlay').onclick = playReel;
 $('#reelRender').onclick = renderReelFile;
 $('#dlAll').onclick = downloadAll;
-$('#regenCap').onclick = () => { makeCaption(); toast('Texto rehecho'); };
+$('#regenCap').onclick = () => { if (isLocalOwn()) makeLocalCaption(); else makeCaption(); toast('Texto rehecho'); };
 $('#copyCap').onclick = async () => {
   const txt = $('#f-caption').value + '\n\n' + $('#f-hashtags').value;
   try { await navigator.clipboard.writeText(txt); toast('Copiado'); }
@@ -1140,12 +1838,16 @@ $('#copyCap').onclick = async () => {
   const br = store.get('brand', BRAND_DEFAULT);
   BFIELDS.forEach(k => $('#b-'+k).value = br[k] != null ? br[k] : (BRAND_DEFAULT[k] || ''));
   $('#accent').value = store.get('accent', '#c6ff3d');
+  if (S.theme === 'auto') S.theme = 'noche';
   $$('#themes .chip').forEach(x => x.classList.toggle('on', x.dataset.t === S.theme));
+  $('#fontSel').value = store.get('font', 'auto');
+  applyMode();
   writeModel(DEMO);
   renderShotList();
   makeCaption();
   renderAll();
   await ensureFonts();
+  await applyFontChoice();
   renderAll();
 })();
 </script>
