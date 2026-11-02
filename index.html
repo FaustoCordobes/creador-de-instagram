@@ -93,6 +93,15 @@ aside{counter-reset:st}
 .card:not(.hidden) .step::before{counter-increment:st;content:counter(st)}
 .logo-slot{width:64px;height:64px;border-radius:50%;background:var(--panel2);border:1px dashed #3a4153;display:grid;place-items:center;font-size:11px;color:var(--muted);overflow:hidden;flex:0 0 64px}
 .logo-slot img{width:100%;height:100%;object-fit:contain;background:#fff}
+.chk{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:14px;cursor:pointer}
+.chk input{accent-color:var(--acc);width:16px;height:16px}
+.pubLog{padding-left:20px;margin:12px 0 0;font-size:13.5px;color:var(--muted)}
+.pubLog li{margin:4px 0}
+.pubLog li.ok{color:var(--ink)}
+.pubLog li.err{color:#ffb3b3}
+.pubLog a{color:var(--acc)}
+.copyrow{display:flex;gap:6px;margin:4px 0 10px}
+.copyrow input{font-family:ui-monospace,monospace;font-size:12px}
 .hidden{display:none!important}
 </style>
 </head>
@@ -115,7 +124,13 @@ aside{counter-reset:st}
   <!-- Local: datos -->
   <div class="card" data-show="local">
     <h2><span class="step"></span> Datos del local <span class="demo-badge hidden" id="lDemoBadge">ejemplo</span></h2>
-    <label class="f" style="margin-top:0">¿Para quién es el contenido?</label>
+    <label class="f" style="margin-top:0">Link del local</label>
+    <div class="row">
+      <input type="text" id="lLink" placeholder="Google, Google Maps, Instagram, TikTok, su web… o el nombre">
+      <button class="btn pri" id="lLinkGo" style="flex:0 0 auto">Traer todo</button>
+    </div>
+    <p class="hint">Con un solo link completa datos, logo y fotos. Después revisá todo.</p>
+    <label class="f">¿Para quién es el contenido?</label>
     <div class="chips" id="purpose">
       <span class="chip on" data-p="local">Para el Instagram del local</span>
       <span class="chip" data-p="caso">Para mi Instagram (mostrar mi trabajo)</span>
@@ -128,6 +143,8 @@ aside{counter-reset:st}
     <label class="f">Descripción / bio <span style="font-weight:400">(copiala del Instagram)</span></label><textarea id="l-bio"></textarea>
     <label class="f">Productos o servicios <span style="font-weight:400">(uno por línea · <i>Nombre: precio o detalle</i>)</span></label><textarea id="l-items" rows="4"></textarea>
     <label class="f">Promo u oferta (opcional)</label><input type="text" id="l-promo" placeholder="Martes 2x1 en facturas">
+    <label class="f">Calificación en Google (opcional)</label><input type="text" id="l-rating" placeholder="4,7 ★ · 230 reseñas en Google">
+    <label class="f">Reseña destacada (opcional)</label><textarea id="l-review" rows="2" placeholder="Texto de la reseña — Nombre"></textarea>
     <div data-show="caso"><label class="f">¿Qué le hiciste?</label><input type="text" id="l-work" placeholder="Página web con catálogo y pedidos por WhatsApp"></div>
     <div class="row" style="margin-top:14px">
       <button class="btn pri hidden" id="lGenAI">✨ Escribir con IA</button>
@@ -270,6 +287,7 @@ aside{counter-reset:st}
       <button class="tab" data-out="story">Historia</button>
       <button class="tab" data-out="reel">Reel (video)</button>
       <button class="tab" data-out="text">Texto del posteo</button>
+      <button class="tab" data-out="publish">🚀 Subir a IG</button>
     </div>
     <div class="spacer"></div>
     <button class="btn" id="dlAll">⬇ Descargar todo (.zip)</button>
@@ -316,6 +334,56 @@ aside{counter-reset:st}
     </div>
   </div>
 
+
+  <div class="pane" data-pane="publish">
+    <div class="single">
+      <div style="flex:1;min-width:300px;max-width:560px">
+        <div class="card" id="pubOffline">
+          <h2>Subir directo a Instagram</h2>
+          <p class="hint" style="margin-top:0">Esto funciona en tu versión publicada en Vercel, con Instagram conectado. Acá adentro de Claude no hay conexión a internet: descargá los archivos y subilos desde el celu.</p>
+        </div>
+        <div id="pubOnline" class="hidden">
+          <div class="card">
+            <h2>Cuenta</h2>
+            <div id="igAccount" class="hint" style="margin:0">Revisando…</div>
+            <div id="srvChecks" class="hint"></div>
+            <label class="f">Clave del estudio</label>
+            <input type="password" id="studioKey" placeholder="La que pusiste en STUDIO_PASSWORD">
+          </div>
+          <div class="card" style="margin-top:14px">
+            <h2>¿Qué subo?</h2>
+            <label class="chk"><input type="checkbox" id="pubCarousel" checked> Carrusel con el texto y los hashtags</label>
+            <label class="chk"><input type="checkbox" id="pubPost"> Post simple (imagen cuadrada)</label>
+            <label class="chk"><input type="checkbox" id="pubStory" checked> Historia</label>
+            <label class="chk"><input type="checkbox" id="pubReel"> Reel (video)</label>
+            <label class="chk" style="padding-left:26px"><input type="checkbox" id="pubReelFeed" checked> Mostrar el reel también en el feed</label>
+            <div class="status show hidden" id="pubWarn"></div>
+            <button class="btn pri" id="pubGo" style="width:100%;margin-top:12px">🚀 Publicar ahora</button>
+            <ol id="pubLog" class="pubLog"></ol>
+          </div>
+        </div>
+      </div>
+      <div class="side">
+        <h3>Conectar tu Instagram (una sola vez)</h3>
+        <ol style="padding-left:18px;margin:6px 0">
+          <li>Seguí la guía <b>GUIA-INSTAGRAM.md</b> del repo: crea la Página de Facebook, la vincula a tu Instagram profesional y arma la app de Meta.</li>
+          <li>En <b>Graph API Explorer</b> generá un token con los permisos de la guía y pegalo acá abajo.</li>
+          <li>Copiá los dos valores que aparecen en Vercel (<i>Settings → Environment Variables</i>) y hacé <b>Redeploy</b>.</li>
+        </ol>
+        <details><summary>Convertir mi token</summary>
+          <textarea id="igToken" rows="3" placeholder="Pegá el token de Graph API Explorer" style="margin-top:8px"></textarea>
+          <button class="btn sm" id="igSetup" style="margin-top:8px">Convertir</button>
+          <div id="igSetupOut" class="hint"></div>
+        </details>
+        <h3 style="margin-top:18px">Límites de Instagram</h3>
+        <ul>
+          <li>Solo cuentas profesionales; hasta 50 publicaciones por día.</li>
+          <li>Las historias se publican sin stickers (link, encuesta, ubicación): agregalos a mano si los necesitás.</li>
+          <li>El reel sale sin música; para sumarla, subilo desde la app.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
   <div class="pane textout" data-pane="text">
     <div class="single">
       <div style="flex:1;min-width:280px">
@@ -1099,8 +1167,8 @@ function reelScenes(){
     const L = readLocal(), b = readBrand(), T = themeColors();
     const slides = buildLocalSlides(L);
     const items = slides.filter(z => z.type === 'litem').slice(0, 4), photos = slides.filter(z => z.type === 'lphoto').slice(0, 3);
-    const order = [slides.find(z => z.type === 'lcover'), slides.find(z => z.type === 'lpromo'), ...items, ...photos, slides.find(z => z.type === 'linfo'), slides.find(z => z.type === 'lcta')].filter(Boolean);
-    const dur = { lcover: 3.2, lpromo: 2.6, litem: 2.6, lphoto: 2.4, linfo: 3.0, lcta: 3.4 };
+    const order = [slides.find(z => z.type === 'lcover'), slides.find(z => z.type === 'lpromo'), ...items, ...photos, slides.find(z => z.type === 'lreview'), slides.find(z => z.type === 'linfo'), slides.find(z => z.type === 'lcta')].filter(Boolean);
+    const dur = { lcover: 3.2, lpromo: 2.6, litem: 2.6, lphoto: 2.4, lreview: 3.2, linfo: 3.0, lcta: 3.4 };
     let t = 0; const scenes = order.map((z, i) => { const d = dur[z.type]; const sc = { slide: z, start: t, dur: d, index: i }; t += d; return sc; });
     return { scenes, total: t, draw: (ctx, W, H, sl, fmt, o, bb, TT) => drawLocalSlide(ctx, W, H, sl, fmt, L, bb, TT, o) };
   }
@@ -1243,10 +1311,10 @@ async function applyAuto(d){
 }
 
 /* ============ modo local ============ */
-const LFIELDS = ['name', 'rubro', 'ig', 'tiktok', 'wa', 'web', 'address', 'hours', 'bio', 'items', 'promo', 'work'];
+const LFIELDS = ['name', 'rubro', 'ig', 'tiktok', 'wa', 'web', 'address', 'hours', 'bio', 'items', 'promo', 'rating', 'review', 'work'];
 const LTF = ['kicker', 'hook', 'sub', 'cta'];
 const LDEMO = { name: 'Panadería La Espiga', rubro: 'Panadería', ig: '@laespiga.sma', tiktok: '', wa: '2944000000', web: '', address: 'Av. San Martín 123', hours: 'Lun a Sáb de 7 a 21 hs',
-  bio: 'Pan de masa madre y facturas recién hechas, todos los días.', items: 'Pan de masa madre: $3.500 el kilo\nMedialunas de manteca: $6.000 la docena\nTorta de ricota: $12.000', promo: 'Martes 2x1 en facturas', work: '' };
+  bio: 'Pan de masa madre y facturas recién hechas, todos los días.', items: 'Pan de masa madre: $3.500 el kilo\nMedialunas de manteca: $6.000 la docena\nTorta de ricota: $12.000', promo: 'Martes 2x1 en facturas', rating: '4,8 ★ · 312 reseñas en Google', review: 'Las mejores medialunas de la ciudad, siempre calentitas y la atención es un diez. — Carla', work: '' };
 const isLocal = () => S.mode === 'local';
 const isLocalOwn = () => S.mode === 'local' && S.purpose === 'local';
 function handleOf(v){ v = (v || '').trim(); if (!v) return ''; const m = v.match(/(?:instagram\.com|tiktok\.com)\/@?([A-Za-z0-9._]+)/i); if (m) return '@' + m[1]; return v.startsWith('@') ? v.replace(/\s+/g, '') : '@' + v.replace(/\s+/g, ''); }
@@ -1255,6 +1323,7 @@ function readLocal(){
   const L = {}; LFIELDS.forEach(k => L[k] = $('#l-' + k).value.trim()); LTF.forEach(k => L[k] = $('#lf-' + k).value.trim());
   L.igH = handleOf(L.ig); L.ttH = handleOf(L.tiktok);
   L.itemList = L.items.split('\n').map(z => z.trim()).filter(Boolean).map(line => { const i = line.indexOf(':'); return i > 0 && i < 50 ? { title: line.slice(0, i).trim(), detail: line.slice(i + 1).trim() } : { title: line, detail: '' }; }).slice(0, 6);
+  { const rv = L.review; const i = rv.lastIndexOf(' — '); L.reviewText = (i > 0 ? rv.slice(0, i) : rv).trim(); L.reviewAuthor = i > 0 ? rv.slice(i + 3).trim() : ''; }
   L.kicker = L.kicker || (L.rubro || '').toUpperCase();
   L.hook = L.hook || L.name || 'Tu local';
   L.cta = L.cta || (L.wa ? 'Pedí por WhatsApp' : 'Vení a visitarnos');
@@ -1449,7 +1518,12 @@ function buildLocalSlides(L){
   let k = 1; const next = () => ph.length > 1 ? ph[(k++) % ph.length] : null;
   if (L.promo) s.push({ type: 'lpromo', photo: next() });
   L.itemList.slice(0, 5).forEach((it, i) => s.push({ type: 'litem', it, n: i + 1, photo: next() }));
-  if (!L.itemList.length) ph.slice(1, 4).forEach(p => s.push({ type: 'lphoto', photo: p }));
+  if (!L.itemList.length) {
+    const seen = new Set([L.hook, L.sub].map(z => (z || '').trim()));
+    const pool = [L.bio, L.hours && `Te esperamos: ${L.hours}`, L.address && `📍 ${L.address}`, L.igH && `Seguinos en ${L.igH}`].filter(z => z && !seen.has(z.trim()));
+    ph.slice(1, 4).forEach((p, i) => s.push({ type: 'lphoto', photo: p, caption: p.caption || pool[i] || '' }));
+  }
+  if (L.reviewText) s.push({ type: 'lreview' });
   if (L.address || L.hours) s.push({ type: 'linfo' });
   s.push({ type: 'lcta' });
   return s;
@@ -1478,7 +1552,7 @@ function drawLocalSlide(ctx, W, H, slide, fmt, L, b, T, opts){
       const y1 = y; anim(ctx, A(0.2), 50*u, () => draw(ctx, F, P, y1, T.ink)); y += F.h + 24*u;
       if (sub) { const y2 = y; anim(ctx, A(0.35), 30*u, () => draw(ctx, sub, P, y2, tone ? alpha(T.ink, .82) : T.muted)); }
     } else {
-      const cap = slide.caption || L.sub || L.bio || '';
+      const cap = slide.caption || '';
       if (cap) { const F = fit(ctx, cap, { maxW, maxH: 300*u, size: 66*u, min: 34*u, weight: 700, lh: 1.08, maxLines: 4 }); anim(ctx, A(0.2), 40*u, () => draw(ctx, F, P, textBottom - F.h, T.ink)); }
     }
   }
@@ -1518,7 +1592,7 @@ function drawLocalSlide(ctx, W, H, slide, fmt, L, b, T, opts){
     anim(ctx, A(0.05), 30*u, () => pill(ctx, 'VENÍ A VISITARNOS', P, y, u, T, false)); y += 52*u + 40*u;
     const F = fit(ctx, L.name || 'Dónde estamos', { maxW, maxH: avail * 0.22, size: 96*u, min: 50*u, weight: 700, lh: 1.04, maxLines: 2 });
     const y0 = y; anim(ctx, A(0.15), 40*u, () => draw(ctx, F, P, y0, T.ink)); y += F.h + 50*u;
-    const rows = [['DIRECCIÓN', L.address], ['HORARIOS', L.hours], ['WHATSAPP', fmtWa(L.wa)], ['INSTAGRAM', L.igH]].filter(r => r[1]);
+    const rows = [['DIRECCIÓN', L.address], ['HORARIOS', L.hours], ['WHATSAPP', fmtWa(L.wa)], ['INSTAGRAM', L.igH], ['EN GOOGLE', L.reviewText ? '' : L.rating]].filter(r => r[1]);
     rows.forEach((r, i) => {
       const V = fit(ctx, r[1], { maxW: maxW - 80*u, maxH: 110*u, size: 44*u, min: 28*u, weight: 700, family: FB, lh: 1.2, maxLines: 2 });
       const hh = 60*u + V.h + 26*u; if (y + hh > H - bottom) return;
@@ -1526,6 +1600,17 @@ function drawLocalSlide(ctx, W, H, slide, fmt, L, b, T, opts){
       anim(ctx, A(0.3 + i * 0.1), 30*u, () => { rr(ctx, P, yy, maxW, hh, 28*u); ctx.fillStyle = T.card; ctx.fill(); ctx.font = `700 ${24*u}px ${FB}`; ctx.fillStyle = T.accTxt; ctx.textAlign = 'left'; ctx.fillText(r[0], P + 40*u, yy + 46*u); draw(ctx, V, P + 40*u, yy + 62*u, T.ink); });
       y += hh + 18*u;
     });
+  }
+  else if (t === 'lreview') {
+    drawBg(ctx, W, H, T, opts.index || 0, opts.tt); localHeader(ctx, W, T, u, top, counter, L, '');
+    ctx.save(); ctx.font = `700 ${560*u}px Georgia, serif`; ctx.fillStyle = alpha(T.acc, 0.16); ctx.textAlign = 'left'; ctx.fillText('“', P - 30*u, top + 420*u); ctx.restore();
+    let y = top + 40*u;
+    anim(ctx, A(0.05), 30*u, () => pill(ctx, 'LO QUE DICEN NUESTROS CLIENTES', P, y, u, T, false)); y += 52*u + 70*u;
+    anim(ctx, A(0.15), 30*u, () => { ctx.font = `700 ${64*u}px ${FB}`; ctx.fillStyle = T.accTxt; ctx.textAlign = 'left'; ctx.fillText('★★★★★', P, y + 56*u); }); y += 110*u;
+    const F = fit(ctx, '“' + L.reviewText + '”', { maxW, maxH: avail * 0.42, size: 76*u, min: 38*u, weight: 700, lh: 1.12 });
+    const y1 = y; anim(ctx, A(0.25), 40*u, () => draw(ctx, F, P, y1, T.ink)); y += F.h + 40*u;
+    if (L.reviewAuthor) { const y2 = y; anim(ctx, A(0.4), 20*u, () => { ctx.font = `600 ${38*u}px ${FB}`; ctx.fillStyle = T.muted; ctx.textAlign = 'left'; ctx.fillText('— ' + L.reviewAuthor, P, y2 + 32*u); }); y += 80*u; }
+    if (L.rating) { const y3 = Math.min(y + 30*u, H - bottom - 100*u); anim(ctx, A(0.55), 20*u, () => { ctx.font = `700 ${30*u}px ${FB}`; ctx.textAlign = 'left'; const tw = ctx.measureText(L.rating).width; rr(ctx, P, y3, tw + 56*u, 70*u, 35*u); ctx.fillStyle = T.card; ctx.fill(); ctx.fillStyle = T.ink; ctx.textBaseline = 'middle'; ctx.fillText(L.rating, P + 28*u, y3 + 36*u); ctx.textBaseline = 'alphabetic'; }); }
   }
   else if (t === 'lcta') {
     drawBg(ctx, W, H, T, opts.index || 0, opts.tt); localHeader(ctx, W, T, u, top, counter, L, '');
@@ -1570,6 +1655,262 @@ function drawLocalStory(ctx, W, H, L, b, T){
   const F = fit(ctx, L.hook, { maxW: W - 2*P, maxH: 330*u, size: 112*u, min: 54*u, weight: 700, lh: 1.03, maxLines: 4 });
   y -= F.h; draw(ctx, F, P, y, T.ink);
   if (L.kicker) { y -= 82*u; pill(ctx, L.kicker, P, y, u, T, true); }
+}
+
+/* ============ servidor propio (versión Vercel) ============ */
+S.server = null;
+const studioKey = () => { try { return $('#studioKey').value.trim() || localStorage.getItem('igstudio.key') || ''; } catch { return $('#studioKey').value.trim(); } };
+async function api(path, body, method){
+  method = method || (body ? 'POST' : 'GET');
+  const url = method === 'GET' && body ? path + '?' + new URLSearchParams(body) : path;
+  const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'x-studio-key': studioKey() }, body: method === 'POST' ? JSON.stringify(body || {}) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j.error) { const e = new Error(j.error || ('Error ' + r.status)); e.status = r.status; throw e; }
+  return j;
+}
+async function detectServer(){
+  try {
+    const r = await withTimeout(fetch('api/ig?action=ping'), 6000);
+    if (r.headers.get('x-igstudio') !== '1') throw 0;
+    S.server = await r.json();
+  } catch { S.server = null; }
+  updatePublishUI();
+}
+function updatePublishUI(){
+  const on = !!S.server;
+  $('#pubOffline').classList.toggle('hidden', on);
+  $('#pubOnline').classList.toggle('hidden', !on);
+  if (!on) return;
+  const sv = S.server, mk = (ok, t) => `<div>${ok ? '✅' : '⬜'} ${t}</div>`;
+  $('#srvChecks').innerHTML = mk(sv.ig, 'Instagram conectado') + mk(sv.blob, 'Almacenamiento temporal (Vercel Blob)') + mk(sv.google, 'Google Maps (para links de Google)') + mk(sv.protected, 'Clave del estudio configurada');
+  refreshAccount();
+  const warn = $('#pubWarn');
+  if (isLocalOwn()) { warn.innerHTML = '<b>Ojo:</b> se publica en <b>tu</b> cuenta, no en la del local. Para la cuenta del local, descargá todo y subilo desde su celu.'; warn.classList.remove('hidden'); }
+  else warn.classList.add('hidden');
+}
+async function refreshAccount(){
+  const box = $('#igAccount');
+  if (!S.server || !S.server.ig) { box.textContent = 'Instagram todavía no está conectado. Seguí los pasos de la derecha.'; return; }
+  try {
+    const a = await api('api/ig', { action: 'status' });
+    S.igAccount = a;
+    const used = a.limit ? ` · usaste ${a.limit.quota_usage} de ${(a.limit.config && a.limit.config.quota_total) || 50} publicaciones hoy` : '';
+    box.innerHTML = `Conectado como <b style="color:var(--ink)">@${a.username}</b>${a.followers_count != null ? ` · ${a.followers_count} seguidores` : ''}${used}`;
+  } catch (e) { box.textContent = e.status === 401 ? 'Escribí tu clave del estudio para ver la cuenta.' : 'No pude leer la cuenta: ' + e.message; }
+}
+
+/* ---- subir archivos temporales y publicar ---- */
+let blobLib = null;
+async function blobUpload(blob, name, type){
+  if (!blobLib) {
+    for (const u of ['https://esm.sh/@vercel/blob@2.8.2/client', 'https://cdn.jsdelivr.net/npm/@vercel/blob@2.8.2/dist/client.js/+esm']) { try { blobLib = await import(u); break; } catch {} }
+    if (!blobLib) throw new Error('No pude cargar el módulo de subida (revisá la conexión).');
+  }
+  const r = await blobLib.upload(`ig/${Date.now()}-${name}`, blob, { access: 'public', handleUploadUrl: 'api/upload', clientPayload: studioKey(), contentType: type });
+  return r.url;
+}
+const jpegBlob = c => new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
+function plog(msg, cls){ const li = document.createElement('li'); li.innerHTML = msg; if (cls) li.className = cls; $('#pubLog').appendChild(li); return li; }
+async function waitReady(id, video){
+  const t0 = Date.now();
+  for (;;) {
+    const j = await api('api/ig', { action: 'check', id });
+    if (j.status_code === 'FINISHED') return;
+    if (j.status_code === 'ERROR' || j.status_code === 'EXPIRED') throw new Error('Instagram rechazó el archivo' + (j.status ? ': ' + j.status : ''));
+    if (Date.now() - t0 > 6 * 60 * 1000) throw new Error('Instagram tardó demasiado en procesar el archivo');
+    await sleep(video ? 5000 : 1500);
+  }
+}
+let pubArmed = 0;
+async function publishFlow(){
+  const want = { carousel: $('#pubCarousel').checked, post: $('#pubPost').checked, story: $('#pubStory').checked, reel: $('#pubReel').checked };
+  const n = Object.values(want).filter(Boolean).length;
+  if (!n) { toast('Elegí qué subir'); return; }
+  if (!S.server || !S.server.ig) { toast('Primero conectá Instagram'); return; }
+  try { localStorage.setItem('igstudio.key', $('#studioKey').value.trim()); } catch {}
+  const btn = $('#pubGo');
+  if (Date.now() - pubArmed > 6000) { pubArmed = Date.now(); btn.textContent = `Confirmá: publicar ${n} cosa${n > 1 ? 's' : ''} en @${(S.igAccount && S.igAccount.username) || 'tu cuenta'}`; setTimeout(() => { if (Date.now() - pubArmed >= 6000) btn.textContent = '🚀 Publicar ahora'; }, 6200); return; }
+  pubArmed = 0; btn.disabled = true; btn.textContent = 'Publicando…'; $('#pubLog').innerHTML = '';
+  const caption = ($('#f-caption').value.trim() + '\n\n' + $('#f-hashtags').value.trim()).trim().slice(0, 2200);
+  const uploaded = [];
+  const up = async (blob, name, type) => { const u = await blobUpload(blob, name, type); uploaded.push(u); return u; };
+  const done = (what, r) => plog(`✅ ${what} ${what === 'Historia' ? 'publicada' : 'publicado'}${r.permalink ? ` — <a href="${r.permalink}" target="_blank" rel="noopener">ver</a>` : ''}`, 'ok');
+  try {
+    await ensureFonts(); renderAll();
+    if (want.carousel) {
+      const cs = $$('#carousel canvas').slice(0, 10);
+      const li = plog(`Subiendo ${cs.length} imágenes del carrusel…`);
+      const ids = [];
+      for (let i = 0; i < cs.length; i++) { const url = await up(await jpegBlob(cs[i]), `slide-${i + 1}.jpg`, 'image/jpeg'); ids.push((await api('api/ig', { action: 'container', kind: 'item', url })).id); li.textContent = `Preparando carrusel ${i + 1}/${cs.length}…`; }
+      const parent = (await api('api/ig', { action: 'container', kind: 'carousel', children: ids, caption })).id;
+      await waitReady(parent, false);
+      done('Carrusel', await api('api/ig', { action: 'publish', id: parent }));
+    }
+    if (want.post) {
+      plog('Subiendo el post…');
+      const url = await up(await jpegBlob($('#cPost')), 'post.jpg', 'image/jpeg');
+      const id = (await api('api/ig', { action: 'container', kind: 'image', url, caption })).id;
+      await waitReady(id, false); done('Post', await api('api/ig', { action: 'publish', id }));
+    }
+    if (want.story) {
+      plog('Subiendo la historia…');
+      const url = await up(await jpegBlob($('#cStory')), 'historia.jpg', 'image/jpeg');
+      const id = (await api('api/ig', { action: 'container', kind: 'story', url })).id;
+      await waitReady(id, false); done('Historia', await api('api/ig', { action: 'publish', id }));
+    }
+    if (want.reel) {
+      const li = plog('Creando el video del reel…');
+      const r = await encodeReel(p => li.textContent = `Creando el video del reel… ${Math.round(p * 100)}%`);
+      if (r.ext !== 'mp4') throw new Error('Este navegador solo crea WEBM y Instagram pide MP4. Usá Chrome o Edge actualizados.');
+      S.lastReel = r;
+      li.textContent = 'Subiendo el reel…';
+      const url = await up(r.blob, 'reel.mp4', 'video/mp4');
+      const id = (await api('api/ig', { action: 'container', kind: 'reel', url, caption, shareToFeed: $('#pubReelFeed').checked })).id;
+      li.textContent = 'Instagram está procesando el reel (puede tardar un par de minutos)…';
+      await waitReady(id, true); done('Reel', await api('api/ig', { action: 'publish', id }));
+    }
+    toast('¡Publicado!');
+  } catch (e) {
+    plog('❌ ' + (e.status === 401 ? 'Clave del estudio incorrecta.' : e.message), 'err');
+  } finally {
+    if (uploaded.length) { try { await api('api/ig', { action: 'cleanup', urls: uploaded }); } catch {} }
+    btn.disabled = false; btn.textContent = '🚀 Publicar ahora'; refreshAccount();
+  }
+}
+async function igSetup(){
+  const out = $('#igSetupOut'); out.textContent = 'Convirtiendo…';
+  try {
+    const j = await api('api/ig', { action: 'setup', token: $('#igToken').value });
+    const esc = v => String(v || '').replace(/"/g, '&quot;');
+    out.innerHTML = j.pages.map(p => p.igId
+      ? `<p style="margin:10px 0 4px"><b>${p.page}</b> → @${p.igUser}</p>
+         <div>IG_PAGE_TOKEN</div><div class="copyrow"><input readonly value="${esc(p.pageToken)}"><button class="btn sm" data-copy="${esc(p.pageToken)}">Copiar</button></div>
+         <div>IG_USER_ID</div><div class="copyrow"><input readonly value="${esc(p.igId)}"><button class="btn sm" data-copy="${esc(p.igId)}">Copiar</button></div>`
+      : `<p><b>${p.page}</b>: no tiene un Instagram vinculado.</p>`).join('') + '<p>Pegalos en Vercel y hacé Redeploy. Este token de Página no vence.</p>';
+    out.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); toast('Copiado'); } catch { toast('Copialo a mano'); } });
+  } catch (e) { out.textContent = '❌ ' + e.message; }
+}
+
+/* ---- link del local: Google, Maps, Instagram, TikTok o web ---- */
+function linkKind(raw){
+  const v = raw.trim();
+  if (!/^https?:\/\//i.test(v) && !/^[\w-]+\.[\w.-]+\//.test(v) && !/\.(com|ar|app|net|org|io)(\/|$)/i.test(v)) return v.startsWith('@') ? { kind: 'ig', user: v.slice(1) } : { kind: 'query', q: v };
+  let U; try { U = normUrl(v); } catch { return { kind: 'query', q: v }; }
+  const h = U.hostname.toLowerCase();
+  if (/(^|\.)instagram\.com$/.test(h)) { const user = U.pathname.split('/').filter(Boolean)[0]; return { kind: 'ig', user, url: U.href }; }
+  if (/(^|\.)tiktok\.com$/.test(h)) return { kind: 'tiktok', url: U.href };
+  if (/(^|\.)(maps\.app\.goo\.gl|goo\.gl|g\.co)$/.test(h)) return { kind: 'gshort', url: U.href };
+  if (/(^|\.)google\.[a-z.]+$/.test(h)) {
+    let q = U.searchParams.get('q') || U.searchParams.get('query');
+    const m = U.pathname.match(/\/maps\/place\/([^/]+)/); if (m) q = decodeURIComponent(m[1].replace(/\+/g, ' '));
+    if (!q) { const mm = U.pathname.match(/\/maps\/search\/([^/]+)/); if (mm) q = decodeURIComponent(mm[1].replace(/\+/g, ' ')); }
+    return { kind: 'query', q: q || '' };
+  }
+  return { kind: 'web', url: U.href };
+}
+function compactHours(list){
+  if (!list || !list.length) return '';
+  const ab = { lunes: 'Lun', martes: 'Mar', 'miércoles': 'Mié', jueves: 'Jue', viernes: 'Vie', 'sábado': 'Sáb', domingo: 'Dom' };
+  const rows = list.map(z => { const i = z.indexOf(':'); return { d: ab[z.slice(0, i).trim().toLowerCase()] || z.slice(0, i).trim().slice(0, 3), h: z.slice(i + 1).trim().replace(/ | /g, ' ').replace(/\s*[–-]\s*/g, ' a ').replace(/(\d{1,2}):00/g, '$1').replace(/Cerrado/i, 'cerrado') }; });
+  const g = []; rows.forEach(r => { const last = g[g.length - 1]; if (last && last.h === r.h) last.to = r.d; else g.push({ from: r.d, to: r.d, h: r.h }); });
+  if (g.length === 1 && g[0].h !== 'cerrado') return 'Todos los días ' + g[0].h + ' hs';
+  return g.filter(x => x.h !== 'cerrado').map(x => (x.from === x.to ? x.from : x.from + ' a ' + x.to) + ' ' + x.h + (/\d$/.test(x.h) ? ' hs' : '')).join(' · ');
+}
+function phoneDigits(p){ let d = (p || '').replace(/\D/g, ''); if (d.startsWith('549')) d = d.slice(3); else if (d.startsWith('54')) d = d.slice(2); if (d.startsWith('0')) d = d.slice(1); return d; }
+function fromBio(bio){
+  const out = {};
+  const wa = bio.match(/wa\.me\/(\d+)/i) || bio.match(/(?:wpp|whats(?:app)?|tel|📲|📞|☎️?)\D{0,6}(\+?[\d\s()-]{8,18}\d)/i);
+  if (wa) out.wa = phoneDigits(wa[1]);
+  const lines = bio.split('\n').map(z => z.trim()).filter(Boolean);
+  const addr = lines.find(l => /📍|direcci[oó]n|^av\.?\s|calle\s/i.test(l)); if (addr) out.address = addr.replace(/📍/g, '').replace(/^direcci[oó]n:?\s*/i, '').trim();
+  const hrs = lines.find(l => /(\d{1,2}\s*(a|-|–)\s*\d{1,2}\s*(hs|h\b))|horario|🕒|⏰/i.test(l)); if (hrs) out.hours = hrs.replace(/🕒|⏰|horarios?:?/gi, '').trim();
+  out.bio = lines.filter(l => l !== addr && l !== hrs && !/wa\.me|whats/i.test(l)).join(' ').replace(/\s+/g, ' ').trim();
+  return out;
+}
+async function imgFromUrl(url, name){ const b = await netFetch(url); if (!b || !b.size) return null; return makeShot(b, name); }
+async function fetchPlace(q){
+  const j = await api('api/place', { q }, 'GET');
+  return (j.places || [])[0] || null;
+}
+async function localFromLink(){
+  const raw = $('#lLink').value.trim();
+  if (!raw) { lstatus('Pegá un link o escribí el nombre del local.', true); return; }
+  let L = linkKind(raw);
+  const btn = $('#lLinkGo'); btn.disabled = true;
+  const notes = [];
+  try {
+    if (!S.server && L.kind !== 'web' && L.kind !== 'tiktok') { lstatus('Traer datos de Google o Instagram funciona en tu versión de Vercel (con las claves configuradas). Acá completá los datos a mano.', true); return; }
+    // empezar de cero
+    LFIELDS.forEach(k => $('#l-' + k).value = ''); LTF.forEach(k => $('#lf-' + k).value = '');
+    S.shots = []; S.logo = null; $('#logoSlot').textContent = 'sin logo'; $('#delLogo').classList.add('hidden'); $('#lDemoBadge').classList.add('hidden');
+    let design = null, place = null;
+    const set = (k, v) => { if (v && !$('#l-' + k).value.trim()) $('#l-' + k).value = v; };
+    if (L.kind === 'gshort') { lstatus('Abriendo el link de Google…'); try { const r = await api('api/place', { resolve: L.url }, 'GET'); L = linkKind(r.url); } catch { L = { kind: 'query', q: '' }; } if (!L.q && L.kind === 'query') throw new Error('No pude leer ese link corto de Google. Probá con el link largo o escribí el nombre del local.'); }
+
+    if (L.kind === 'ig') {
+      if (!S.server.ig) throw new Error('Para leer Instagram primero conectá tu cuenta (pestaña "Subir a IG").');
+      lstatus(`Leyendo @${L.user} en Instagram…`);
+      const d = await api('api/ig', { action: 'discover', username: L.user });
+      set('name', d.name || d.username); set('ig', '@' + (d.username || L.user)); set('web', d.website && !/instagram\.com|linktr\.ee/i.test(d.website) ? d.website.replace(/^https?:\/\//, '').replace(/\/$/, '') : '');
+      const fb = fromBio(d.biography || ''); set('bio', fb.bio); set('wa', fb.wa); set('address', fb.address); set('hours', fb.hours);
+      if (d.profile_picture_url) { const lg = await imgFromUrl(d.profile_picture_url, 'perfil.jpg'); if (lg) { S.logo = lg; const pp = imagePalette(lg.img); S.logoBg = pp.dominant || '#fff'; $('#logoSlot').innerHTML = `<img src="${lg.url}" alt="">`; $('#delLogo').classList.remove('hidden'); design = designFromImage(lg.img, true); } }
+      const media = ((d.media && d.media.data) || []).map(m => ({ u: m.media_type === 'VIDEO' ? m.thumbnail_url : m.media_url, c: m.caption || '' })).filter(m => m.u).slice(0, 10);
+      const shortCap = c => { const t = c.replace(/#[\wáéíóúñ]+/gi, '').replace(/@[\w.]+/g, '').replace(/\s+/g, ' ').trim().split(/(?<=[.!?])\s/)[0] || ''; return t.length >= 12 && t.length <= 90 ? t : ''; };
+      lstatus(`Bajando ${media.length} fotos de Instagram…`);
+      const shots = await Promise.all(media.map(async (m, i) => { const sh = await imgFromUrl(m.u, `ig-${i + 1}.jpg`).catch(() => null); if (sh) sh.caption = shortCap(m.c); return sh; }));
+      shots.filter(Boolean).forEach(sh => { sh.manual = true; S.shots.push(sh); });
+      notes.push(`Instagram: ${S.shots.length} fotos y el logo`);
+      if (S.server.google) { try { place = await fetchPlace(`${$('#l-name').value} ${readBrand().city || ''}`); } catch {} }
+    } else if (L.kind === 'query') {
+      if (!S.server.google) throw new Error('Para links de Google falta configurar GOOGLE_PLACES_KEY en Vercel (ver GUIA-GOOGLE.md).');
+      lstatus(`Buscando "${L.q}" en Google Maps…`);
+      place = await fetchPlace(L.q);
+      if (!place) throw new Error('Google no encontró ese local. Probá agregando la ciudad.');
+    } else if (L.kind === 'tiktok') {
+      $('#l-tiktok').value = L.url;
+      const t = await tiktokInfo(readLocal());
+      if (t && !t.blocked) { set('name', t.author); notes.push('TikTok: nombre y miniatura'); }
+      else throw new Error('No pude leer el TikTok desde acá.');
+    } else if (L.kind === 'web') {
+      lstatus('Leyendo la web del local…');
+      const src = await fromWebsite(L.url);
+      const { raw: wraw, shots } = await analyze(src);
+      const h = heuristic(wraw);
+      set('name', h.name); set('bio', h.tagline); set('web', new URL(L.url).hostname.replace(/^www\./, ''));
+      const wa = (wraw.html.match(/wa\.me\/(\d+)/) || [])[1]; if (wa) set('wa', phoneDigits(wa));
+      const ig = (wraw.html.match(/instagram\.com\/([A-Za-z0-9._]+)/) || [])[1]; if (ig && !/^(p|reel|explore)$/.test(ig)) set('ig', '@' + ig);
+      shots.forEach(sh => { sh.manual = true; S.shots.push(sh); });
+      design = extractDesign(wraw, shots);
+      notes.push('su web: textos, colores y capturas');
+      if (S.server && S.server.google) { try { place = await fetchPlace(`${h.name} ${readBrand().city || ''}`); } catch {} }
+    }
+
+    if (place) {
+      set('name', place.name); set('rubro', place.type); set('address', place.address); set('hours', compactHours(place.hours));
+      set('wa', phoneDigits(place.phone)); set('bio', place.summary);
+      if (place.website) { if (/instagram\.com/i.test(place.website)) set('ig', handleOf(place.website)); else set('web', place.website.replace(/^https?:\/\//, '').replace(/\/$/, '')); }
+      if (place.rating) set('rating', `${place.rating.toFixed(1).replace('.', ',')} ★ · ${place.ratings || 0} reseñas en Google`);
+      const rv = (place.reviews || []).filter(r => r.rating >= 5 && r.text && r.text.length >= 30 && r.text.length <= 240)[0];
+      if (rv) set('review', `${rv.text.replace(/\s+/g, ' ').trim()} — ${(rv.author || '').split(' ')[0]}`);
+      const need = Math.max(0, 8 - S.shots.length);
+      if (need) {
+        lstatus('Bajando fotos de Google Maps…');
+        const ph = await Promise.all(place.photos.slice(0, need).map(async (n, i) => { try { const r = await fetch('api/place?' + new URLSearchParams({ photo: n, k: studioKey() })); if (!r.ok) return null; return makeShot(await r.blob(), `google-${i + 1}.jpg`); } catch { return null; } }));
+        ph.filter(Boolean).forEach(sh => { sh.manual = true; S.shots.push(sh); });
+      }
+      notes.push('Google Maps: dirección, horarios, teléfono' + (place.rating ? ', calificación' : '') + (place.photos.length ? ' y fotos' : ''));
+      if (!$('#l-ig').value && place.website && S.server.ig && /instagram\.com/i.test(place.website)) notes.push('(tiene Instagram: pegá ese link para sumar el logo)');
+    }
+
+    if (!design && S.shots[0]) design = designFromImage(S.shots[0].img, false);
+    renderShotList();
+    if (S.purpose === 'caso') { caseFromLocal(); makeCaption(); } else { localAutoTexts(true); makeLocalCaption(); }
+    if (design) await applyAuto(design); else renderAll();
+    lstatus(`Listo: ${notes.join(' · ') || 'datos cargados'}. Revisá todo${$('#l-wa').value ? ' (fijate que el teléfono sea el WhatsApp)' : ''}.`);
+  } catch (e) {
+    lstatus(e.status === 401 ? 'Clave del estudio incorrecta (ponela en la pestaña "Subir a IG").' : (e.message || 'No pude leer ese link.'), true);
+    renderAll();
+  } finally { btn.disabled = false; }
 }
 
 /* ============ render ============ */
@@ -1729,7 +2070,7 @@ function setSrc(k){ $$('#srcTabs .tab').forEach(t => t.classList.toggle('on', t.
 
 /* ============ eventos ============ */
 $$('#srcTabs .tab').forEach(t => t.onclick = () => setSrc(t.dataset.src));
-$$('#outTabs .tab').forEach(t => t.onclick = () => { $$('#outTabs .tab').forEach(x => x.classList.toggle('on', x === t)); $$('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === t.dataset.out)); if (t.dataset.out !== 'reel' && reelPlaying) stopReel(); });
+$$('#outTabs .tab').forEach(t => t.onclick = () => { $$('#outTabs .tab').forEach(x => x.classList.toggle('on', x === t)); $$('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === t.dataset.out)); if (t.dataset.out !== 'reel' && reelPlaying) stopReel(); if (t.dataset.out === 'publish') updatePublishUI(); });
 function dropify(zone, input, handler){
   zone.onclick = () => input.click();
   zone.ondragover = e => { e.preventDefault(); zone.classList.add('over'); };
@@ -1789,6 +2130,7 @@ function applyMode(){
   $$('#purpose .chip').forEach(x => x.classList.toggle('on', x.dataset.p === S.purpose));
   $('#projTitle').textContent = S.mode === 'local' ? 'La web o app que le hiciste (opcional)' : 'Tu proyecto';
   $('#imgTitle').textContent = S.mode === 'local' ? 'Logo y fotos' : 'Capturas de pantalla';
+  if (S.server) { const w = $('#pubWarn'); if (isLocalOwn()) { w.innerHTML = '<b>Ojo:</b> se publica en <b>tu</b> cuenta, no en la del local. Para la cuenta del local, descargá todo y subilo desde su celu.'; w.classList.remove('hidden'); } else w.classList.add('hidden'); }
   $('#brandLabel').textContent = isLocalOwn() ? 'Tu marca (sale como crédito chico: "Diseño: …")' : 'Tu marca';
 }
 function setMode(m){
@@ -1811,6 +2153,11 @@ $$('#purpose .chip').forEach(x => x.onclick = () => { S.purpose = x.dataset.p; a
 LFIELDS.forEach(k => $('#l-' + k).addEventListener('input', () => debounce(renderAll)));
 LTF.forEach(k => $('#lf-' + k).addEventListener('input', () => debounce(renderAll)));
 $('#lGenAuto').onclick = buildLocal;
+$('#lLinkGo').onclick = localFromLink;
+$('#lLink').onkeydown = e => { if (e.key === 'Enter') localFromLink(); };
+$('#pubGo').onclick = publishFlow;
+$('#igSetup').onclick = igSetup;
+$('#studioKey').addEventListener('change', () => { try { localStorage.setItem('igstudio.key', $('#studioKey').value.trim()); } catch {} refreshAccount(); });
 $('#lGenAI').onclick = () => S.purpose === 'caso' ? generateAI() : generateLocalAI();
 $('#addLogo').onclick = () => $('#inLogo').click();
 $('#inLogo').onchange = async () => {
@@ -1849,6 +2196,8 @@ $('#copyCap').onclick = async () => {
   await ensureFonts();
   await applyFontChoice();
   renderAll();
+  try { $('#studioKey').value = localStorage.getItem('igstudio.key') || ''; } catch {}
+  detectServer();
 })();
 </script>
 </body>

@@ -1,0 +1,9 @@
+{
+  "name": "estudio-ig",
+  "private": true,
+  "description": "Estudio de Contenido IG - F-C Web Studio",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@vercel/blob": "^2.8.2"
+  }
+}
