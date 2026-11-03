@@ -25,7 +25,8 @@ module.exports = async (req, res) => {
       ig: !!(TOKEN() && IGID()),
       metaApp: !!(process.env.META_APP_ID && process.env.META_APP_SECRET),
       google: !!process.env.GOOGLE_PLACES_KEY,
-      blob: !!process.env.BLOB_READ_WRITE_TOKEN,
+      blob: !!(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID),
+      blobMode: process.env.BLOB_READ_WRITE_TOKEN ? 'token' : (process.env.BLOB_STORE_ID ? 'presigned' : null),
       protected: !!process.env.STUDIO_PASSWORD
     });
   }
@@ -93,7 +94,7 @@ module.exports = async (req, res) => {
 
     if (action === 'cleanup') {
       const urls = (body.urls || []).filter(u => /blob\.vercel-storage\.com/.test(u));
-      if (urls.length && process.env.BLOB_READ_WRITE_TOKEN) { const { del } = require('@vercel/blob'); await del(urls); }
+      if (urls.length && (process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID)) { const { del } = require('@vercel/blob'); await del(urls); }
       return res.json({ deleted: urls.length });
     }
 

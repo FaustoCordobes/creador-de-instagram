@@ -1700,7 +1700,11 @@ async function blobUpload(blob, name, type){
     for (const u of ['https://esm.sh/@vercel/blob@2.8.2/client', 'https://cdn.jsdelivr.net/npm/@vercel/blob@2.8.2/dist/client.js/+esm']) { try { blobLib = await import(u); break; } catch {} }
     if (!blobLib) throw new Error('No pude cargar el módulo de subida (revisá la conexión).');
   }
-  const r = await blobLib.upload(`ig/${Date.now()}-${name}`, blob, { access: 'public', handleUploadUrl: 'api/upload', clientPayload: studioKey(), contentType: type });
+  const path = `ig/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${name}`;
+  const opts = { access: 'public', handleUploadUrl: 'api/upload', clientPayload: studioKey(), contentType: type };
+  let r;
+  try { r = S.server && S.server.blobMode === 'presigned' && blobLib.uploadPresigned ? await blobLib.uploadPresigned(path, blob, opts) : await blobLib.upload(path, blob, opts); }
+  catch (e) { const m = String(e && e.message || e); if (/private|access/i.test(m)) throw new Error('El almacenamiento Blob tiene que ser Público (Vercel → Storage → tu Blob → Settings).'); throw new Error('No pude subir el archivo: ' + m.replace(/^Vercel Blob:\s*/, '')); }
   return r.url;
 }
 const jpegBlob = c => new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
