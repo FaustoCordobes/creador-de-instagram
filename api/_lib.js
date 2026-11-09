@@ -9,11 +9,19 @@ function cors(res) {
 }
 
 // Si definiste STUDIO_PASSWORD en Vercel, todas las acciones sensibles la piden.
+const clean = v => String(v || '').replace(/^["'\s]+|["'\s]+$/g, '');
+function studioPass() { return clean(process.env.STUDIO_PASSWORD); }
 function authorized(req) {
-  const pass = process.env.STUDIO_PASSWORD;
+  const pass = studioPass();
   if (!pass) return true;
-  const got = req.headers['x-studio-key'] || (req.query && req.query.k) || '';
+  const got = clean(req.headers['x-studio-key'] || (req.query && req.query.k) || '');
   return got === pass;
+}
+// Huella de la clave para diagnosticar sin revelarla
+function passInfo() {
+  const p = studioPass(); if (!p) return null;
+  const h = require('crypto').createHash('sha256').update(p).digest('hex').slice(0, 8);
+  return { len: p.length, hash: h };
 }
 
 async function readBody(req) {
@@ -37,4 +45,4 @@ async function graph(path, params = {}, method = 'GET') {
   return j;
 }
 
-module.exports = { GRAPH, cors, authorized, readBody, graph };
+module.exports = { GRAPH, cors, authorized, readBody, graph, studioPass, passInfo };

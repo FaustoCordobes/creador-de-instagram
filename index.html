@@ -84,10 +84,10 @@ main{padding:18px 22px;min-width:0}
 .toast.show{opacity:1;transform:translateX(-50%)}
 .demo-badge{font-size:12px;background:#ffd36b22;color:#ffd36b;border:1px solid #ffd36b55;padding:4px 10px;border-radius:99px}
 details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-top:10px}
-.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .mode{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
 .mode b{font:700 15px 'Space Grotesk'}
-.mode span{font-size:12.5px;color:var(--muted)}
+.mode span{font-size:12px;color:var(--muted);line-height:1.3}
 .mode.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
 aside{counter-reset:st}
 .card:not(.hidden) .step::before{counter-increment:st;content:counter(st)}
@@ -119,6 +119,19 @@ aside{counter-reset:st}
   <div class="modes" id="modes">
     <button class="mode on" data-mode="dev"><b>Mi app o web</b><span>Promocionar un proyecto tuyo</span></button>
     <button class="mode" data-mode="local"><b>Un local</b><span>Contenido para un negocio</span></button>
+    <button class="mode" data-mode="brand"><b>Mi marca</b><span>Presentarte y tus servicios</span></button>
+  </div>
+
+  <!-- Mi marca -->
+  <div class="card" data-show="brand">
+    <h2><span class="step"></span> Tu presentación</h2>
+    <p class="hint" style="margin-top:0">Carrusel para arrancar el perfil: quién sos, qué hacés, cómo trabajás y qué incluye. Subí tu logo o una foto tuya y capturas de tus trabajos en el paso siguiente.</p>
+    <label class="f">Frase principal</label><input type="text" id="m-hook">
+    <label class="f">Quién sos (una línea)</label><input type="text" id="m-who">
+    <label class="f">Qué hacés (uno por línea · <i>Servicio: para qué sirve</i>)</label><textarea id="m-services" rows="4"></textarea>
+    <label class="f">Cómo trabajás (3 pasos · <i>Paso: detalle</i>)</label><textarea id="m-process" rows="3"></textarea>
+    <label class="f">Qué incluye (uno por línea)</label><textarea id="m-includes" rows="4"></textarea>
+    <label class="f">Llamado a la acción</label><input type="text" id="m-cta">
   </div>
 
   <!-- Local: datos -->
@@ -142,10 +155,10 @@ aside{counter-reset:st}
     <label class="f">Dirección</label><input type="text" id="l-address">
     <label class="f">Horarios</label><input type="text" id="l-hours" placeholder="Lun a Sáb de 8 a 20 hs">
     <label class="f">Descripción / bio <span style="font-weight:400">(copiala del Instagram)</span></label><textarea id="l-bio"></textarea>
-    <label class="f">Productos o servicios <span style="font-weight:400">(uno por línea · <i>Nombre: precio o detalle</i>)</span></label><textarea id="l-items" rows="4"></textarea>
+    <label class="f" id="itemsLabel">Productos o servicios <span style="font-weight:400">(uno por línea · <i>Nombre: precio o detalle</i>)</span></label><textarea id="l-items" rows="4"></textarea>
     <label class="f">Promo u oferta (opcional)</label><input type="text" id="l-promo" placeholder="Martes 2x1 en facturas">
     <label class="f">Calificación en Google (opcional)</label><input type="text" id="l-rating" placeholder="4,7 ★ · 230 reseñas en Google">
-    <label class="f">Reseña destacada (opcional)</label><textarea id="l-review" rows="2" placeholder="Texto de la reseña — Nombre"></textarea>
+    <label class="f" id="reviewLabel">Reseña destacada (opcional)</label><textarea id="l-review" rows="2" placeholder="Texto de la reseña — Nombre"></textarea>
     <div data-show="caso"><label class="f">¿Qué le hiciste?</label><input type="text" id="l-work" placeholder="Página web con catálogo y pedidos por WhatsApp"></div>
     <div class="row" style="margin-top:14px">
       <button class="btn pri hidden" id="lGenAI">✨ Escribir con IA</button>
@@ -204,14 +217,14 @@ aside{counter-reset:st}
   <!-- Imágenes -->
   <div class="card">
     <h2><span class="step"></span> <span id="imgTitle">Capturas de pantalla</span></h2>
-    <div data-show="local">
-      <label class="f" style="margin-top:0">Logo del local</label>
+    <div data-show="logo">
+      <label class="f" style="margin-top:0" id="logoLabel">Logo del local</label>
       <div class="row" style="align-items:center;flex:0">
         <div class="logo-slot" id="logoSlot">sin logo</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" id="addLogo">Subir logo</button><button class="btn sm hidden" id="delLogo">Quitar</button></div>
       </div>
       <input type="file" id="inLogo" accept="image/*" hidden>
-      <label class="f">Fotos (productos, el local, la gente)</label>
+      <label class="f" id="photosLabel">Fotos (productos, el local, la gente)</label>
     </div>
     <div class="shots" id="shots"></div>
     <p class="hint" style="margin-top:6px">Clic = usar o no usar · doble clic = poner de portada</p>
@@ -229,6 +242,8 @@ aside{counter-reset:st}
     <label class="f">Problema que resuelve</label><input type="text" id="f-problem">
     <label class="f">Para quién es</label><input type="text" id="f-audience">
     <label class="f">Funciones (una por línea · <i>Título: descripción</i>)</label><textarea id="f-features" rows="5"></textarea>
+    <label class="f">Resultado o lo que dijo el cliente <span style="font-weight:400">(opcional · <i>texto — nombre</i>)</span></label><textarea id="f-result" rows="2" placeholder="Ahora sé qué se le hizo a cada auto y le aviso al cliente en un minuto — Dueño de CKP"></textarea>
+    <label class="f">Qué incluye <span style="font-weight:400">(uno por línea · reemplaza la diapositiva de tecnología)</span></label><textarea id="f-includes" rows="4"></textarea>
     <label class="f">Tecnologías (separadas por coma)</label><input type="text" id="f-tech">
     <label class="f">Llamado a la acción</label><input type="text" id="f-cta">
   </div>
@@ -276,6 +291,11 @@ aside{counter-reset:st}
     </div>
     <label class="f">Web</label><input type="text" id="b-web">
     <label class="f">Ciudad (para hashtags)</label><input type="text" id="b-city">
+    <div data-show="notlocalown">
+      <label class="f">Palabra para que te escriban</label><input type="text" id="b-keyword" placeholder="WEB">
+      <p class="hint" style="margin-top:4px">Cierra con "Comentá WEB o escribime al DM": en Instagram los links del texto no se pueden tocar.</p>
+      <label class="f">Oferta de lanzamiento (opcional)</label><input type="text" id="b-offer" placeholder="Primeros 3 locales: 20% off">
+    </div>
   </div>
 </aside>
 
@@ -287,6 +307,7 @@ aside{counter-reset:st}
       <button class="tab" data-out="story">Historia</button>
       <button class="tab" data-out="reel">Reel (video)</button>
       <button class="tab" data-out="text">Texto del posteo</button>
+      <button class="tab" data-out="hl">Destacadas</button>
       <button class="tab" data-out="publish">🚀 Subir a IG</button>
     </div>
     <div class="spacer"></div>
@@ -378,6 +399,15 @@ aside{counter-reset:st}
       </div>
     </div>
   </div>
+  <div class="pane" data-pane="hl">
+    <div class="row" style="max-width:760px;align-items:end;margin-bottom:14px">
+      <div style="flex:3"><label class="f" style="margin-top:0">Nombres de las destacadas (separados por coma)</label><input type="text" id="hl-labels" value="Trabajos, Servicios, Proceso, Opiniones, Contacto"></div>
+      <div style="flex:1"><label class="f" style="margin-top:0">Estilo</label><select id="hl-style"><option value="color">Fondo de color</option><option value="dark">Fondo del tema</option></select></div>
+    </div>
+    <div class="strip" id="highlights" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))"></div>
+    <p class="hint">Portadas 1080×1920 para las historias destacadas del perfil. Subí cada una como historia, agregala a la destacada y elegila como portada. Instagram muestra solo el círculo del centro.</p>
+  </div>
+
   <div class="pane textout" data-pane="text">
     <div class="single">
       <div style="flex:1;min-width:280px">
@@ -437,18 +467,19 @@ const canvasBlob = c => new Promise(r => c.toBlob(r, 'image/png'));
 /* ============ estado ============ */
 const S = { shots: [], detected: null, theme: store.get('theme','noche'), raw: null, isDemo: true, mode: 'dev', purpose: 'local', logo: null, logoBg: null, auto: null, autoOrig: null, sets: { dev: [], local: [] }, rawSets: { dev: null, local: null } };
 
-const BRAND_DEFAULT = { brand:'F-C Web Studio', wa:'2944242906', ig:'', web:'f-cwebstudio.vercel.app', city:'San Martín de los Andes' };
+const BRAND_DEFAULT = { brand:'F-C Web Studio', wa:'2944242906', ig:'', web:'f-cwebstudio.vercel.app', city:'San Martín de los Andes', keyword:'WEB', offer:'' };
 const DEMO = {
   name:'Turnero Online', kicker:'NUEVO PROYECTO', hook:'Tus clientes sacan turno solos, 24/7',
   tagline:'Sistema de turnos web para negocios y profesionales', problem:'¿Seguís anotando turnos en un cuaderno y contestando WhatsApp todo el día?',
   audience:'Peluquerías, consultorios, talleres y estéticas',
   features:'Turnos online: el cliente elige día y horario desde el celular\nRecordatorios: aviso automático por WhatsApp antes del turno\nPanel del negocio: agenda del día, clientes e historial\nSe instala como app: funciona en celu y compu, sin descargar nada',
-  tech:'HTML, CSS, JavaScript, Supabase, PWA', cta:'¿Querés una app así para tu negocio?'
+  tech:'HTML, CSS, JavaScript, Supabase, PWA', cta:'¿Querés una app así para tu negocio?',
+  result:'', includes:'Diseño a medida con tu logo y colores\nDominio propio y hosting\nFunciona en celular y compu\nCapacitación para usarla\nMantenimiento y cambios mensuales'
 };
 
 /* ============ formulario <-> modelo ============ */
-const FIELDS = ['name','kicker','hook','tagline','problem','audience','features','tech','cta'];
-const BFIELDS = ['brand','wa','ig','web','city'];
+const FIELDS = ['name','kicker','hook','tagline','problem','audience','features','tech','cta','result','includes'];
+const BFIELDS = ['brand','wa','ig','web','city','keyword','offer'];
 function readModel(){
   const m = {}; FIELDS.forEach(k => m[k] = $('#f-'+k).value.trim());
   m.featureList = m.features.split('\n').map(s=>s.trim()).filter(Boolean).map(line=>{
@@ -457,11 +488,13 @@ function readModel(){
     return { title: line, desc: '' };
   }).slice(0,6);
   m.techList = m.tech.split(',').map(s=>s.trim()).filter(Boolean).slice(0,8);
+  { const q = splitQuote(m.result); m.resultText = q.text; m.resultAuthor = q.author; }
+  m.includesList = m.includes.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,7);
   return m;
 }
 function readBrand(){ const b={}; BFIELDS.forEach(k=>b[k]=$('#b-'+k).value.trim()); return b; }
 function writeModel(m){
-  FIELDS.forEach(k => { let v = m[k]; if (k==='features' && Array.isArray(v)) v = v.map(f=> typeof f==='string'?f:(f.desc?`${f.title}: ${f.desc}`:f.title)).join('\n'); if (k==='tech' && Array.isArray(v)) v=v.join(', '); $('#f-'+k).value = v || ''; });
+  FIELDS.forEach(k => { let v = m[k]; if (k==='features' && Array.isArray(v)) v = v.map(f=> typeof f==='string'?f:(f.desc?`${f.title}: ${f.desc}`:f.title)).join('\n'); if ((k==='tech') && Array.isArray(v)) v=v.join(', '); if (k==='includes' && Array.isArray(v)) v=v.join('\n'); $('#f-'+k).value = v || ''; });
 }
 function fmtWa(w){ const d=(w||'').replace(/\D/g,''); if(d.length===10) return d.slice(0,4)+' '+d.slice(4,7)+'-'+d.slice(7); return w; }
 
@@ -779,7 +812,9 @@ Respondé SOLO con un objeto JSON con estas claves:
  "features": [{"title":"máx 4 palabras","desc":"máx 14 palabras"}],  (3 a 5 items)
  "tech": ["máximo 6 tecnologías o cualidades técnicas en palabras simples"],
  "cta": "llamado a la acción, máximo 9 palabras",
- "caption": "texto del posteo de 600-1100 caracteres, con saltos de línea, algunos emojis, lista de beneficios y cierre invitando a escribir por WhatsApp ${brand.wa || ''}${brand.web ? ' o visitar ' + brand.web : ''}. Sin hashtags.",
+ "includes": ["4 a 6 cosas que incluye el servicio, en palabras de un comerciante (ej: dominio y hosting, capacitación, mantenimiento mensual); nada técnico"],
+ "result": "solo si el contexto trae una frase o resultado real del cliente, en formato 'texto — nombre'; si no, cadena vacía. NO inventes testimonios",
+ "caption": "texto del posteo de 600-1100 caracteres, con saltos de línea, algunos emojis, lista de beneficios${brand.offer ? ', la oferta "' + brand.offer + '"' : ''} y cierre con: Comentá \"${(brand.keyword || 'WEB').toUpperCase()}\" o escribime al DM, y 'link en la bio' (no pegues URLs, en Instagram no se pueden tocar). Sin hashtags.",
  "hashtags": ["15 hashtags sin #, mezcla de nicho, ciudad y rubro"]}`;
   const btn = $('#genAI'); btn.disabled = true; const old = btn.textContent; btn.textContent = 'Escribiendo…';
   status('La IA está leyendo tu proyecto…');
@@ -804,15 +839,22 @@ Respondé SOLO con un objeto JSON con estas claves:
 
 /* ============ caption sin IA ============ */
 function makeCaption(){
+  if (S.mode === 'brand') return makeBrandCaption();
   const m = readModel(), b = readBrand();
-  const feats = m.featureList.map(f => '✅ ' + f.title + (f.desc ? ' — ' + f.desc : '')).join('\n');
-  const contact = [b.wa ? `📲 WhatsApp: ${fmtWa(b.wa)}` : '', b.web ? `🌐 ${b.web}` : ''].filter(Boolean).join('\n');
-  const cap = `🚀 ${m.name}: ${m.tagline}\n\n${m.problem}\n\n${feats}\n\n${m.audience ? '👥 Ideal para: ' + m.audience + '\n\n' : ''}${m.techList.length ? '🛠️ Hecho con ' + m.techList.join(', ') + '\n\n' : ''}${m.cta} Escribime y lo charlamos 👇\n${contact}`;
-  $('#f-caption').value = cap.trim();
-  const slug = s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
-  const tags = ['desarrolloweb','programador','appsparanegocios','emprendedores','pymes','software','transformaciondigital','argentina','hechoenargentina','freelancer'];
+  const out = [`🚀 ${m.name}${m.tagline ? ': ' + m.tagline : ''}`];
+  if (m.problem) out.push('', m.problem);
+  if (m.featureList.length) { out.push(''); m.featureList.forEach(f => out.push('✅ ' + f.title + (f.desc ? ' — ' + f.desc : ''))); }
+  if (m.resultText) out.push('', `💬 "${m.resultText}"${m.resultAuthor ? ' — ' + m.resultAuthor : ''}`);
+  if (m.includesList.length) { out.push('', '📦 Incluye:'); m.includesList.forEach(x => out.push('• ' + x)); }
+  else if (m.techList.length) out.push('', '🛠️ Hecho con ' + m.techList.join(', '));
+  if (m.audience) out.push('', '👥 Ideal para: ' + m.audience);
+  if (b.offer) out.push('', `🎁 ${b.offer}`);
+  out.push('', m.cta || '¿Hablamos?', captionCloser(b));
+  $('#f-caption').value = out.join('\n').trim();
+  const slug = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
+  const tags = ['desarrolloweb','programador','appsparanegocios','emprendedores','pymes','software','transformaciondigital','comerciolocal','argentina','freelancer'];
   if (b.city) { tags.push(slug(b.city)); }
-  m.techList.slice(0,3).forEach(t => { const s = slug(t); if (s.length > 2) tags.push(s); });
+  if (!m.includesList.length) m.techList.slice(0,3).forEach(t => { const s = slug(t); if (s.length > 2) tags.push(s); });
   if (m.name) tags.push(slug(m.name));
   $('#f-hashtags').value = [...new Set(tags)].filter(Boolean).map(t => '#' + t).join(' ');
 }
@@ -995,12 +1037,14 @@ function checkIcon(ctx, x, y, s, T){
 /* ---- escenas ---- */
 const SAFE = { carousel:{top:170,bottom:130}, post:{top:150,bottom:110}, story:{top:250,bottom:300}, reel:{top:260,bottom:440} };
 function buildSlides(m){
+  if (m.brandMode) return buildBrandSlides(m);
   const shots = activeShots();
   const pickShot = i => shots.length ? shots[i % shots.length] : null;
   const s = [{ type:'cover', shot: pickShot(0) }];
   if (m.problem) s.push({ type:'problem' });
   m.featureList.forEach((f, i) => s.push({ type:'feature', f, n: i+1, shot: shots.length > 1 ? pickShot(i+1) : null }));
-  if (m.techList.length) s.push({ type:'tech' });
+  if (m.resultText) s.push({ type:'result', shot: shots.length > 2 ? pickShot(m.featureList.length + 1) : null });
+  if (m.includesList.length) s.push({ type:'includes' }); else if (m.techList.length) s.push({ type:'tech' });
   s.push({ type:'cta' });
   return s;
 }
@@ -1016,8 +1060,11 @@ function drawSlide(ctx, W, H, slide, fmt, m, b, T, opts){
   else drawHeader(ctx, W, T, u, top, '', b);
   let y = top + 30*u;
   const avail = H - bottom - y;
+  const ox = { u, P, top, bottom, maxW, A, tt, isVideo };
 
-  if (slide.type === 'cover') {
+  if (drawExtraSlide(ctx, W, H, slide, fmt, m, b, T, ox)) {}
+  else if (slide.type === 'cta') ctaSlide(ctx, W, H, m, b, T, ox);
+  else if (slide.type === 'cover') {
     anim(ctx, A(0.05), 30*u, () => pill(ctx, m.kicker || 'NUEVO PROYECTO', P, y, u, T, false));
     y += 52*u + 34*u;
     const F = fit(ctx, m.hook || m.name, { maxW, maxH: avail * (fmt==='post'?0.3:0.27), size: 112*u, min: 54*u, weight: 700, lh: 1.04 });
@@ -1030,6 +1077,7 @@ function drawSlide(ctx, W, H, slide, fmt, m, b, T, opts){
     const sh = H - bottom - y - 10*u;
     const p = A(0.5, 0.8);
     anim(ctx, p, 140*u, () => { ctx.save(); if (isVideo) ctx.translate(0, -Math.min(tt,4) * 6*u); drawShot(ctx, slide.shot, P, y, maxW, sh, T, u, b, 1); ctx.restore(); });
+    if (b.offer) anim(ctx, A(0.9), 20*u, () => offerSticker(ctx, b.offer, W - P + 10*u, y - 40*u, u, T));
   }
   else if (slide.type === 'problem') {
     ctx.save(); ctx.font = `700 ${720*u}px ${FH}`; ctx.fillStyle = alpha(T.acc, 0.09); ctx.textAlign = 'right'; ctx.fillText('?', W - 20*u, top + avail*0.75); ctx.restore();
@@ -1127,7 +1175,7 @@ function drawPost(ctx, W, H, m, b, T){
   const by = H - 120*u;
   rr(ctx, P, by, W - 2*P, 80*u, 40*u); ctx.fillStyle = T.acc; ctx.fill();
   ctx.fillStyle = T.accInk; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
-  const t = [m.cta, b.wa ? 'WhatsApp ' + fmtWa(b.wa) : b.web].filter(Boolean).join('  ·  ');
+  const t = [b.offer ? '🎁 ' + b.offer : m.cta, `Comentá “${(b.keyword || 'WEB').toUpperCase()}”`].filter(Boolean).join('  ·  ');
   const C = fit(ctx, t, { maxW: W - 2*P - 60*u, maxH: 40*u, size: 32*u, min: 20*u, weight: 800, family: FB, maxLines: 1 });
   ctx.font = C.font; ctx.fillText(C.lines[0], W/2, by + 41*u); ctx.textBaseline = 'alphabetic';
 }
@@ -1151,8 +1199,9 @@ function drawStory(ctx, W, H, m, b, T){
   y += 10*u;
   rr(ctx, P, y, W - 2*P, 110*u, 55*u); ctx.fillStyle = T.acc; ctx.fill();
   ctx.fillStyle = T.accInk; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  const C = fit(ctx, b.wa ? 'Escribime: ' + fmtWa(b.wa) : (m.cta || 'Escribime'), { maxW: W - 2*P - 60*u, maxH: 50*u, size: 40*u, min: 24*u, weight: 800, family: FB, maxLines: 1 });
+  const C = fit(ctx, `Respondé “${(b.keyword || 'WEB').toUpperCase()}” y te paso info`, { maxW: W - 2*P - 60*u, maxH: 50*u, size: 40*u, min: 24*u, weight: 800, family: FB, maxLines: 1 });
   ctx.font = C.font; ctx.fillText(C.lines[0], W/2, y + 56*u); ctx.textBaseline = 'alphabetic';
+  if (b.offer) offerSticker(ctx, b.offer, W - P + 10*u, top + 20*u, u, T);
 }
 
 /* ---- reel ---- */
@@ -1166,11 +1215,11 @@ function reelScenes(){
     let t = 0; const scenes = order.map((z, i) => { const d = dur[z.type]; const sc = { slide: z, start: t, dur: d, index: i }; t += d; return sc; });
     return { scenes, total: t, draw: (ctx, W, H, sl, fmt, o, bb, TT) => drawLocalSlide(ctx, W, H, sl, fmt, L, bb, TT, o) };
   }
-  const m = readModel();
+  const m = S.mode === 'brand' ? readBrandModel() : readModel();
   const slides = buildSlides(m);
   const feats = slides.filter(s => s.type === 'feature').slice(0, 3);
-  const order = [slides.find(s=>s.type==='cover'), slides.find(s=>s.type==='problem'), ...feats, slides.find(s=>s.type==='tech'), slides.find(s=>s.type==='cta')].filter(Boolean);
-  const dur = { cover: 3.4, problem: 3.0, feature: 2.8, tech: 2.6, cta: 3.6 };
+  const order = m.brandMode ? slides : [slides.find(s=>s.type==='cover'), slides.find(s=>s.type==='problem'), ...feats, slides.find(s=>s.type==='result'), slides.find(s=>s.type==='includes') || slides.find(s=>s.type==='tech'), slides.find(s=>s.type==='cta')].filter(Boolean);
+  const dur = { cover: 3.4, problem: 3.0, feature: 2.8, tech: 2.6, result: 3.2, includes: 3.0, cta: 3.8, bcover: 3.4, bservices: 3.4, bprocess: 3.6, bworks: 2.8 };
   let t = 0; const scenes = order.map((s, i) => { const d = dur[s.type]; const sc = { slide: s, start: t, dur: d, index: i }; t += d; return sc; });
   return { scenes, total: t, draw: (ctx, W, H, sl, fmt, o, bb, TT) => drawSlide(ctx, W, H, sl, fmt, m, bb, TT, o) };
 }
@@ -1340,12 +1389,16 @@ function caseFromLocal(){
   const work = L.work || (base ? 'Web' : 'Página web');
   let hook = `${cap1(work)} para ${L.name || 'un cliente'}`;
   if (hook.split(' ').length > 10) hook = `Nuevo trabajo para ${L.name}`;
+  const own = L.itemList.map(i => ({ title: i.title, desc: i.detail }));
+  const prev = readModel();
   writeModel({
+    result: L.review || prev.result || '',
+    includes: prev.includes || DEFAULT_INCLUDES,
     name: L.name || (base && base.name) || 'Cliente', kicker: 'TRABAJO PARA CLIENTE', hook,
     tagline: [L.rubro, L.address].filter(Boolean).join(' · ') || (base && base.tagline) || '',
-    problem: `¿Tu ${(L.rubro || 'negocio').toLowerCase()} todavía depende solo de Instagram y WhatsApp?`,
-    audience: L.rubro ? `${cap1(L.rubro)} y comercios de la zona` : 'Comercios y emprendimientos',
-    features: base && base.features && base.features.length ? base.features : [
+    problem: /app|sistema|gesti|turno|orden|stock|software|panel/i.test(work) ? '¿Seguís anotando todo en papel, cuadernos o planillas?' : `¿Tu ${(L.rubro || 'negocio').toLowerCase()} todavía depende solo de Instagram y WhatsApp?`,
+    audience: L.rubro ? `${cap1(L.rubro)}, comercios y emprendimientos` : 'Comercios y emprendimientos',
+    features: own.length ? own : base && base.features && base.features.length ? base.features : [
       { title: 'Diseño a medida', desc: `con los colores y el estilo de ${L.name || 'la marca'}` },
       { title: 'Pensada para el celular', desc: 'la mayoría de los clientes entra desde el teléfono' },
       { title: 'Contacto directo', desc: 'botón de WhatsApp para consultar o pedir' } ],
@@ -1654,6 +1707,18 @@ function drawLocalStory(ctx, W, H, L, b, T){
 /* ============ servidor propio (versión Vercel) ============ */
 S.server = null;
 const studioKey = () => { try { return $('#studioKey').value.trim() || localStorage.getItem('igstudio.key') || ''; } catch { return $('#studioKey').value.trim(); } };
+async function keyDiagnosis(){
+  try {
+    const r = await fetch('api/ig?action=ping'); const j = await r.json(); const p = j.pass;
+    if (!p) return 'En Vercel no hay STUDIO_PASSWORD cargada (o falta Redeploy).';
+    const k = studioKey().replace(/^["'\s]+|["'\s]+$/g, '');
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(k));
+    const h = [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 8);
+    if (h === p.hash) return 'Las claves coinciden: recargá la página (Ctrl+F5) y probá de nuevo.';
+    if (k.length !== p.len) return `La clave que escribiste tiene ${k.length} caracteres y la de Vercel tiene ${p.len}. Revisá que sea la misma y que hayas hecho Redeploy.`;
+    return `Tienen el mismo largo (${k.length}) pero alguna letra no coincide (ojo con mayúsculas). Si cambiaste la clave en Vercel, hacé Redeploy.`;
+  } catch { return ''; }
+}
 async function api(path, body, method){
   method = method || (body ? 'POST' : 'GET');
   const url = method === 'GET' && body ? path + '?' + new URLSearchParams(body) : path;
@@ -1690,7 +1755,7 @@ async function refreshAccount(){
     S.igAccount = a;
     const used = a.limit ? ` · usaste ${a.limit.quota_usage} de ${(a.limit.config && a.limit.config.quota_total) || 50} publicaciones hoy` : '';
     box.innerHTML = `Conectado como <b style="color:var(--ink)">@${a.username}</b>${a.followers_count != null ? ` · ${a.followers_count} seguidores` : ''}${used}`;
-  } catch (e) { box.textContent = e.status === 401 ? 'Escribí tu clave del estudio para ver la cuenta.' : 'No pude leer la cuenta: ' + e.message; }
+  } catch (e) { box.textContent = e.status === 401 ? 'Clave del estudio incorrecta. ' + await keyDiagnosis() : 'No pude leer la cuenta: ' + e.message; }
 }
 
 /* ---- subir archivos temporales y publicar ---- */
@@ -1786,7 +1851,7 @@ async function igSetup(){
          <div>IG_USER_ID</div><div class="copyrow"><input readonly value="${esc(p.igId)}"><button class="btn sm" data-copy="${esc(p.igId)}">Copiar</button></div>`
       : `<p><b>${p.page}</b>: no tiene un Instagram vinculado.</p>`).join('') + '<p>Pegalos en Vercel y hacé Redeploy. Este token de Página no vence.</p>';
     out.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); toast('Copiado'); } catch { toast('Copialo a mano'); } });
-  } catch (e) { out.textContent = '❌ ' + e.message; }
+  } catch (e) { out.textContent = '❌ ' + e.message + (e.status === 401 ? ' ' + await keyDiagnosis() : ''); }
 }
 
 /* ---- link del local: Google, Maps, Instagram, TikTok o web ---- */
@@ -1927,6 +1992,256 @@ async function localFromLink(){
   } finally { btn.disabled = false; }
 }
 
+/* ============ mejoras para conseguir clientes ============ */
+const DEFAULT_INCLUDES = 'Diseño a medida con tu logo y colores\nDominio propio y hosting\nFunciona en celular y compu\nCapacitación para usarla\nMantenimiento y cambios mensuales';
+const BRAND_MODEL_DEFAULT = {
+  hook: 'Webs y apps a medida para tu negocio',
+  who: 'Soy Fausto, desarrollador web en San Martín de los Andes',
+  services: 'Páginas web: para que tu local aparezca en Google y reciba consultas\nApps de gestión: turnos, stock, órdenes de trabajo y caja\nTiendas online: catálogo y pedidos desde el celular',
+  process: 'Charlamos: me contás qué necesita tu negocio\nTe muestro una demo: la ves funcionando antes de decidir\nLa publico y la mantengo: dominio, hosting y soporte mensual',
+  includes: DEFAULT_INCLUDES,
+  cta: '¿Tu negocio necesita una web o una app?'
+};
+const MFIELDS = ['hook', 'who', 'services', 'process', 'includes', 'cta'];
+const splitLines = v => (v || '').split('\n').map(x => x.trim()).filter(Boolean);
+const titleDesc = line => { const i = line.indexOf(':'); return i > 0 && i < 48 ? { title: line.slice(0, i).trim(), desc: line.slice(i + 1).trim() } : { title: line, desc: '' }; };
+function splitQuote(v){ v = (v || '').trim(); const i = v.lastIndexOf(' — '); return { text: (i > 0 ? v.slice(0, i) : v).replace(/^["“]|["”]$/g, '').trim(), author: i > 0 ? v.slice(i + 3).trim() : '' }; }
+function readBrandModel(){
+  const b = readBrand(), g = id => $('#m-' + id).value.trim();
+  const services = splitLines(g('services')).map(titleDesc).slice(0, 5);
+  return { brandMode: true, name: b.brand || 'Mi marca', kicker: (b.brand || 'MI MARCA').toUpperCase(), hook: g('hook') || b.brand, tagline: g('who'), who: g('who'),
+    problem: '', audience: '', featureList: services, services, process: splitLines(g('process')).map(titleDesc).slice(0, 4),
+    includesList: splitLines(g('includes')).slice(0, 7), techList: [], cta: g('cta') || '¿Hablamos?', resultText: '', resultAuthor: '' };
+}
+function buildBrandSlides(m){
+  const shots = activeShots();
+  const s = [{ type: 'bcover' }];
+  if (m.services.length) s.push({ type: 'bservices' });
+  if (m.process.length) s.push({ type: 'bprocess' });
+  if (shots.length) s.push({ type: 'bworks' });
+  if (m.includesList.length) s.push({ type: 'includes' });
+  s.push({ type: 'cta' });
+  return s;
+}
+function offerSticker(ctx, text, xRight, y, u, T){
+  ctx.font = `800 ${30*u}px ${FB}`;
+  const t = '🎁 ' + text, w = Math.min(ctx.measureText(t).width + 64*u, 760*u), h = 74*u;
+  ctx.save(); ctx.translate(xRight - w/2, y + h/2); ctx.rotate(-0.06);
+  ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 24*u; ctx.shadowOffsetY = 8*u;
+  rr(ctx, -w/2, -h/2, w, h, h/2); ctx.fillStyle = T.acc; ctx.fill(); ctx.shadowColor = 'transparent';
+  const F = fit(ctx, t, { maxW: w - 50*u, maxH: 40*u, size: 30*u, min: 18*u, weight: 800, family: FB, maxLines: 1 });
+  ctx.font = F.font; ctx.fillStyle = T.accInk; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(F.lines[0], 0, 2*u);
+  ctx.restore(); ctx.textBaseline = 'alphabetic';
+}
+// diapositivas nuevas: devuelve true si dibujó algo
+function drawExtraSlide(ctx, W, H, slide, fmt, m, b, T, o){
+  const { u, P, top, bottom, maxW, A, tt, isVideo } = o;
+  let y = top + 30*u; const avail = H - bottom - y;
+  const t = slide.type;
+  if (t === 'result') {
+    ctx.save(); ctx.font = `700 ${560*u}px Georgia, serif`; ctx.fillStyle = alpha(T.acc, 0.14); ctx.textAlign = 'left'; ctx.fillText('“', P - 30*u, top + 420*u); ctx.restore();
+    anim(ctx, A(0.05), 30*u, () => pill(ctx, 'EL RESULTADO', P, y, u, T, false)); y += 52*u + 80*u;
+    const hasShot = !!slide.shot;
+    const F = fit(ctx, '“' + m.resultText + '”', { maxW, maxH: avail * (hasShot ? 0.3 : 0.5), size: 80*u, min: 40*u, weight: 700, lh: 1.12 });
+    const y1 = y; anim(ctx, A(0.15), 40*u, () => draw(ctx, F, P, y1, T.ink)); y += F.h + 34*u;
+    if (m.resultAuthor) { const y2 = y; anim(ctx, A(0.3), 20*u, () => { const Au = fit(ctx, '— ' + m.resultAuthor, { maxW, maxH: 50*u, size: 38*u, min: 26*u, weight: 600, family: FB, maxLines: 1 }); draw(ctx, Au, P, y2, T.accTxt); }); y += 80*u; }
+    if (hasShot) { const rest = H - bottom - y - 20*u; anim(ctx, A(0.45, 0.8), 120*u, () => drawShot(ctx, slide.shot, P, y + 20*u, maxW, rest, T, u, b, 7)); }
+    return true;
+  }
+  if (t === 'includes') {
+    anim(ctx, A(0.05), 30*u, () => pill(ctx, 'QUÉ INCLUYE', P, y, u, T, false)); y += 52*u + 44*u;
+    const F = fit(ctx, m.brandMode ? 'Todo resuelto, sin vueltas' : 'Listo para usar desde el primer día', { maxW, maxH: avail * 0.24, size: 88*u, min: 48*u, weight: 700, lh: 1.05 });
+    anim(ctx, A(0.15), 40*u, () => draw(ctx, F, P, y, T.ink)); y += F.h + 50*u;
+    m.includesList.forEach((it, i) => {
+      const R = fit(ctx, it, { maxW: maxW - 90*u, maxH: 110*u, size: 42*u, min: 28*u, weight: 600, family: FB, lh: 1.2, maxLines: 2 });
+      const rowH = Math.max(64*u, R.h) + 36*u; if (y + rowH > H - bottom - (m.techList.length ? 70*u : 0)) return;
+      const yy = y; anim(ctx, A(0.3 + i * 0.08), 30*u, () => { checkIcon(ctx, P, yy, 54*u, T); draw(ctx, R, P + 84*u, yy + 4*u, T.ink); });
+      y += rowH;
+    });
+    if (m.techList.length) anim(ctx, A(0.8), 10*u, () => { const Tl = fit(ctx, 'Hecho con ' + m.techList.join(' · '), { maxW, maxH: 44*u, size: 28*u, min: 20*u, weight: 500, family: FB, maxLines: 1 }); draw(ctx, Tl, P, H - bottom - 52*u, T.muted); });
+    return true;
+  }
+  if (t === 'bcover') {
+    if (S.logo) { const d = 210*u; anim(ctx, A(0.05), 30*u, () => { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 40*u; ctx.beginPath(); ctx.arc(P + d/2, y + d/2, d/2, 0, 7); ctx.fillStyle = S.logoBg || '#fff'; ctx.fill(); ctx.restore(); logoCircle(ctx, P, y, d); }); y += d + 50*u; }
+    else { anim(ctx, A(0.05), 30*u, () => pill(ctx, 'HOLA 👋', P, y, u, T, false)); y += 52*u + 50*u; }
+    const F = fit(ctx, m.hook, { maxW, maxH: avail * 0.36, size: 124*u, min: 60*u, weight: 700, lh: 1.02 });
+    const y1 = y; anim(ctx, A(0.15), 50*u, () => draw(ctx, F, P, y1, T.ink)); y += F.h + 30*u;
+    if (m.who) { const Wh = fit(ctx, m.who, { maxW, maxH: 120*u, size: 40*u, min: 28*u, weight: 400, family: FB, lh: 1.3, maxLines: 2 }); const y2 = y; anim(ctx, A(0.3), 30*u, () => draw(ctx, Wh, P, y2, T.muted)); y += Wh.h + 50*u; }
+    // chips de servicios
+    ctx.font = `700 ${36*u}px ${FB}`;
+    let cx = P, cy = y; const ch = 80*u, gap = 16*u;
+    m.services.forEach((sv, i) => {
+      const tw = Math.min(ctx.measureText(sv.title).width + 60*u, maxW);
+      if (cx + tw > W - P) { cx = P; cy += ch + gap; }
+      if (cy + ch > H - bottom - 20*u) return;
+      const x0 = cx, y0 = cy;
+      anim(ctx, A(0.45 + i * 0.08), 25*u, () => { rr(ctx, x0, y0, tw, ch, ch/2); ctx.fillStyle = i === 0 ? T.acc : T.card; ctx.fill(); ctx.font = `700 ${36*u}px ${FB}`; ctx.fillStyle = i === 0 ? T.accInk : T.ink; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText(sv.title, x0 + 30*u, y0 + ch/2 + 2); ctx.textBaseline = 'alphabetic'; });
+      cx += tw + gap;
+    });
+    if (b.offer) anim(ctx, A(0.8), 20*u, () => offerSticker(ctx, b.offer, W - P, top + 10*u, u, T));
+    return true;
+  }
+  if (t === 'bservices') {
+    anim(ctx, A(0.05), 30*u, () => pill(ctx, 'QUÉ HAGO', P, y, u, T, false)); y += 52*u + 44*u;
+    const n = m.services.length, gap = 22*u;
+    const cardH = Math.min(260*u, (H - bottom - y - gap * (n - 1)) / n);
+    m.services.forEach((sv, i) => {
+      const yy = y;
+      anim(ctx, A(0.15 + i * 0.12), 40*u, () => {
+        rr(ctx, P, yy, maxW, cardH, 30*u); ctx.fillStyle = T.card; ctx.fill();
+        const d = 74*u; ctx.beginPath(); ctx.arc(P + 40*u + d/2, yy + 40*u + d/2, d/2, 0, 7); ctx.fillStyle = T.acc; ctx.fill();
+        ctx.font = `800 ${36*u}px ${FB}`; ctx.fillStyle = T.accInk; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(i + 1), P + 40*u + d/2, yy + 40*u + d/2 + 2); ctx.textBaseline = 'alphabetic';
+        const tx = P + 40*u + d + 32*u, tw = maxW - (tx - P) - 36*u;
+        const Ti = fit(ctx, sv.title, { maxW: tw, maxH: 60*u, size: 50*u, min: 30*u, weight: 700, maxLines: 1 });
+        draw(ctx, Ti, tx, yy + 44*u, T.ink);
+        if (sv.desc) { const D = fit(ctx, sv.desc, { maxW: tw, maxH: cardH - 140*u, size: 34*u, min: 24*u, weight: 400, family: FB, lh: 1.3, maxLines: 3 }); draw(ctx, D, tx, yy + 44*u + Ti.h + 12*u, T.muted); }
+      });
+      y += cardH + gap;
+    });
+    return true;
+  }
+  if (t === 'bprocess') {
+    anim(ctx, A(0.05), 30*u, () => pill(ctx, 'CÓMO TRABAJO', P, y, u, T, false)); y += 52*u + 44*u;
+    const F = fit(ctx, m.process.length === 3 ? 'En 3 pasos simples' : 'Así trabajo', { maxW, maxH: 120*u, size: 88*u, min: 50*u, weight: 700, maxLines: 1 });
+    anim(ctx, A(0.12), 40*u, () => draw(ctx, F, P, y, T.ink)); y += F.h + 60*u;
+    const n = m.process.length, stepH = Math.min(300*u, (H - bottom - y) / n), d = 86*u;
+    anim(ctx, A(0.2, 1.2), 0, () => { ctx.strokeStyle = alpha(T.acc, 0.45); ctx.lineWidth = 6*u; ctx.beginPath(); ctx.moveTo(P + d/2, y + d/2); ctx.lineTo(P + d/2, y + stepH * (n - 1) + d/2); ctx.stroke(); });
+    m.process.forEach((st, i) => {
+      const yy = y + i * stepH;
+      anim(ctx, A(0.3 + i * 0.25), 30*u, () => {
+        ctx.beginPath(); ctx.arc(P + d/2, yy + d/2, d/2, 0, 7); ctx.fillStyle = T.acc; ctx.fill();
+        ctx.font = `800 ${40*u}px ${FB}`; ctx.fillStyle = T.accInk; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(i + 1), P + d/2, yy + d/2 + 2); ctx.textBaseline = 'alphabetic';
+        const tx = P + d + 40*u, tw = maxW - d - 40*u;
+        const Ti = fit(ctx, st.title, { maxW: tw, maxH: 64*u, size: 52*u, min: 32*u, weight: 700, maxLines: 1 });
+        draw(ctx, Ti, tx, yy + 8*u, T.ink);
+        if (st.desc) { const D = fit(ctx, st.desc, { maxW: tw, maxH: stepH - Ti.h - 50*u, size: 36*u, min: 24*u, weight: 400, family: FB, lh: 1.3, maxLines: 3 }); draw(ctx, D, tx, yy + 8*u + Ti.h + 12*u, T.muted); }
+      });
+    });
+    return true;
+  }
+  if (t === 'bworks') {
+    anim(ctx, A(0.05), 30*u, () => pill(ctx, 'ALGUNOS TRABAJOS', P, y, u, T, false)); y += 52*u + 44*u;
+    const shots = activeShots().slice(0, 4), n = shots.length;
+    const cols = n === 1 ? 1 : 2, rows = Math.ceil(n / cols), gap = 24*u;
+    const cw = (maxW - gap * (cols - 1)) / cols, chh = (H - bottom - y - 20*u - gap * (rows - 1)) / rows;
+    shots.forEach((sh, i) => {
+      const x0 = P + (i % cols) * (cw + gap), y0 = y + Math.floor(i / cols) * (chh + gap);
+      anim(ctx, A(0.15 + i * 0.12), 60*u, () => { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 40*u; ctx.shadowOffsetY = 14*u; rr(ctx, x0, y0, cw, chh, 26*u); ctx.fillStyle = T.card; ctx.fill(); ctx.restore(); ctx.save(); rr(ctx, x0, y0, cw, chh, 26*u); ctx.clip(); photoFill(ctx, sh.img, x0, y0, cw, chh, isVideo ? 1.02 + Math.min(tt, 3) * 0.02 : 1, 0); ctx.restore(); });
+    });
+    return true;
+  }
+  return false;
+}
+function ctaSlide(ctx, W, H, m, b, T, o){
+  const { u, P, top, bottom, maxW, A } = o;
+  const avail = H - bottom - top;
+  let y = top + avail * 0.05;
+  const F = fit(ctx, m.cta || '¿Hablamos?', { maxW, maxH: avail * 0.28, size: 104*u, min: 54*u, weight: 700, lh: 1.04 });
+  anim(ctx, A(0.05), 50*u, () => draw(ctx, F, P, y, T.ink)); y += F.h + 44*u;
+  const kw = (b.keyword || 'WEB').toUpperCase();
+  const yk = y;
+  anim(ctx, A(0.25), 30*u, () => {
+    rr(ctx, P, yk, maxW, 160*u, 34*u); ctx.fillStyle = T.acc; ctx.fill();
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.font = `700 ${25*u}px ${FB}`; ctx.fillStyle = alpha(T.accInk, 0.75); ctx.fillText('COMENTÁ O MANDAME POR DM', P + 44*u, yk + 50*u);
+    ctx.font = `800 ${70*u}px ${FB}`; ctx.fillStyle = T.accInk; const kws = `“${kw}”`; ctx.fillText(kws, P + 44*u, yk + 128*u);
+    const kwW = ctx.measureText(kws).width;
+    const R = fit(ctx, 'y te paso toda la info', { maxW: maxW - kwW - 120*u, maxH: 50*u, size: 34*u, min: 22*u, weight: 600, family: FB, maxLines: 1 });
+    ctx.font = R.font; ctx.fillStyle = alpha(T.accInk, 0.85); ctx.fillText(R.lines[0], P + 44*u + kwW + 24*u, yk + 122*u);
+  });
+  y += 182*u;
+  if (b.offer) {
+    const yo = y;
+    anim(ctx, A(0.38), 30*u, () => {
+      rr(ctx, P, yo, maxW, 130*u, 28*u); ctx.fillStyle = T.card; ctx.fill();
+      ctx.save(); ctx.strokeStyle = T.acc; ctx.lineWidth = 3*u; ctx.setLineDash([14*u, 10*u]); rr(ctx, P, yo, maxW, 130*u, 28*u); ctx.stroke(); ctx.restore();
+      ctx.font = `700 ${24*u}px ${FB}`; ctx.fillStyle = T.accTxt; ctx.textAlign = 'left'; ctx.fillText('🎁 OFERTA DE LANZAMIENTO', P + 40*u, yo + 46*u);
+      const V = fit(ctx, b.offer, { maxW: maxW - 80*u, maxH: 50*u, size: 42*u, min: 24*u, weight: 800, family: FB, maxLines: 1 }); ctx.font = V.font; ctx.fillStyle = T.ink; ctx.fillText(V.lines[0], P + 40*u, yo + 104*u);
+    });
+    y += 150*u;
+  }
+  const rows = [['WHATSAPP', fmtWa(b.wa)], ['LINK EN LA BIO', b.web]].filter(r => r[1]);
+  rows.forEach((r, i) => {
+    if (y + 110*u > H - bottom - 70*u) return;
+    const yy = y;
+    anim(ctx, A(0.5 + i * 0.1), 30*u, () => {
+      rr(ctx, P, yy, maxW, 110*u, 26*u); ctx.fillStyle = T.card; ctx.fill();
+      ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+      ctx.font = `700 ${24*u}px ${FB}`; ctx.fillStyle = T.muted; ctx.fillText(r[0], P + 40*u, yy + 36*u);
+      const V = fit(ctx, r[1], { maxW: maxW - 80*u, maxH: 50*u, size: 40*u, min: 24*u, weight: 800, family: FB, maxLines: 1 });
+      ctx.font = V.font; ctx.fillStyle = T.ink; ctx.fillText(V.lines[0], P + 40*u, yy + 76*u); ctx.textBaseline = 'alphabetic';
+    });
+    y += 126*u;
+  });
+  anim(ctx, A(0.75), 20*u, () => { const B = fit(ctx, (b.brand || '') + (b.city ? '  ·  ' + b.city : ''), { maxW, maxH: 50*u, size: 30*u, min: 22*u, weight: 600, family: FB, maxLines: 1 }); draw(ctx, B, P, H - bottom - 52*u, T.muted); });
+}
+function captionCloser(b){
+  const kw = (b.keyword || 'WEB').toUpperCase();
+  return `👉 Comentá "${kw}" o escribime al DM y te cuento cómo sería para tu negocio.\n🔗 Link en la bio${b.wa ? `\n📲 WhatsApp: ${fmtWa(b.wa)}` : ''}`;
+}
+function makeBrandCaption(){
+  const m = readBrandModel(), b = readBrand();
+  const out = [`👋 ${m.who || 'Hola!'}`, '', `${m.hook}.`];
+  if (m.services.length) { out.push('', '💼 Qué hago:'); m.services.forEach(s => out.push(`✅ ${s.title}${s.desc ? ' — ' + s.desc : ''}`)); }
+  if (m.process.length) { out.push('', '🧭 Cómo trabajo:'); const nums = ['1️⃣', '2️⃣', '3️⃣', '4️⃣']; m.process.forEach((p, i) => out.push(`${nums[i] || '•'} ${p.title}${p.desc ? ': ' + p.desc : ''}`)); }
+  if (m.includesList.length) { out.push('', '📦 Incluye:'); m.includesList.forEach(x => out.push('• ' + x)); }
+  if (b.offer) out.push('', `🎁 ${b.offer}`);
+  out.push('', m.cta, captionCloser(b));
+  $('#f-caption').value = out.join('\n').trim();
+  const slug = z => (z || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  const tags = ['desarrolloweb', 'paginasweb', 'disenoweb', 'appsparanegocios', 'emprendedores', 'pymes', 'comerciolocal', 'argentina', 'freelancer', slug(b.city), slug(b.brand)];
+  $('#f-hashtags').value = [...new Set(tags)].filter(z => z && z.length > 2).map(z => '#' + z).join(' ');
+}
+
+/* ---- portadas de destacadas ---- */
+function hlIcon(label){
+  const l = label.toLowerCase();
+  if (/trabaj|portfolio|proyect|web/.test(l)) return 'monitor';
+  if (/servic|hago|ofrezco/.test(l)) return 'layers';
+  if (/precio|tarifa|plan|cost|\$/.test(l)) return 'price';
+  if (/opin|reseñ|resen|client|testim/.test(l)) return 'star';
+  if (/contact|escrib|whats|dm|habl/.test(l)) return 'chat';
+  if (/proces|cómo|como|pasos/.test(l)) return 'steps';
+  if (/preg|faq|duda/.test(l)) return 'question';
+  return 'letter';
+}
+function drawIcon(ctx, kind, cx, cy, s, color, label){
+  ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = s * 0.075; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const line = (pts) => { ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(cx + p[0]*s, cy + p[1]*s) : ctx.moveTo(cx + p[0]*s, cy + p[1]*s)); ctx.stroke(); };
+  if (kind === 'monitor') { rr(ctx, cx - 0.5*s, cy - 0.38*s, s, 0.64*s, 0.07*s); ctx.stroke(); line([[0, 0.26], [0, 0.42]]); line([[-0.22, 0.44], [0.22, 0.44]]); line([[-0.3, -0.12], [0.05, -0.12]]); line([[-0.3, 0.04], [0.25, 0.04]]); }
+  else if (kind === 'layers') { line([[0, -0.42], [0.5, -0.17], [0, 0.08], [-0.5, -0.17], [0, -0.42]]); line([[-0.5, 0.05], [0, 0.3], [0.5, 0.05]]); line([[-0.5, 0.25], [0, 0.5], [0.5, 0.25]]); }
+  else if (kind === 'price') { line([[-0.45, -0.05], [0.05, -0.48], [0.48, -0.48], [0.48, -0.05], [-0.02, 0.45], [-0.45, -0.05]]); ctx.beginPath(); ctx.arc(cx + 0.27*s, cy - 0.27*s, 0.07*s, 0, 7); ctx.stroke(); }
+  else if (kind === 'star') { const pts = []; for (let i = 0; i < 10; i++) { const r = i % 2 ? 0.22 : 0.52, a = -Math.PI/2 + i * Math.PI/5; pts.push([Math.cos(a) * r, Math.sin(a) * r + 0.04]); } pts.push(pts[0]); line(pts); }
+  else if (kind === 'chat') { rr(ctx, cx - 0.5*s, cy - 0.4*s, s, 0.66*s, 0.18*s); ctx.stroke(); line([[-0.22, 0.26], [-0.3, 0.48], [0.02, 0.26]]); [-0.22, 0, 0.22].forEach(x => { ctx.beginPath(); ctx.arc(cx + x*s, cy - 0.07*s, 0.055*s, 0, 7); ctx.fill(); }); }
+  else if (kind === 'steps') { [-0.3, 0, 0.3].forEach(yv => { line([[-0.48, yv], [-0.38, yv + 0.09], [-0.22, yv - 0.1]]); line([[-0.06, yv], [0.48, yv]]); }); }
+  else { ctx.font = `800 ${s}px ${FB}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(kind === 'question' ? '?' : (label.trim()[0] || '★').toUpperCase(), cx, cy + 0.05*s); }
+  ctx.restore();
+}
+function drawHighlight(ctx, W, H, label, T, style){
+  const u = W / 1080;
+  let fg;
+  if (style === 'color') { ctx.fillStyle = T.acc; ctx.fillRect(0, 0, W, H); fg = T.accInk;
+    const g = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W * 0.8); g.addColorStop(0, alpha('#ffffff', 0.18)); g.addColorStop(1, alpha('#000000', 0.15)); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
+  else { drawBg(ctx, W, H, T, 0); ctx.beginPath(); ctx.arc(W/2, H/2, 330*u, 0, 7); ctx.fillStyle = T.acc; ctx.fill(); fg = T.accInk; }
+  drawIcon(ctx, hlIcon(label), W/2, H/2, 360*u, fg, label);
+}
+function renderHighlights(){
+  const box = $('#highlights'); if (!box) return;
+  const T = themeColors(), style = $('#hl-style').value;
+  const labels = $('#hl-labels').value.split(',').map(z => z.trim()).filter(Boolean).slice(0, 10);
+  box.innerHTML = '';
+  labels.forEach(lb => {
+    const fr = document.createElement('div'); fr.className = 'frame';
+    const c = document.createElement('canvas'); c.width = 1080; c.height = 1920; c.dataset.hl = lb;
+    drawHighlight(c.getContext('2d'), 1080, 1920, lb, T, style);
+    fr.appendChild(c);
+    const meta = document.createElement('div'); meta.className = 'meta'; meta.innerHTML = `<span>${lb.replace(/</g, '&lt;')}</span>`;
+    const btn = document.createElement('button'); btn.className = 'btn sm'; btn.textContent = '⬇ PNG';
+    btn.onclick = async () => saveFile(`destacada-${lb.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.png`, await canvasBlob(c));
+    meta.appendChild(btn); fr.appendChild(meta); box.appendChild(fr);
+  });
+}
+
 /* ============ render ============ */
 let fontsReady = false;
 async function ensureFonts(){
@@ -1940,7 +2255,7 @@ function renderAll(){
   let slides, drawOne;
   if (isLocalOwn()) { const L = readLocal(); slides = buildLocalSlides(L); drawOne = (ctx, sl, o) => drawLocalSlide(ctx, 1080, 1350, sl, 'carousel', L, b, T, o);
     drawLocalPost($('#cPost').getContext('2d'), 1080, 1080, L, b, T); drawLocalStory($('#cStory').getContext('2d'), 1080, 1920, L, b, T); }
-  else { const m = readModel(); slides = buildSlides(m); drawOne = (ctx, sl, o) => drawSlide(ctx, 1080, 1350, sl, 'carousel', m, b, T, o);
+  else { const m = S.mode === 'brand' ? readBrandModel() : readModel(); slides = buildSlides(m); drawOne = (ctx, sl, o) => drawSlide(ctx, 1080, 1350, sl, 'carousel', m, b, T, o);
     drawPost($('#cPost').getContext('2d'), 1080, 1080, m, b, T); drawStory($('#cStory').getContext('2d'), 1080, 1920, m, b, T); }
   const box = $('#carousel'); box.innerHTML = '';
   slides.forEach((sl, i) => {
@@ -1954,9 +2269,10 @@ function renderAll(){
     btn.onclick = async () => saveFile(`${fileBase()}-carrusel-${String(i+1).padStart(2,'0')}.png`, await canvasBlob(c));
     meta.appendChild(btn); fr.appendChild(meta); box.appendChild(fr);
   });
+  renderHighlights();
   if (!reelPlaying) { const R = reelScenes(); $('#reelLen').textContent = `1080×1920 · ${Math.round(R.total)} s`; drawReelFrame($('#cReel').getContext('2d'), R, 2.2, b, T); }
 }
-function fileBase(){ return ((isLocal() ? $('#l-name').value.trim() : '') || readModel().name || 'proyecto').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase() || 'proyecto'; }
+function fileBase(){ if (S.mode === 'brand') return 'mi-marca'; return ((isLocal() ? $('#l-name').value.trim() : '') || readModel().name || 'proyecto').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase() || 'proyecto'; }
 
 /* ---- vista previa del reel ---- */
 let reelPlaying = false, reelRaf = 0;
@@ -2035,6 +2351,7 @@ async function downloadAll(){
     for (let i = 0; i < cs.length; i++) zip.file(`carrusel/${String(i+1).padStart(2,'0')}.png`, await canvasBlob(cs[i]));
     zip.file('post-1080x1080.png', await canvasBlob($('#cPost')));
     zip.file('historia-1080x1920.png', await canvasBlob($('#cStory')));
+    const hls = $$('#highlights canvas'); for (const c of hls) zip.file(`destacadas/${c.dataset.hl.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/gi,'-').toLowerCase()}.png`, await canvasBlob(c));
     if (!$('#f-caption').value.trim()) makeCaption();
     zip.file('texto-del-posteo.txt', $('#f-caption').value + '\n\n' + $('#f-hashtags').value);
     if (S.lastReel) zip.file(`reel.${S.lastReel.ext}`, S.lastReel.blob);
@@ -2138,12 +2455,17 @@ $$('#themes .chip').forEach(c => c.onclick = () => { setTheme(c.dataset.t); rend
 $('#fontSel').onchange = async () => { store.set('font', $('#fontSel').value); await applyFontChoice(); renderAll(); };
 /* modos */
 function applyMode(){
-  const vis = k => k === 'dev' ? S.mode === 'dev' : k === 'local' ? S.mode === 'local' : k === 'caso' ? (S.mode === 'local' && S.purpose === 'caso') : k === 'lp-local' ? isLocalOwn() : k === 'devlike' ? (S.mode === 'dev' || S.purpose === 'caso') : true;
+  const vis = k => k === 'dev' ? S.mode === 'dev' : k === 'local' ? S.mode === 'local' : k === 'brand' ? S.mode === 'brand' : k === 'logo' ? (S.mode === 'local' || S.mode === 'brand') : k === 'notlocalown' ? !isLocalOwn() : k === 'caso' ? (S.mode === 'local' && S.purpose === 'caso') : k === 'lp-local' ? isLocalOwn() : k === 'devlike' ? (S.mode === 'dev' || (S.mode === 'local' && S.purpose === 'caso')) : true;
   $$('[data-show]').forEach(el => el.classList.toggle('hidden', !vis(el.dataset.show)));
   $$('#modes .mode').forEach(x => x.classList.toggle('on', x.dataset.mode === S.mode));
   $$('#purpose .chip').forEach(x => x.classList.toggle('on', x.dataset.p === S.purpose));
   $('#projTitle').textContent = S.mode === 'local' ? 'La web o app que le hiciste (opcional)' : 'Tu proyecto';
-  $('#imgTitle').textContent = S.mode === 'local' ? 'Logo y fotos' : 'Capturas de pantalla';
+  $('#imgTitle').textContent = S.mode === 'local' ? 'Logo y fotos' : S.mode === 'brand' ? 'Tu logo y tus trabajos' : 'Capturas de pantalla';
+  $('#logoLabel').textContent = S.mode === 'brand' ? 'Tu logo o una foto tuya' : 'Logo del local';
+  $('#photosLabel').textContent = S.mode === 'brand' ? 'Capturas de tus trabajos (hasta 4)' : (S.purpose === 'caso' ? 'Capturas de lo que le hiciste y fotos del local' : 'Fotos (productos, el local, la gente)');
+  const caso = S.mode === 'local' && S.purpose === 'caso';
+  $('#itemsLabel').innerHTML = caso ? 'Qué hace lo que le hiciste <span style="font-weight:400">(uno por línea · <i>Función: detalle</i>)</span>' : 'Productos o servicios <span style="font-weight:400">(uno por línea · <i>Nombre: precio o detalle</i>)</span>';
+  $('#reviewLabel').textContent = caso ? 'Lo que dijo el cliente (opcional · texto — nombre)' : 'Reseña destacada (opcional)';
   if (S.server) { const w = $('#pubWarn'); if (isLocalOwn()) { w.innerHTML = '<b>Ojo:</b> se publica en <b>tu</b> cuenta, no en la del local. Para la cuenta del local, descargá todo y subilo desde su celu.'; w.classList.remove('hidden'); } else w.classList.add('hidden'); }
   $('#brandLabel').textContent = isLocalOwn() ? 'Tu marca (sale como crédito chico: "Diseño: …")' : 'Tu marca';
 }
@@ -2151,7 +2473,10 @@ function setMode(m){
   if (m === S.mode) return;
   S.sets[S.mode] = S.shots; S.rawSets[S.mode] = S.raw;
   S.designSets = S.designSets || {}; S.designSets[S.mode] = { auto: S.auto, orig: S.autoOrig, theme: S.theme, acc: $('#accent').value, info: $('#autoInfo').textContent };
+  S.logoSets = S.logoSets || {}; S.logoSets[S.mode] = { logo: S.logo, bg: S.logoBg };
   S.mode = m; S.shots = S.sets[m] || []; S.raw = S.rawSets[m] || null;
+  { const ls = S.logoSets[m] || {}; S.logo = ls.logo || null; S.logoBg = ls.bg || null; $('#logoSlot').innerHTML = S.logo ? `<img src="${S.logo.url}" alt="">` : 'sin logo'; $('#delLogo').classList.toggle('hidden', !S.logo); }
+  if (m === 'brand' && !MFIELDS.some(k => $('#m-' + k).value.trim())) MFIELDS.forEach(k => $('#m-' + k).value = BRAND_MODEL_DEFAULT[k]);
   const ds = S.designSets[m];
   if (ds) { S.auto = ds.auto; S.autoOrig = ds.orig; $('#accent').value = ds.acc; $('#autoInfo').textContent = ds.info; setTheme(ds.theme); }
   else { S.auto = null; S.autoOrig = null; $('#autoInfo').textContent = ''; if (S.theme === 'auto') setTheme('noche'); }
@@ -2165,6 +2490,9 @@ function setMode(m){
 $$('#modes .mode').forEach(x => x.onclick = () => setMode(x.dataset.mode));
 $$('#purpose .chip').forEach(x => x.onclick = () => { S.purpose = x.dataset.p; applyMode(); if (S.purpose === 'caso') { caseFromLocal(); makeCaption(); } else makeLocalCaption(); renderAll(); });
 LFIELDS.forEach(k => $('#l-' + k).addEventListener('input', () => debounce(renderAll)));
+MFIELDS.forEach(k => $('#m-' + k).addEventListener('input', () => debounce(() => { makeBrandCaption(); renderAll(); })));
+['#hl-labels', '#hl-style'].forEach(id => $(id).addEventListener('input', () => debounce(renderHighlights)));
+['#b-keyword', '#b-offer'].forEach(id => $(id).addEventListener('change', () => { if (isLocalOwn()) makeLocalCaption(); else makeCaption(); }));
 LTF.forEach(k => $('#lf-' + k).addEventListener('input', () => debounce(renderAll)));
 $('#lGenAuto').onclick = buildLocal;
 $('#lLinkGo').onclick = localFromLink;

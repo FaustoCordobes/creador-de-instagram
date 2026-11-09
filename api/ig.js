@@ -8,7 +8,7 @@
 //   check      → estado de un contenedor (IN_PROGRESS, FINISHED, ERROR…)
 //   publish    → publica un contenedor y devuelve el link
 //   cleanup    → borra los archivos temporales subidos a Vercel Blob
-const { cors, authorized, readBody, graph } = require('./_lib');
+const { cors, authorized, readBody, graph, studioPass, passInfo } = require('./_lib');
 
 const TOKEN = () => process.env.IG_PAGE_TOKEN;
 const IGID = () => process.env.IG_USER_ID;
@@ -27,7 +27,8 @@ module.exports = async (req, res) => {
       google: !!process.env.GOOGLE_PLACES_KEY,
       blob: !!(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID),
       blobMode: process.env.BLOB_READ_WRITE_TOKEN ? 'token' : (process.env.BLOB_STORE_ID ? 'presigned' : null),
-      protected: !!process.env.STUDIO_PASSWORD
+      protected: !!studioPass(),
+      pass: passInfo()
     });
   }
   if (!authorized(req)) return res.status(401).json({ error: 'Clave del estudio incorrecta.' });

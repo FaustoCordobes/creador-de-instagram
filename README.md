@@ -13,7 +13,12 @@ y **publicarlo directo en tu cuenta** desde la pestaña 🚀 Subir a IG (o desca
 | Un link de Instagram de un local | Logo, bio, web y últimas fotos *(requiere Meta)*; sin Meta, busca el @ en Google |
 | Un link de TikTok | Nombre y miniatura |
 
-Dos modos: **Mi app o web** (para promocionar tus proyectos) y **Un local** (para un negocio: con destino *Instagram del local* o *mi Instagram* como caso de cliente).
+Tres modos:
+- **Mi app o web**: promocionar tus proyectos.
+- **Un local**: contenido para un negocio, con destino *Instagram del local* o *mi Instagram* (caso de cliente, con diapositiva de resultado/testimonio).
+- **Mi marca**: carrusel de presentación (quién sos, qué hacés, cómo trabajás, qué incluye).
+
+Además: diapositiva **Qué incluye**, **oferta de lanzamiento** opcional, cierre con **palabra clave** ("Comentá WEB o escribime al DM" + link en la bio) y **portadas para historias destacadas**.
 
 ## Estructura
 

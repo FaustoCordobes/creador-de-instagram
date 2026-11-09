@@ -5,13 +5,13 @@
 //   - BLOB_STORE_ID (conexión nueva de Vercel, sin token)
 const { handleUpload, handleUploadPresigned } = require('@vercel/blob/client');
 const { issueSignedToken } = require('@vercel/blob');
-const { cors, readBody } = require('./_lib');
+const { cors, readBody, studioPass } = require('./_lib');
 
 const TYPES = ['image/jpeg', 'video/mp4'];
 const MAX = 200 * 1024 * 1024;
 function checkKey(clientPayload) {
-  const pass = process.env.STUDIO_PASSWORD;
-  if (pass && clientPayload !== pass) throw new Error('Clave del estudio incorrecta.');
+  const pass = studioPass();
+  if (pass && String(clientPayload || '').trim() !== pass) throw new Error('Clave del estudio incorrecta.');
 }
 
 module.exports = async (req, res) => {
