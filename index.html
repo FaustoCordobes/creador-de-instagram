@@ -271,7 +271,7 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
         <input type="url" id="ghUrl" placeholder="github.com/usuario/repo · usuario.github.io/web · mi-web.vercel.app">
         <button class="btn pri" id="ghGo" style="flex:0 0 auto">Traer</button>
       </div>
-      <p class="hint" id="ghHint">Sirve un repo de GitHub, una página de GitHub Pages, una web en Vercel o cualquier dominio. De una web saca los textos, los colores y capturas de compu y de celu.</p>
+      <p class="hint" id="ghHint">Sirve un repo de GitHub, una página de GitHub Pages, una web en Vercel o cualquier dominio. Entra a la app, toca sus secciones y saca capturas de compu y de celu, como si la estuviera usando un cliente.</p>
       <div class="status show hidden" id="offlineHelp" style="line-height:1.55"></div>
     </div>
     <div data-srcpane="text" class="hidden">
@@ -285,7 +285,7 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
     <textarea id="ctx" placeholder="Ej: lo hice para un taller mecánico de Junín; los clientes reciben aviso por WhatsApp cuando el auto está listo."></textarea>
     <div class="row">
       <div><label class="f">Tono</label>
-        <select id="tone"><option>Cercano</option><option>Profesional</option><option>Vendedor y directo</option><option>Técnico (para devs)</option></select></div>
+        <select id="tone"><option>Cercano</option><option>Profesional</option><option>Vendedor y directo</option></select></div>
       <div><label class="f">Objetivo</label>
         <select id="goal"><option>Conseguir clientes (negocios)</option><option>Mostrar portfolio</option><option>Lanzar una app</option></select></div>
     </div>
@@ -325,11 +325,12 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
     <label class="f">Para quién es</label><input type="text" id="f-audience">
     <label class="f">Funciones (una por línea · <i>Título: descripción</i>)</label><textarea id="f-features" rows="5"></textarea>
     <label class="f">Llamado a la acción</label><input type="text" id="f-cta">
-    <details class="more"><summary>Más textos (opcional): etiqueta, resultado, qué incluye y tecnologías</summary>
+    <details class="more"><summary>Más textos (opcional): etiqueta, resultado, qué incluye y lo que gana el negocio</summary>
     <label class="f">Etiqueta chica (arriba)</label><input type="text" id="f-kicker">
     <label class="f">Resultado o lo que dijo el cliente <span style="font-weight:400">(<i>texto — nombre</i>)</span></label><textarea id="f-result" rows="2" placeholder="Ahora sé qué se le hizo a cada auto y le aviso al cliente en un minuto — Dueño de CKP"></textarea>
-    <label class="f">Qué incluye <span style="font-weight:400">(uno por línea · reemplaza la diapositiva de tecnología)</span></label><textarea id="f-includes" rows="4"></textarea>
-    <label class="f">Tecnologías (separadas por coma)</label><input type="text" id="f-tech">
+    <label class="f">Qué incluye <span style="font-weight:400">(uno por línea)</span></label><textarea id="f-includes" rows="4"></textarea>
+    <label class="f">Lo que gana el negocio <span style="font-weight:400">(uno por línea · <i>antes → ahora</i>)</span></label><textarea id="f-gains" rows="3" placeholder="Anotar turnos en un cuaderno → Los clientes reservan solos, a cualquier hora"></textarea>
+    <p class="hint" style="margin-top:4px">Nada técnico: lenguajes, Supabase o Vercel no le dicen nada a un dueño de local. Si aparecen, el estudio los saca solo.</p>
     </details>
   </div>
 
@@ -668,12 +669,12 @@ const DEMO = {
   tagline:'Sistema de turnos web para negocios y profesionales', problem:'¿Seguís anotando turnos en un cuaderno y contestando WhatsApp todo el día?',
   audience:'Peluquerías, consultorios, talleres y estéticas',
   features:'Turnos online: el cliente elige día y horario desde el celular\nRecordatorios: aviso automático por WhatsApp antes del turno\nPanel del negocio: agenda del día, clientes e historial\nSe instala como app: funciona en celu y compu, sin descargar nada',
-  tech:'HTML, CSS, JavaScript, Supabase, PWA', cta:'¿Querés una app así para tu negocio?',
+  gains:'Anotar turnos en un cuaderno → Los clientes reservan solos, a cualquier hora\nContestar WhatsApp todo el día → Recordatorios automáticos antes de cada turno\nNo saber quién viene mañana → La agenda del día en el celular', cta:'¿Querés una app así para tu negocio?',
   result:'', includes:'Diseño a medida con tu logo y colores\nDominio propio y hosting\nFunciona en celular y compu\nCapacitación para usarla\nMantenimiento y cambios mensuales'
 };
 
 /* ============ formulario <-> modelo ============ */
-const FIELDS = ['name','kicker','hook','tagline','problem','audience','features','tech','cta','result','includes'];
+const FIELDS = ['name','kicker','hook','tagline','problem','audience','features','gains','cta','result','includes'];
 const BFIELDS = ['brand','wa','ig','web','city','keyword','offer'];
 function readModel(){
   const m = {}; FIELDS.forEach(k => m[k] = $('#f-'+k).value.trim());
@@ -682,14 +683,15 @@ function readModel(){
     if (i > 0 && i < 48) return { title: line.slice(0,i).trim(), desc: line.slice(i+1).trim() };
     return { title: line, desc: '' };
   }).slice(0,6);
-  m.techList = m.tech.split(',').map(s=>s.trim()).filter(Boolean).slice(0,8);
+  m.techList = []; // lo técnico no se muestra: el público son dueños de locales
+  m.gainsList = parseGains(m.gains);
   { const q = splitQuote(m.result); m.resultText = q.text; m.resultAuthor = q.author; }
   m.includesList = m.includes.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,7);
   return m;
 }
 function readBrand(){ const b={}; BFIELDS.forEach(k=>b[k]=$('#b-'+k).value.trim()); return b; }
 function writeModel(m){
-  FIELDS.forEach(k => { let v = m[k]; if (k==='features' && Array.isArray(v)) v = v.map(f=> typeof f==='string'?f:(f.desc?`${f.title}: ${f.desc}`:f.title)).join('\n'); if ((k==='tech') && Array.isArray(v)) v=v.join(', '); if (k==='includes' && Array.isArray(v)) v=v.join('\n'); $('#f-'+k).value = v || ''; });
+  FIELDS.forEach(k => { let v = m[k]; if (k==='features' && Array.isArray(v)) v = v.map(f=> typeof f==='string'?f:(f.desc?`${f.title}: ${f.desc}`:f.title)).join('\n'); if (k==='gains' && Array.isArray(v)) v = v.map(g => typeof g === 'string' ? g : (g.before ? `${g.before} → ${g.after}` : g.after)).join('\n'); if (k==='includes' && Array.isArray(v)) v=v.join('\n'); $('#f-'+k).value = v || ''; });
 }
 function fmtWa(w){ const d=(w||'').replace(/\D/g,''); if(d.length===10) return d.slice(0,4)+' '+d.slice(4,7)+'-'+d.slice(7); return w; }
 
@@ -729,6 +731,7 @@ function normUrl(u){ u = u.trim(); if (!/^https?:\/\//i.test(u)) u = 'https://' 
 const shotUrl = (url, mobile) => 'https://api.microlink.io/?url=' + encodeURIComponent(url) + '&screenshot=true&meta=false&embed=screenshot.url&waitForTimeout=1500' +
   (mobile ? '&viewport.width=390&viewport.height=844&viewport.deviceScaleFactor=2&viewport.isMobile=true' : '&viewport.width=1366&viewport.height=860');
 function liveShotEntries(url){
+  if (S.server) return []; // en Vercel: recorrido real de la app (api/recorrido)
   return [
     { path: 'screenshot-desktop.png', size: 0, text: async () => '', blob: () => netFetch(shotUrl(url, false)) },
     { path: 'screenshot-movil.png', size: 0, text: async () => '', blob: () => netFetch(shotUrl(url, true)) }
@@ -839,6 +842,43 @@ function dataUrlBlob(d){
   const bin = atob(b64); const arr = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
   return new Blob([arr], { type: mime });
 }
+/* ============ recorrido de la app (entra, toca secciones y captura) ============ */
+const isMenuLabel = l => !l || /^(men[uú]|☰|≡|abrir men[uú]|navegaci[oó]n)$/i.test(l.trim());
+function siteFromText(t){ const m = String(t || '').match(/https?:\/\/[^\s)<>"']+\.(?:vercel\.app|netlify\.app|github\.io|pages\.dev|web\.app|onrender\.com)[^\s)<>"']*/i); return m ? m[0].replace(/[.,]$/, '') : ''; }
+async function tourShots(url){
+  const one = async device => {
+    try {
+      const j = await withTimeout(api('api/recorrido', { url, device, max: 6 }), 75000);
+      const out = [];
+      for (const [i, f] of (j.frames || []).entries()) {
+        const sh = await makeShot(dataUrlBlob(f.img), `recorrido-${device === 'movil' ? 'celu' : 'compu'}-${i + 1}${f.label && !isMenuLabel(f.label) ? '-' + slugT(f.label).slice(0, 18) : ''}.jpg`);
+        if (sh) { sh.tour = { device, i, kind: f.kind, tap: f.tap, label: f.label || '' }; out.push(sh); }
+      }
+      return out;
+    } catch (e) { S.tourErr = e.message; return []; }
+  };
+  const [mo, co] = await Promise.all([one('movil'), one('compu')]);
+  // portada: la compu entera; después las pantallas a las que se llegó tocando
+  const good = sh => sh.tour.kind === 'tap' && !isMenuLabel(sh.tour.label);
+  const first = co[0] || mo[0], mid = [], rest = [];
+  const a = mo.filter(good), c = co.filter(good);
+  for (let i = 0; i < Math.max(a.length, c.length); i++) { if (a[i]) mid.push(a[i]); if (c[i]) mid.push(c[i]); }
+  [...mo, ...co].forEach(sh => { if (sh !== first && !mid.includes(sh)) rest.push(sh); });
+  return [first, ...mid, ...rest].filter(Boolean);
+}
+async function microShots(url){
+  const out = [];
+  for (const [mobile, nm] of [[false, 'screenshot-desktop.png'], [true, 'screenshot-movil.png']]) { try { const bl = await netFetch(shotUrl(url, mobile)); const sh = bl && await makeShot(bl, nm); if (sh) out.push(sh); } catch {} }
+  return out;
+}
+// la secuencia que se anima en el reel: la del celu si hay, si no la de la compu
+function tourFrames(){
+  const all = activeShots().filter(z => z.tour);
+  const by = d => all.filter(z => z.tour.device === d).sort((x, y) => x.tour.i - y.tour.i);
+  const mo = by('movil'), co = by('compu');
+  return mo.length >= 2 ? mo : co.length >= 2 ? co : [];
+}
+
 /* ============ capturas ============ */
 async function makeShot(blob, name){
   const url = URL.createObjectURL(blob);
@@ -868,25 +908,71 @@ function stripMd(s){
   return s.replace(/<[^>]+>/g,' ').replace(/!\[[^\]]*\]\([^)]*\)/g,'').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1')
     .replace(/[`*_~>]/g,'').replace(/^#+\s*/,'').replace(/\s+/g,' ').trim();
 }
-const TECH = { 'react':'React','next':'Next.js','vue':'Vue','nuxt':'Nuxt','svelte':'Svelte','@angular/core':'Angular','@supabase/supabase-js':'Supabase','firebase':'Firebase','tailwindcss':'Tailwind','vite':'Vite','typescript':'TypeScript','express':'Node.js','fastify':'Node.js','chart.js':'Gráficos','recharts':'Gráficos','leaflet':'Mapas','react-native':'React Native','expo':'Expo','electron':'App de escritorio','prisma':'Prisma','mongoose':'MongoDB','mongodb':'MongoDB','pg':'PostgreSQL','mysql2':'MySQL','sqlite3':'SQLite','better-sqlite3':'SQLite','socket.io':'Tiempo real','stripe':'Pagos online','mercadopago':'Mercado Pago','three':'3D (Three.js)','framer-motion':'Animaciones','jspdf':'PDF','xlsx':'Excel','dexie':'Funciona offline','workbox-window':'PWA','vite-plugin-pwa':'PWA','next-pwa':'PWA' };
-const EXT = { html:'HTML', css:'CSS', js:'JavaScript', ts:'TypeScript', tsx:'TypeScript', py:'Python', php:'PHP', sql:'SQL', java:'Java', cs:'C#', go:'Go', dart:'Flutter', kt:'Kotlin', swift:'Swift' };
-function detectTech(raw){
-  const out = [];
-  const add = t => { if (t && !out.includes(t)) out.push(t); };
-  const deps = raw.pkg ? Object.keys({ ...(raw.pkg.dependencies||{}), ...(raw.pkg.devDependencies||{}) }) : [];
-  deps.forEach(d => add(TECH[d]));
-  if (raw.manifest || raw.tree.some(p => /(^|\/)(sw|service-worker)\.js$/i.test(p))) add('PWA');
-  if (raw.tree.some(p => /vercel\.json$/.test(p))) add('Vercel');
-  const cnt = {}; raw.tree.forEach(p => { const x = (p.split('.').pop()||'').toLowerCase(); if (EXT[x]) cnt[EXT[x]] = (cnt[EXT[x]]||0)+1; });
-  Object.entries(cnt).sort((a,b)=>b[1]-a[1]).forEach(([t]) => add(t));
-  if (raw.gh && raw.gh.language) add(raw.gh.language);
-  const h = raw.html || '';
-  [[/__NEXT_DATA__|\/_next\//, 'Next.js'], [/data-reactroot|react-dom/, 'React'], [/wp-content|wordpress/i, 'WordPress'], [/cdn\.shopify|Shopify\./, 'Shopify'], [/tailwind/i, 'Tailwind'], [/bootstrap(\.min)?\.(css|js)/i, 'Bootstrap'],
-   [/supabase/i, 'Supabase'], [/firebase/i, 'Firebase'], [/leaflet/i, 'Mapas'], [/wa\.me\/|api\.whatsapp\.com/i, 'Botón de WhatsApp'], [/serviceWorker\.register/, 'PWA'], [/<meta[^>]+viewport/i, 'Adaptada a celular']].forEach(([re, t]) => { if (re.test(h)) add(t); });
-  if (raw.site && /vercel\.app$/.test(raw.site.host)) add('Vercel');
-  if (raw.site && /github\.io$/.test(raw.site.host)) add('GitHub Pages');
-  if (h && !out.length) ['HTML', 'CSS', 'JavaScript'].forEach(add);
-  return out.slice(0, 6);
+/* ---- nada técnico: el público son dueños de locales ---- */
+const STACK_SRC = 'react(?: native)?|next\\.?js|vue(?:\\.?js)?|nuxt|svelte|angular(?:js)|node(?:\\.?js)?|express\\.?js|typescript|javascript|js|html5?|css3?|tailwind(?:css)?|bootstrap|vite|webpack|python|php|laravel|django|flask|kotlin|flutter|supabase|firebase|postgre(?:sql|s)|mysql|sqlite|mongo(?:db)?|prisma|sql|vercel|netlify|github(?: pages)?|gitlab|git|npm|api(?: rest)?|json|framework|front-?end|back-?end|full-?stack|crud|deploy(?:ar|ad[oa]s?)?|repositorio|código abierto|open source|serverless|hosting en la nube|pwa';
+const STACK = new RegExp('(?<![\\p{L}\\d.])(?:' + STACK_SRC + ')(?![\\p{L}\\d])', 'giu');
+const WITH_STACK = new RegExp('(?:(?<![\\p{L}])(?:hech|armad|desarrollad|construid|programad|cread|hospedad|alojad|publicad|desplegad|subid)[oa]s?\\s+)?(?<![\\p{L}])(?:con|en|usando|sobre|mediante|desde)\\s+(?:(?:' + STACK_SRC + ')(?![\\p{L}\\d])(?:\\s*(?:,|\\+|/|\\by\\b|\\be\\b)\\s*)?)+', 'giu');
+const PLAIN = [[/(?<![\p{L}])(?:una |la )?PWA(?![\p{L}])/giu, 'una app que se instala en el celular'], [/(?<![\p{L}])(?:diseño )?responsiv[eoa](?![\p{L}])/giu, 'adaptado al celular'],
+  [/(?<![\p{L}])offline(?![\p{L}])/giu, 'sin internet'], [/(?<![\p{L}])dashboard(?![\p{L}])/giu, 'panel'], [/(?<![\p{L}])login(?![\p{L}])/giu, 'ingreso con usuario'],
+  [/(?<![\p{L}])bases? de datos(?![\p{L}])/giu, 'registro'], [/(?<![\p{L}])(?:la )?nube(?![\p{L}])/giu, 'internet'], [/(?<![\p{L}])backups?(?![\p{L}])/giu, 'copias de seguridad']];
+const TECH_TAG = /^(react\w*|next\w*|javascript|js|html\d?|css\d?|typescript|supabase|vercel|github|webdev\w*|frontend|backend|fullstack|programaci[oó]n|programador\w*|programmer|coding|code|developer\w*|desarrollador\w*|devs?|tailwind\w*|node\w*|python|php|firebase|sql|pwa|software(?:developer|engineer)?|codigo)$/i;
+function hasTech(x){ STACK.lastIndex = 0; return STACK.test(String(x || '')); }
+// saca menciones técnicas sin romper el texto
+function plainTech(x){
+  let t = String(x || '');
+  if (!t) return t;
+  PLAIN.forEach(([re, rep]) => { t = t.replace(re, m => keepCase(m, rep)); });
+  const words = z => (z.match(/\p{L}{2,}/gu) || []).length;
+  t = t.split('\n').map(line => {
+    if (!hasTech(line)) return line;
+    const parts = line.split(/(?<=[.!?;])\s+/).map(z => {
+      if (!hasTech(z)) return z;
+      WITH_STACK.lastIndex = 0; const c = z.replace(WITH_STACK, ' ').replace(/\s*(?:,\s*)?\by\s*([.!?]?)$/, '$1');
+      return hasTech(c) || words(c) < Math.max(3, words(z) * 0.5) ? null : c;
+    }).filter(Boolean);
+    if (parts.length) return parts.join(' ');
+    WITH_STACK.lastIndex = 0; const c = line.replace(WITH_STACK, ' ').replace(STACK, '');
+    return words(c) && t.indexOf('\n') < 0 ? c : null; // texto de una línea (ej. el subtítulo): mejor algo corto que nada
+  }).filter(l => l !== null && !/^\s*(?:[•\-–→*]|\d+[.)])\s*$/.test(l)).join('\n');
+  return t.replace(/(celular)\s+adaptad[oa] al celular/gi, '$1').replace(/ {2,}/g, ' ').replace(/ +([,.;:!?])/g, '$1').replace(/[,;:]+\s*([.!?])/g, '$1').replace(/([.!?])\s*[,;:]+/g, '$1').replace(/(^|\n)\s*,\s*/g, '$1').replace(/\n{3,}/g, '\n\n').trim();
+}
+// limpia un modelo (de la IA o del formulario) de menciones técnicas
+function cleanTechModel(v, asText){
+  ['hook', 'tagline', 'problem', 'audience', 'cta', 'kicker'].forEach(k => { if (typeof v[k] === 'string') v[k] = plainTech(v[k]); });
+  if (Array.isArray(v.features)) v.features = v.features.filter(f => !hasTech(typeof f === 'string' ? f.split(':')[0] : f.title)).map(f => typeof f === 'string' ? plainTech(f) : { title: f.title, desc: plainTech(f.desc || '') });
+  else if (typeof v.features === 'string') v.features = v.features.split('\n').filter(l => !hasTech(l.split(':')[0])).map(plainTech).filter(Boolean).join('\n');
+  if (Array.isArray(v.includes)) v.includes = v.includes.filter(x => !hasTech(x));
+  else if (typeof v.includes === 'string') v.includes = v.includes.split('\n').filter(x => !hasTech(x)).join('\n');
+  if (Array.isArray(v.gains)) v.gains = v.gains.map(String).filter(x => !hasTech(x));
+  else if (typeof v.gains === 'string') v.gains = v.gains.split('\n').filter(x => !hasTech(x)).join('\n');
+  delete v.tech;
+  return v;
+}
+// "antes → ahora": una línea por cambio
+function parseGains(txt){
+  return String(txt || '').split('\n').map(z => z.trim()).filter(Boolean).map(line => {
+    const p = line.split(/\s*(?:→|->|=>|\|)\s*/);
+    return p.length > 1 ? { before: p[0].replace(/^antes:?\s*/i, ''), after: p.slice(1).join(' ').replace(/^ahora:?\s*/i, '') } : { before: '', after: line };
+  }).filter(g => g.after && !hasTech(g.after + ' ' + g.before)).slice(0, 3);
+}
+const GAINS_LIB = [
+  [/turno|reserva|agenda|cita/i, 'Anotar turnos en un cuaderno', 'Los clientes reservan solos, a cualquier hora'],
+  [/recordatorio|aviso|whats ?app|notific/i, 'Mandar mensajes uno por uno', 'Avisos automáticos por WhatsApp'],
+  [/stock|inventario|mercader/i, 'Contar la mercadería a ojo', 'El stock al día en el celular'],
+  [/factur|cobr|caja|venta|pago|precio/i, 'Sacar cuentas en papel', 'Ventas y caja en una sola pantalla'],
+  [/orden(es)? de trabajo|taller|reparaci|servicio t[eé]cnico/i, 'Órdenes en papel que se pierden', 'Cada trabajo con su estado y su fecha'],
+  [/historial|ficha|paciente|cliente/i, 'Datos de clientes desparramados', 'El historial de cada cliente a un toque'],
+  [/cat[aá]logo|carta|men[uú]|producto|tienda|pedido/i, 'Mandar fotos de productos por chat', 'Un catálogo online siempre actualizado'],
+  [/reporte|estad[ií]stic|gr[aá]fico|m[eé]trica/i, 'No saber cuánto vendiste en el mes', 'Los números del mes de un vistazo'],
+  [/empleado|fichaje|asistencia|personal/i, 'Controlar horarios en una planilla', 'Cada empleado ficha desde el celular'],
+  [/celular|m[oó]vil|instala|app/i, 'Depender de la compu del local', 'Todo desde el celular, estés donde estés'] ];
+function gainsFor(text, isWeb){
+  const t = String(text || ''), out = [];
+  if (isWeb) out.push(['Que no te encuentren en Google', 'Una web que muestra tu negocio y recibe consultas']);
+  GAINS_LIB.forEach(([re, b, a]) => { if (out.length < 3 && re.test(t)) out.push([b, a]); });
+  [['Responder lo mismo todo el día', 'La info clave siempre a mano para tus clientes'], ['Hacer todo a mano', 'Tareas que se resuelven solas'], ['Perder clientes por no contestar a tiempo', 'Consultas que llegan directo a tu WhatsApp']]
+    .forEach(z => { if (out.length < 3 && !out.some(o => o[1] === z[1])) out.push(z); });
+  return out.slice(0, 3).map(([b, a]) => `${b} → ${a}`).join('\n');
 }
 function detectColor(raw){
   const counts = {};
@@ -956,9 +1042,10 @@ function heuristic(raw){
   let tagline = (raw.gh && raw.gh.description) || (raw.pkg && raw.pkg.description) || metaDesc || (raw.manifest && raw.manifest.description) || para || heroP || (htmlH1.length >= 40 ? htmlH1 : '') || '';
   tagline = tagline.split(/(?<=[.!?])\s/)[0].replace(/\.$/,'');
   if (tagline.length > 110) tagline = tagline.slice(0, 107).replace(/\s\S*$/,'') + '…';
-  const feats = featuresFrom(raw);
-  const tech = detectTech(raw);
+  const feats = featuresFrom(raw).filter(f => !hasTech(f.title)).map(f => ({ title: f.title, desc: hasTech(f.desc) ? '' : f.desc }));
+  tagline = plainTech(tagline);
   const words = tagline.split(' ').length;
+  const appish = /turno|agenda|stock|caja|panel|sistema|gesti|inventario|orden|factur|fichaje|pedidos|app/i.test([tagline, htmlTitle, htmlH1, feats.map(f => f.title).join(' ')].join(' '));
   const goal = $('#goal').value;
   return {
     name, kicker: goal.startsWith('Lanzar') ? 'YA DISPONIBLE' : (goal.startsWith('Mostrar') ? 'PROYECTO' : (fromSite ? 'NUEVA WEB' : 'NUEVO PROYECTO')),
@@ -967,7 +1054,7 @@ function heuristic(raw){
     problem: '¿Seguís haciendo todo a mano, con papel y planillas?',
     audience: 'Negocios y emprendimientos que quieren ordenarse',
     features: feats.length ? feats : [{title:'Hecho a medida', desc:'Se adapta a cómo trabaja tu negocio'},{title:'Desde el celular', desc:'Funciona en cualquier dispositivo'},{title:'Fácil de usar', desc:'Sin capacitaciones largas'}],
-    tech, cta: goal.startsWith('Mostrar') ? '¿Tenés un proyecto en mente? Hablemos' : (fromSite ? '¿Querés una web así para tu negocio?' : '¿Querés una app así para tu negocio?')
+    gains: gainsFor([tagline, metaDesc, htmlH1, raw.readme.slice(0, 3000), feats.map(f => f.title + ' ' + f.desc).join(' ')].join(' '), fromSite && !appish), cta: goal.startsWith('Mostrar') ? '¿Tenés un proyecto en mente? Hablemos' : (fromSite && !appish ? '¿Querés una web así para tu negocio?' : '¿Querés una app así para tu negocio?')
   };
 }
 
@@ -979,7 +1066,7 @@ async function generateAI(){
   if (raw.html) { try { const d = new DOMParser().parseFromString(raw.html,'text/html'); d.querySelectorAll('script,style,svg').forEach(n=>n.remove()); htmlText = (d.title + '\n' + d.body.innerText).replace(/\n\s*\n/g,'\n').slice(0, 3500); } catch {} }
   const brand = readBrand();
   const prompt = `Sos redactor de marketing para Instagram de un desarrollador freelance argentino (${brand.brand || 'freelancer'}, ${brand.city || 'Argentina'}) que hace apps y webs para negocios.
-Escribí en español rioplatense (voseo), claro, sin tecnicismos salvo que el tono sea técnico. Nada inventado: basate en lo que muestra el proyecto. No uses emojis en los campos cortos.
+Escribí en español rioplatense (voseo), claro y sin tecnicismos. El público son dueños de locales y comercios, no programadores: PROHIBIDO nombrar lenguajes, frameworks, bases de datos, servicios o herramientas (HTML, JavaScript, React, Supabase, Vercel, GitHub, PWA, API, etc.). Hablá de lo que gana el negocio: tiempo, clientes, orden, ventas. Nada inventado: basate en lo que muestra el proyecto. No uses emojis en los campos cortos.
 Que NO parezca escrito por una IA: frases cortas y concretas, como las diría el desarrollador en persona; detalles reales del proyecto (rubro, ciudad, qué resuelve); nada de "llevá tu negocio al siguiente nivel", "potenciá", "descubrí", "solución integral", "innovador", "en la era digital", "experiencia única"; sin rayas largas (—); sin signos de exclamación de más.
 Redacción web: lo más importante primero (pirámide invertida), voz activa, oraciones cortas (máximo 20 palabras), párrafos de hasta 3 oraciones, nada de lenguaje promocional (increíble, el mejor, imperdible: mejor un dato concreto), palabras simples y cercanas (usar, esperar, enseguida), sin renglones en mayúsculas.
 Tono: ${$('#tone').value}. Objetivo: ${$('#goal').value}.
@@ -1010,7 +1097,7 @@ Respondé SOLO con un objeto JSON con estas claves:
  "problem": "pregunta sobre el dolor del cliente, máximo 16 palabras",
  "audience": "para quién es, máximo 10 palabras",
  "features": [{"title":"máx 4 palabras","desc":"máx 14 palabras"}],  (3 a 5 items)
- "tech": ["máximo 6 tecnologías o cualidades técnicas en palabras simples"],
+ "gains": ["3 cambios concretos en el día a día del dueño del negocio, formato 'antes → ahora', máximo 8 palabras de cada lado, sin nada técnico"],
  "cta": "llamado a la acción, máximo 9 palabras",
  "includes": ["4 a 6 cosas que incluye el servicio, en palabras de un comerciante (ej: dominio y hosting, capacitación, mantenimiento mensual); nada técnico"],
  "result": "solo si el contexto trae una frase o resultado real del cliente, en formato 'texto — nombre'; si no, cadena vacía. NO inventes testimonios",
@@ -1023,11 +1110,12 @@ Respondé SOLO con un objeto JSON con estas claves:
     if (typeof AI.json === 'function') { try { val = await AI.json(prompt, { modelTier: 'default' }); } catch (e) { if (e && (e.code === 'not_granted' || e.code === 'rate_limited')) throw e; } }
     if (!val) { const r = await AI(prompt, { modelTier: 'default' }); const m = (r.text || '').match(/\{[\s\S]*\}/); val = m ? JSON.parse(m[0]) : null; }
     if (!val || !val.name) throw new Error('Respuesta vacía');
+    cleanTechModel(val);
     writeModel(val);
-    S.hookPool = Array.isArray(val.hooks) ? val.hooks.filter(h => typeof h === 'string' && h.trim()).map(h => ({ h: noDash(h.trim()) })) : [];
+    S.hookPool = Array.isArray(val.hooks) ? val.hooks.filter(h => typeof h === 'string' && h.trim() && !hasTech(h)).map(h => ({ h: noDash(h.trim()) })) : [];
     S.hookI = 0;
-    if (val.caption) { $('#f-caption').value = noDash(val.caption); S.capAI = true; }
-    if (Array.isArray(val.hashtags)) $('#f-hashtags').value = val.hashtags.slice(0, 5).map(h => '#' + String(h).replace(/^#/,'').replace(/\s+/g,'')).join(' ');
+    if (val.caption) { $('#f-caption').value = S.mode === 'local' && S.purpose !== 'caso' ? noDash(val.caption) : plainTech(noDash(val.caption)); S.capAI = true; }
+    if (Array.isArray(val.hashtags)) $('#f-hashtags').value = val.hashtags.map(h => String(h).replace(/^#/,'').replace(/\s+/g,'')).filter(h => !TECH_TAG.test(h)).slice(0, 5).map(h => '#' + h).join(' ');
     else makeCaption();
     S.isDemo = false; $('#demoBadge').classList.add('hidden');
     status('Listo. Revisá los textos del paso 2 y elegí qué descargar.');
@@ -1230,7 +1318,8 @@ function buildSlides(m){
   if (m.problem) s.push({ type:'problem' });
   m.featureList.forEach((f, i) => s.push({ type:'feature', f, n: i+1, shot: shots.length > 1 ? pickShot(i+1) : null }));
   if (m.resultText) s.push({ type:'result', shot: shots.length > 2 ? pickShot(m.featureList.length + 1) : null });
-  if (m.includesList.length) s.push({ type:'includes' }); else if (m.techList.length) s.push({ type:'tech' });
+  if (m.gainsList.length) s.push({ type:'gains' });
+  if (m.includesList.length) s.push({ type:'includes' });
   s.push({ type:'cta' });
   return s;
 }
@@ -1250,6 +1339,7 @@ function drawSlide(ctx, W, H, slide, fmt, m, b, T, opts){
 
   if (drawExtraSlide(ctx, W, H, slide, fmt, m, b, T, ox)) {}
   else if (slide.type === 'cta') ctaSlide(ctx, W, H, m, b, T, ox);
+  else if (slide.type === 'tour') drawTour(ctx, W, H, slide, fmt, m, b, T, ox);
   else if (slide.type === 'cover') {
     anim(ctx, A(0.05), 30*u, () => pill(ctx, m.kicker || 'NUEVO PROYECTO', P, y, u, T, false));
     y += 52*u + 34*u;
@@ -1305,23 +1395,32 @@ function drawSlide(ctx, W, H, slide, fmt, m, b, T, opts){
       others.forEach(o => { if (yy + 70*u > y + bh) return; checkIcon(ctx, P + 36*u, yy, 44*u, T); const O = fit(ctx, o.title, { maxW: maxW - 140*u, maxH: 60*u, size: 36*u, min: 26*u, weight: 600, family: FB, maxLines: 1 }); draw(ctx, O, P + 100*u, yy + 2*u, T.ink); yy += 100*u; });
     });
   }
-  else if (slide.type === 'tech') {
-    anim(ctx, A(0.05), 30*u, () => pill(ctx, 'CÓMO ESTÁ HECHO', P, y, u, T, false));
-    y += 52*u + 44*u;
-    const F = fit(ctx, 'Tecnología actual, rápida y segura', { maxW, maxH: avail*0.3, size: 92*u, min: 50*u, weight: 700, lh: 1.05 });
-    anim(ctx, A(0.15), 40*u, () => draw(ctx, F, P, y, T.ink)); y += F.h + 60*u;
-    ctx.font = `700 ${42*u}px ${FB}`;
-    let cx = P, cy = y; const ch = 92*u, gap = 20*u;
-    m.techList.forEach((t, i) => {
-      const tw = ctx.measureText(t).width + 70*u;
-      if (cx + tw > W - P) { cx = P; cy += ch + gap; }
-      const x0 = cx, y0 = cy;
-      anim(ctx, A(0.3 + i*0.08), 30*u, () => { rr(ctx, x0, y0, tw, ch, ch/2); ctx.fillStyle = i === 0 ? T.acc : T.card; ctx.fill(); if (i) { ctx.strokeStyle = T.line; ctx.lineWidth = 2*u; ctx.stroke(); } ctx.font = `700 ${42*u}px ${FB}`; ctx.fillStyle = i === 0 ? T.accInk : T.ink; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText(t, x0 + 35*u, y0 + ch/2 + 2); ctx.textBaseline = 'alphabetic'; });
-      cx += tw + gap;
+  else if (slide.type === 'gains') {
+    anim(ctx, A(0.05), 30*u, () => pill(ctx, 'LO QUE CAMBIA', P, y, u, T, false));
+    y += 52*u + 40*u;
+    const F = fit(ctx, m.gainsTitle || 'Antes y ahora', { maxW, maxH: avail*0.2, size: 92*u, min: 50*u, weight: 700, lh: 1.05 });
+    anim(ctx, A(0.15), 40*u, () => draw(ctx, F, P, y, T.ink)); y += F.h + 44*u;
+    const list = m.gainsList.slice(0, 3), gap = 26*u;
+    const cardH = Math.min(250*u, (H - bottom - y - gap*(list.length - 1)) / Math.max(1, list.length));
+    list.forEach((g, i) => {
+      const y0 = y;
+      anim(ctx, A(0.3 + i*0.18), 30*u, () => {
+        rr(ctx, P, y0, maxW, cardH, 28*u); ctx.fillStyle = T.card; ctx.fill(); ctx.strokeStyle = T.line; ctx.lineWidth = 2*u; ctx.stroke();
+        const ix = P + 34*u, tw = maxW - 68*u; let yy = y0 + 30*u;
+        if (g.before) {
+          ctx.font = `700 ${22*u}px ${FB}`; ctx.fillStyle = T.muted; ctx.textAlign = 'left'; ctx.fillText('ANTES', ix, yy + 18*u);
+          const B = fit(ctx, g.before, { maxW: tw - 120*u, maxH: cardH*0.3, size: 34*u, min: 24*u, weight: 500, family: FB, lh: 1.2, maxLines: 2 });
+          draw(ctx, B, ix + 120*u, yy, T.muted);
+          const lw = Math.min(tw - 120*u, Math.max(...B.lines.map(l => { ctx.font = B.font; return ctx.measureText(l).width; })));
+          ctx.strokeStyle = alpha(T.acc, 0.85); ctx.lineWidth = 4*u; B.lines.forEach((l, k) => { ctx.font = B.font; const w = ctx.measureText(l).width; const ly = yy + (k + 0.5) * B.h / B.lines.length - 3*u; ctx.beginPath(); ctx.moveTo(ix + 120*u, ly); ctx.lineTo(ix + 120*u + Math.min(w, lw), ly); ctx.stroke(); });
+          yy += B.h + 22*u;
+        }
+        checkIcon(ctx, ix, yy, 50*u, T);
+        const N = fit(ctx, g.after, { maxW: tw - 76*u, maxH: y0 + cardH - yy - 24*u, size: 44*u, min: 28*u, weight: 700, family: FB, lh: 1.15, maxLines: 3 });
+        draw(ctx, N, ix + 76*u, yy + 2*u, T.ink);
+      });
+      y += cardH + gap;
     });
-    y = cy + ch + 70*u;
-    const extras = ['Funciona en celular y compu', 'Hecha a medida de tu negocio', 'Soporte directo con quien la programó'];
-    extras.forEach((e, i) => { if (y + 70*u > H - bottom) return; const yy = y; anim(ctx, A(0.6 + i*0.1), 30*u, () => { checkIcon(ctx, P, yy, 50*u, T); const E = fit(ctx, e, { maxW: maxW - 80*u, maxH: 60*u, size: 38*u, min: 26*u, weight: 600, family: FB, maxLines: 1 }); draw(ctx, E, P + 76*u, yy + 3*u, T.ink); }); y += 84*u; });
   }
   else if (slide.type === 'cta') {
     const mid = top + avail * 0.12;
@@ -1390,6 +1489,83 @@ function storyResumen(ctx, W, H, m, b, T){
   const C = fit(ctx, `Respondé “${(b.keyword || 'WEB').toUpperCase()}” y te paso info`, { maxW: W - 2*P - 60*u, maxH: 50*u, size: 40*u, min: 24*u, weight: 800, family: FB, maxLines: 1 });
   ctx.font = C.font; ctx.fillText(C.lines[0], W/2, y + 56*u); ctx.textBaseline = 'alphabetic';
   if (b.offer) offerSticker(ctx, b.offer, W - P + 10*u, top + 20*u, u, T);
+}
+
+/* ---- recorrido animado: dedo que toca y la pantalla que cambia ---- */
+const TOUR_STEP = 2.2;
+const tourDur = n => 0.6 + (n - 1) * TOUR_STEP + 1.6;
+function drawTour(ctx, W, H, slide, fmt, m, b, T, o){
+  const { u, P, top, bottom, maxW, A, tt, isVideo } = o;
+  const fr = slide.frames, n = fr.length; if (!n) return;
+  let y = top + 30*u;
+  anim(ctx, A(0.05), 30*u, () => pill(ctx, 'ASÍ SE USA', P, y, u, T, false));
+  y += 52*u + 30*u;
+  let k, p;
+  if (!isVideo) { k = 0; p = 0.62; }
+  else { const s = Math.max(0, tt - 0.6); k = Math.min(n - 1, Math.floor(s / TOUR_STEP)); p = k >= n - 1 ? 0 : (s - k * TOUR_STEP) / TOUR_STEP; }
+  const cur = fr[k], nx = k < n - 1 ? fr[k + 1] : null, act = nx && nx.tour;
+  // qué está pasando, en palabras
+  let line = '';
+  if (act && p > 0.18) line = act.kind === 'tap' ? (isMenuLabel(act.label) ? 'Abrís el menú' : `Tocás «${act.label}»`) : 'Bajás para ver más';
+  else if (cur.tour.kind === 'tap' && !isMenuLabel(cur.tour.label)) line = cur.tour.label;
+  else line = k === 0 ? (m.name || 'Pantalla de inicio') : '';
+  if (line) { const L = fit(ctx, line, { maxW, maxH: 70*u, size: 54*u, min: 34*u, weight: 700, family: FB, maxLines: 1 }); draw(ctx, L, P, y, T.ink); }
+  y += 86*u;
+  // aparato
+  const phone = cur.h / cur.w > 1.25, dh = H - bottom - y - 20*u;
+  let fx, fy, fw, fh, sx, sy, sw, sh;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.42)'; ctx.shadowBlur = 56*u; ctx.shadowOffsetY = 22*u;
+  if (phone) {
+    const ar = Math.min(2.18, cur.h / cur.w); fh = dh; fw = fh / ar; if (fw > maxW) { fw = maxW; fh = fw * ar; }
+    fx = (W - fw) / 2; fy = y + (dh - fh) / 2; const bz = 15*u;
+    rr(ctx, fx, fy, fw, fh, 54*u); ctx.fillStyle = '#0a0a0a'; ctx.fill(); ctx.shadowColor = 'transparent'; ctx.strokeStyle = '#3a3a3a'; ctx.lineWidth = 3*u; ctx.stroke();
+    sx = fx + bz; sy = fy + bz; sw = fw - 2*bz; sh = fh - 2*bz;
+  } else {
+    const bar = 48*u; fw = maxW; const ih = Math.min(dh - bar, fw * cur.h / cur.w); fh = bar + ih; fx = P; fy = y + (dh - fh) / 2;
+    rr(ctx, fx, fy, fw, fh, 18*u); ctx.fillStyle = T.dark ? '#1d2230' : '#ffffff'; ctx.fill(); ctx.shadowColor = 'transparent';
+    ['#ff5f57', '#febc2e', '#28c840'].forEach((c, i) => { ctx.beginPath(); ctx.arc(fx + 30*u + i*26*u, fy + bar/2, 8*u, 0, 7); ctx.fillStyle = c; ctx.fill(); });
+    sx = fx; sy = fy + bar; sw = fw; sh = ih;
+  }
+  ctx.restore();
+  const drawImg = (z, dy, alphaV) => { const ih = sw * z.h / z.w; ctx.save(); ctx.globalAlpha = alphaV; ctx.drawImage(z.img, sx, sy + dy, sw, ih); ctx.restore(); };
+  ctx.save(); rr(ctx, sx, sy, sw, sh, phone ? 40*u : 0); ctx.clip();
+  ctx.fillStyle = '#fff'; ctx.fillRect(sx, sy, sw, sh);
+  const scroll = act && act.kind === 'scroll';
+  if (act && scroll && p > 0.4) { const e = ease((p - 0.4) / 0.45); drawImg(cur, -e * sh, 1); drawImg(nx, (1 - e) * sh, 1); }
+  else if (act && !scroll && p > 0.66) { const e = ease((p - 0.66) / 0.2); drawImg(cur, 0, 1); drawImg(nx, 0, e); }
+  else drawImg(cur, 0, 1);
+  ctx.restore();
+  if (phone) { rr(ctx, fx + fw/2 - 56*u, fy + 15*u + 10*u, 112*u, 30*u, 15*u); ctx.fillStyle = '#0a0a0a'; ctx.fill(); }
+  // dedo (celu) o flecha (compu)
+  if (!act) return;
+  const rest = { x: sx + sw * 0.62, y: sy + sh * 0.86 };
+  const tgt = act.tap ? { x: sx + sw * act.tap.x, y: sy + Math.min(sh, sw * cur.h / cur.w) * act.tap.y } : { x: sx + sw * 0.55, y: sy + sh * 0.3 };
+  let fxp, fyp, alphaF = 1, press = 0, ring = -1;
+  if (scroll) {
+    if (p < 0.25) return;
+    alphaF = Math.min(1, (p - 0.25) / 0.12) * (p > 0.88 ? Math.max(0, 1 - (p - 0.88) / 0.1) : 1);
+    const e = ease(Math.max(0, (p - 0.4) / 0.45)); fxp = sx + sw * 0.6; fyp = sy + sh * (0.72 - 0.42 * e); press = p > 0.36 && p < 0.86 ? 1 : 0;
+  } else {
+    if (p < 0.16) return;
+    alphaF = Math.min(1, (p - 0.16) / 0.1) * (p > 0.84 ? Math.max(0, 1 - (p - 0.84) / 0.12) : 1);
+    const e = ease(Math.min(1, Math.max(0, (p - 0.22) / 0.3))); fxp = rest.x + (tgt.x - rest.x) * e; fyp = rest.y + (tgt.y - rest.y) * e;
+    press = p > 0.52 && p < 0.66 ? 1 : 0; if (p > 0.55) ring = Math.min(1, (p - 0.55) / 0.3);
+  }
+  ctx.save();
+  if (ring >= 0 && ring < 1) { ctx.beginPath(); ctx.arc(tgt.x, tgt.y, (26 + 70 * ring) * u, 0, 7); ctx.strokeStyle = alpha(T.acc, 0.85 * (1 - ring)); ctx.lineWidth = 6*u; ctx.stroke(); }
+  ctx.globalAlpha = alphaF;
+  if (phone) {
+    const r = (press ? 26 : 32) * u;
+    ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 18*u; ctx.shadowOffsetY = 6*u;
+    ctx.beginPath(); ctx.arc(fxp, fyp, r, 0, 7); ctx.fillStyle = press ? 'rgba(255,255,255,.92)' : 'rgba(255,255,255,.78)'; ctx.fill();
+    ctx.shadowColor = 'transparent'; ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.lineWidth = 3*u; ctx.stroke();
+  } else {
+    const s2 = 1.6*u * (press ? 0.9 : 1); ctx.translate(fxp, fyp); ctx.scale(s2, s2);
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 26); ctx.lineTo(7, 20); ctx.lineTo(12, 31); ctx.lineTo(17, 29); ctx.lineTo(12, 18); ctx.lineTo(21, 18); ctx.closePath();
+    ctx.fillStyle = '#111'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+  }
+  ctx.restore();
 }
 
 /* ---- reel ---- */
@@ -1584,7 +1760,7 @@ function caseFromLocal(){
       { title: 'Diseño a medida', desc: `con los colores y el estilo de ${L.name || 'la marca'}` },
       { title: 'Pensada para el celular', desc: 'la mayoría de los clientes entra desde el teléfono' },
       { title: 'Contacto directo', desc: 'botón de WhatsApp para consultar o pedir' } ],
-    tech: (base && base.tech) || ['HTML', 'CSS', 'JavaScript'],
+    gains: (prev.gains && prev.gains.trim()) || gainsFor([work, L.rubro, L.bio].join(' '), !/app|sistema|gesti|turno|orden|stock|software|panel/i.test(work)),
     cta: '¿Querés algo así para tu negocio?'
   });
 }
@@ -1661,7 +1837,7 @@ Si el dueño pasó productos, mantené esos (podés mejorar el nombre, nunca el 
     ['kicker', 'hook', 'sub', 'cta'].forEach(k => { if (val[k]) $('#lf-' + k).value = val[k]; });
     if (Array.isArray(val.items) && val.items.length) $('#l-items').value = val.items.map(i => i.detail ? `${i.title}: ${i.detail}` : i.title).join('\n');
     if (L.promo && val.promo) $('#l-promo').value = val.promo;
-    if (val.caption) { $('#f-caption').value = noDash(val.caption); S.capAI = true; } else makeLocalCaption();
+    if (val.caption) { $('#f-caption').value = S.mode === 'local' && S.purpose !== 'caso' ? noDash(val.caption) : plainTech(noDash(val.caption)); S.capAI = true; } else makeLocalCaption();
     if (Array.isArray(val.hashtags)) $('#f-hashtags').value = val.hashtags.slice(0, 5).map(h => '#' + String(h).replace(/^#/, '').replace(/\s+/g, '')).join(' ');
     $('#lDemoBadge').classList.add('hidden');
     lstatus('Listo. Revisá los textos antes de publicar.');
@@ -2232,12 +2408,12 @@ function readBrandModel(){
   if (tp && tp.hooks) {
     const pts = splitLines(g('points')).map(titleDesc).slice(0, 6);
     return { brandMode: true, topic: tk, tips: true, name: b.brand || 'Mi marca', kicker: tp.k, hook: g('hook') || tp.hooks[0], tagline: tp.sub, who: '', storyQ: tp.q,
-      problem: '', audience: '', featureList: pts, services: [], process: [], includesList: [], techList: [], cta: g('cta') || tp.cta, resultText: '', resultAuthor: '' };
+      problem: '', audience: '', featureList: pts, services: [], process: [], includesList: [], techList: [], gainsList: [], cta: g('cta') || tp.cta, resultText: '', resultAuthor: '' };
   }
   const services = splitLines(g('services')).map(titleDesc).slice(0, 5);
   return { brandMode: true, name: b.brand || 'Mi marca', kicker: (b.brand || 'MI MARCA').toUpperCase(), hook: g('hook') || b.brand, tagline: g('who'), who: g('who'),
     problem: '', audience: '', featureList: services, services, process: splitLines(g('process')).map(titleDesc).slice(0, 4),
-    includesList: splitLines(g('includes')).slice(0, 7), techList: [], cta: g('cta') || '¿Hablamos?', resultText: '', resultAuthor: '', storyQ: '¿Tu negocio ya tiene web?' };
+    includesList: splitLines(g('includes')).slice(0, 7), techList: [], gainsList: [], cta: g('cta') || '¿Hablamos?', resultText: '', resultAuthor: '', storyQ: '¿Tu negocio ya tiene web?' };
 }
 function buildBrandSlides(m){
   if (m.topic) return topicSlides(m);
@@ -2281,11 +2457,10 @@ function drawExtraSlide(ctx, W, H, slide, fmt, m, b, T, o){
     anim(ctx, A(0.15), 40*u, () => draw(ctx, F, P, y, T.ink)); y += F.h + 50*u;
     m.includesList.forEach((it, i) => {
       const R = fit(ctx, it, { maxW: maxW - 90*u, maxH: 110*u, size: 42*u, min: 28*u, weight: 600, family: FB, lh: 1.2, maxLines: 2 });
-      const rowH = Math.max(64*u, R.h) + 36*u; if (y + rowH > H - bottom - (m.techList.length ? 70*u : 0)) return;
+      const rowH = Math.max(64*u, R.h) + 36*u; if (y + rowH > H - bottom) return;
       const yy = y; anim(ctx, A(0.3 + i * 0.08), 30*u, () => { checkIcon(ctx, P, yy, 54*u, T); draw(ctx, R, P + 84*u, yy + 4*u, T.ink); });
       y += rowH;
     });
-    if (m.techList.length) anim(ctx, A(0.8), 10*u, () => { const Tl = fit(ctx, 'Hecho con ' + m.techList.join(' · '), { maxW, maxH: 44*u, size: 28*u, min: 20*u, weight: 500, family: FB, maxLines: 1 }); draw(ctx, Tl, P, H - bottom - 52*u, T.muted); });
     return true;
   }
   if (t === 'tcover') { drawTopicCover(ctx, W, H, m, b, T, o); return true; }
@@ -2820,7 +2995,7 @@ function nextHook(){
 
 /* ---- textos del posteo: varias estructuras, pocos emojis, sin rayas ---- */
 const slugT = z => (z || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-const tags5 = list => [...new Set(list.map(slugT).filter(z => z && z.length > 2))].slice(0, 5).map(z => '#' + z).join(' ');
+const tags5 = list => [...new Set(list.map(slugT).filter(z => z && z.length > 2 && !TECH_TAG.test(z)))].slice(0, 5).map(z => '#' + z).join(' ');
 const noDash = s => (s || '').replace(/\s+[—–]\s+/g, ': ').replace(/[—–]/g, ', ').trim();
 const joinY = arr => arr.length < 2 ? (arr[0] || '') : arr.slice(0, -1).join(', ') + ' y ' + arr[arr.length - 1];
 function capVersion(){ if (S.capV == null) S.capV = Math.floor(rv(41) * 3); return S.capV % 3; }
@@ -2842,16 +3017,19 @@ function makeCaption(){
   const place = caso ? c.ciudad : '';
   const intro = caso ? `${c.Trabajo || 'Un trabajo nuevo'} para ${m.name}${c.rubro ? ` (${c.rubro}${place ? ' en ' + place : ''})` : ''}.` : `${m.name}${m.tagline ? ': ' + lc1(noDash(m.tagline)) : ''}.`;
   const res = m.resultText ? `Lo que me dijo ${m.resultAuthor || 'el cliente'}: "${m.resultText}"` : '';
-  const inc = m.includesList.length ? `Incluye: ${m.includesList.slice(0, 3).map(lc1).join(', ')}.` : (m.techList.length ? `Hecho con ${joinY(m.techList.slice(0, 4))}.` : '');
+  const inc = m.includesList.length ? `Incluye: ${m.includesList.slice(0, 3).map(lc1).join(', ')}.` : '';
+  const gains = m.gainsList.slice(0, 3).map(g => g.before ? `• Antes: ${lc1(noDash(g.before)).replace(/\.$/, '')}. Ahora: ${lc1(noDash(g.after)).replace(/\.$/, '')}.` : `• ${noDash(g.after)}`);
   const out = [];
   if (v === 0) {
     const dup = normT(intro).startsWith(normT(hook));
     out.push(...(dup ? [intro] : [hook, '', intro])); if (m.problem) out.push(noDash(m.problem));
     if (feats.length) { out.push('', 'Qué hace:'); feats.forEach(f => out.push(`• ${f.title}${f.desc ? ': ' + lc1(noDash(f.desc)) : ''}`)); }
+    if (gains.length) out.push('', 'Lo que cambia en el día a día:', ...gains);
     if (res) out.push('', res); if (inc) out.push('', inc);
   } else if (v === 1) {
     out.push(noDash(m.problem) || hook, '', `${caso ? `Por eso le armé a ${m.name} ${c.trabajo ? (/^(app|web|página|tienda|landing|plataforma)/i.test(c.trabajo) ? 'una ' : 'un ') + c.trabajo : 'esto'}` : `Por eso armé ${m.name}`}. En ${feats.length} cosas:`, '');
     feats.forEach((f, i) => out.push(`${i + 1}. ${f.title}${f.desc ? ': ' + lc1(noDash(f.desc)) : ''}`));
+    if (gains.length) out.push('', ...gains);
     if (res) out.push('', res);
   } else {
     out.push(...(normT(intro).startsWith(normT(hook)) ? [intro] : [hook, '', intro]), '', feats.map(f => f.title).join(' · ') + '.');
@@ -2859,9 +3037,9 @@ function makeCaption(){
   }
   if (b.offer) out.push('', noDash(b.offer));
   out.push('', noDash(m.cta || '¿Hablamos?'), captionCloser(b), '', shareLine(c.unRubro));
-  $('#f-caption').value = out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  $('#f-caption').value = plainTech(out.join('\n')).replace(/\n{3,}/g, '\n\n').trim();
   const site = S.raw && S.raw.site && !S.raw.gh;
-  $('#f-hashtags').value = tags5([c.rubro && (c.rubro + (place || b.city || '')), place || b.city, isAppWork() && !site ? 'appsparanegocios' : 'paginasweb', 'desarrolloweb', b.brand]);
+  $('#f-hashtags').value = tags5([c.rubro && (c.rubro + (place || b.city || '')), place || b.city, isAppWork() && !site ? 'appsparanegocios' : 'paginasweb', 'diseñoweb', b.brand]);
 }
 function makeBrandCaption(){
   const m = readBrandModel(), b = readBrand(), out = [noDash(m.hook)];
@@ -2877,7 +3055,7 @@ function makeBrandCaption(){
   if (b.offer) out.push('', noDash(b.offer));
   out.push('', noDash(m.cta), captionCloser(b), '', shareLine(''));
   $('#f-caption').value = out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-  $('#f-hashtags').value = tags5(['paginasweb', 'desarrolloweb', b.city, 'emprendedores', b.brand]);
+  $('#f-hashtags').value = tags5(['paginasweb', 'diseñoweb', b.city, 'emprendedores', b.brand]);
 }
 function makeLocalCaption(){
   S.capAI = false;
@@ -2948,6 +3126,7 @@ function qualityChecks(){
   add(!longS && !longP, longS || longP ? `${longS ? longS + ' oración(es) de más de 25 palabras' : ''}${longS && longP ? ' y ' : ''}${longP ? longP + ' párrafo(s) de más de 75 palabras' : ''}: cortalos para que se lea de un vistazo` : 'Oraciones y párrafos cortos');
   const caps = cap.split('\n').filter(l => { const w = l.match(/\p{L}{3,}/gu) || []; return w.length >= 4 && w.every(x => x === x.toUpperCase()); }).length;
   if (caps) add(false, `${caps} renglón(es) en MAYÚSCULAS: cuestan más de leer`, 'caps');
+  if (!isLocalOwn()) { const mm = S.mode === 'brand' ? null : readModel(); const src = [cap, tagsTxt, hook, mm ? [mm.tagline, mm.features, mm.problem, mm.includes, mm.gains, mm.cta].join('\n') : ''].join('\n'); STACK.lastIndex = 0; const tw = [...new Set((src.match(STACK) || []).map(z => z.toLowerCase()))]; add(!tw.length, tw.length ? `Lenguaje técnico ("${tw.slice(0, 4).join('", "')}"): a un dueño de local no le dice nada. Contá lo que gana su negocio.` : 'Sin lenguaje técnico', tw.length ? 'tech' : null); }
   const used = pubHist().find(h => normT(h.hook) === normT(hook));
   add(!used, used ? `Ese gancho ya lo usaste el ${fmtD(used.d)}: tocá "✍️ Otro gancho"` : 'Gancho que todavía no usaste', used ? 'hook' : null);
   const first = (cap.split('\n')[0] || '');
@@ -2971,7 +3150,9 @@ function trimTags(cap, tagsTxt, max){
   return { cap: body, tags: (tagsTxt.match(TAGRE) || []).slice(0, left).join(' ') };
 }
 function fixAll(){
-  let cap = $('#f-caption').value;
+  let cap = plainTech($('#f-caption').value);
+  if (S.mode !== 'brand' && !isLocalOwn()) { const v = {}; ['hook', 'tagline', 'problem', 'features', 'includes', 'gains', 'cta'].forEach(k => { const el = $('#f-' + k); if (el) v[k] = el.value; }); cleanTechModel(v, true); Object.entries(v).forEach(([k, x]) => { const el = $('#f-' + k); if (el) el.value = x; }); }
+  $('#f-hashtags').value = ($('#f-hashtags').value.match(TAGRE) || []).filter(h => !TECH_TAG.test(h.slice(1))).join(' ');
   AI_TELLS.forEach(([re, rep]) => { if (rep == null) return; re.lastIndex = 0; cap = cap.replace(re, m => keepCase(m, rep)); });
   cap = noDash(cap).replace(/ {2,}/g, ' ').replace(/ +([.,:])/g, '$1');
   cap = cap.split('\n').map(l => { const w = l.match(/\p{L}{3,}/gu) || []; return w.length >= 4 && w.every(x => x === x.toUpperCase()) ? cap1(l.toLowerCase()) : l; }).join('\n');
@@ -3018,7 +3199,8 @@ function speechFor(s, m, L, b){
   if (t === 'feature') { const con = m.tips ? '' : (['Primero, ', 'Además, ', 'También, ', 'Y otra cosa: ', 'Y por último, '][Math.min((s.n || 1) - 1, 4)]); return [endDot(con ? con + lc1(s.f.title) : s.f.title), endDot(cap1(s.f.desc || ''))].join(' '); }
   if (t === 'result') return endDot(`${m.resultAuthor || 'El cliente'} dice: ${m.resultText}`);
   if (t === 'includes') return endDot('Incluye ' + lc1(joinY(m.includesList.slice(0, 4).map(lc1))));
-  if (t === 'tech') return 'Está hecho con tecnología actual, rápida y segura.';
+  if (t === 'tour') { const ls = [...new Set(s.frames.filter(z => z.tour.kind === 'tap' && !isMenuLabel(z.tour.label)).map(z => lc1(z.tour.label)))].slice(0, 3); return pickR(['Te muestro cómo se usa.', 'Mirá cómo funciona por dentro.', 'Así se usa, en el celular.'], 67) + (ls.length ? ` Tocás ${joinY(ls)}, y listo.` : ' Todo a un toque.'); }
+  if (t === 'gains') return m.gainsList.slice(0, 2).map((g, i) => g.before ? `${i ? 'Y' : 'Antes'}, ${lc1(g.before).replace(/\.$/, '')}; ahora, ${lc1(g.after).replace(/\.$/, '')}.` : endDot(g.after)).join(' ');
   if (t === 'cta') return `${endDot(m.cta || '¿Hablamos?')} ` + pickR([`Comentá ${kw} y te cuento.`, `Si te sirve, comentá ${kw} o escribime por WhatsApp, y lo charlamos.`, `Escribime ${kw} por mensaje y lo vemos juntos.`], 64);
   if (t === 'bcover') return [endDot(m.hook), endDot(m.who)].join(' ');
   if (t === 'tcover') return [endDot(m.hook), endDot(m.tagline)].join(' ');
@@ -3045,8 +3227,9 @@ function reelScenes(opts){
   } else {
     const m = S.mode === 'brand' ? readBrandModel() : readModel(), slides = buildSlides(m);
     if (m.brandMode) order = story ? [slides[0], ...slides.slice(1, -1).slice(0, 3), slides[slides.length - 1]] : slides.slice();
-    else { const feats = slides.filter(s => s.type === 'feature').slice(0, story ? 2 : 3); order = [pick(slides, 'cover'), pick(slides, 'problem'), ...feats, pick(slides, 'result'), story ? null : (pick(slides, 'includes') || pick(slides, 'tech')), pick(slides, 'cta')].filter(Boolean); }
-    dur = { cover: 3.4, problem: 3.0, feature: 2.8, tech: 2.6, result: 3.2, includes: 3.0, cta: 3.8, bcover: 3.4, bservices: 3.4, bprocess: 3.6, bworks: 2.8, tcover: 3.2 };
+    else { const tf = tourFrames(), tour = tf.length >= 2 ? { type: 'tour', frames: tf.slice(0, story ? 4 : 6) } : null; if (tour) tour.dur = tourDur(tour.frames.length);
+      const feats = slides.filter(s => s.type === 'feature').slice(0, tour ? (story ? 1 : 2) : (story ? 2 : 3)); order = [pick(slides, 'cover'), pick(slides, 'problem'), tour, ...feats, pick(slides, 'gains'), pick(slides, 'result'), story ? null : pick(slides, 'includes'), pick(slides, 'cta')].filter(Boolean); }
+    dur = { cover: 3.4, problem: 3.0, feature: 2.8, gains: 3.6, result: 3.2, includes: 3.0, cta: 3.8, bcover: 3.4, bservices: 3.4, bprocess: 3.6, bworks: 2.8, tcover: 3.2 };
     draw = (ctx, W, H, sl, fmt, o, bb, TT) => drawSlide(ctx, W, H, sl, fmt, m, bb, TT, o);
     sp = s => speechFor(s, m, null, b);
   }
@@ -3056,7 +3239,7 @@ function reelScenes(opts){
     const scenes = list.map((s, i) => {
       const key = sceneKey(s), auto = sp(s), text = S.voice.lines[key] != null ? S.voice.lines[key] : auto;
       const audio = audioFor(key, text), lead = i === 0 ? 0.2 : 0.45;
-      let d = (dur[s.type] || 3) * (s.type === 'cta' ? SLOW : pace);
+      let d = s.type === 'tour' ? s.dur : (dur[s.type] || 3) * (s.type === 'cta' ? SLOW : pace);
       if (audio) d = Math.max(d, lead + audio.duration + 0.9);
       const sc = { slide: s, start: t, dur: d, index: i, key, auto, text, audio, lead }; t += d; return sc;
     });
@@ -3667,7 +3850,7 @@ function saveImages(){
   clearTimeout(imgT);
   imgT = setTimeout(async () => {
     try {
-      const pack = list => (list || []).filter(s => s && s.blob).map(s => ({ blob: s.blob, name: s.name, on: s.on, manual: !!s.manual, caption: s.caption || '' }));
+      const pack = list => (list || []).filter(s => s && s.blob).map(s => ({ blob: s.blob, name: s.name, on: s.on, manual: !!s.manual, caption: s.caption || '', tour: s.tour || null }));
       await IDB.put('imgs:' + S.mode, { shots: pack(S.shots), logo: S.logo && S.logo.blob ? { blob: S.logo.blob, name: S.logo.name } : null, logoBg: S.logoBg || null });
     } catch {}
   }, 1200);
@@ -3676,7 +3859,7 @@ async function loadImages(mode){
   try {
     const d = await IDB.get('imgs:' + mode); if (!d) return null;
     const shots = [];
-    for (const s of d.shots || []) { const sh = await makeShot(s.blob, s.name); if (sh) { sh.on = s.on; sh.manual = s.manual; sh.caption = s.caption; shots.push(sh); } }
+    for (const s of d.shots || []) { const sh = await makeShot(s.blob, s.name); if (sh) { sh.on = s.on; sh.manual = s.manual; sh.caption = s.caption; if (s.tour) sh.tour = s.tour; shots.push(sh); } }
     const logo = d.logo ? await makeShot(d.logo.blob, d.logo.name) : null;
     return { shots, logo, logoBg: d.logoBg };
   } catch { return null; }
@@ -3796,8 +3979,18 @@ async function ingest(srcPromise, label){
     const src = await srcPromise;
     if (!src.list.length) throw new Error('No encontré archivos.');
     status(`Analizando ${src.list.length} archivos…`);
-    const { raw, shots } = await analyze(src);
+    const an = await analyze(src), raw = an.raw;
+    let shots = an.shots;
     S.raw = raw;
+    const tourUrl = (raw.site && raw.site.url) || siteFromText(raw.readme);
+    if (tourUrl && S.server) {
+      status('Entrando a la app y tocando sus secciones, como un cliente (tarda unos 30 segundos)…');
+      S.tourErr = '';
+      let tr = await tourShots(tourUrl);
+      if (!tr.length) tr = await microShots(tourUrl);
+      shots = [...tr, ...shots.filter(z => !/^screenshot-/.test(z.name))];
+      if (!raw.site) raw.site = { url: tourUrl, host: new URL(tourUrl).hostname };
+    }
     // reemplaza capturas detectadas, conserva las agregadas a mano
     S.shots = [...S.shots.filter(s => s.manual), ...shots];
     renderShotList();

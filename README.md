@@ -76,3 +76,15 @@ Para ver qué está configurado, abrí `https://TU-APP.vercel.app/api/ig?action=
 - Las capturas de páginas usan [microlink.io](https://microlink.io) (gratis con límite diario).
 - El botón "Escribir con IA" solo aparece cuando la herramienta se abre dentro de Claude.
 - El reel se genera en el navegador (mejor en Chrome o Edge) y sale sin audio: ponele música al subirlo.
+
+## Recorrido automático de la app
+
+Cuando traés un proyecto con link publicado (o un repo de GitHub con su web), la versión en Vercel abre la app en un navegador real (`api/recorrido.js`, con Chromium), toca sus menús, pestañas y botones seguros (nunca borrar, pagar, enviar ni cerrar sesión), baja con scroll y saca una captura de cada pantalla, en celular y en compu.
+
+- En el carrusel, cada función usa una pantalla distinta del recorrido.
+- En el reel y la historia aparece la escena "Así se usa": el celular con un dedo que toca y la pantalla que cambia, como una grabación de pantalla.
+- Si el recorrido falla, se usan capturas simples de la portada.
+
+## Nada técnico en el contenido
+
+Lo que se publica es para dueños de locales: el estudio no muestra lenguajes, frameworks ni servicios (React, Supabase, Vercel, etc.). En su lugar hay una diapositiva "Antes y ahora" con lo que gana el negocio (campo "Lo que gana el negocio", una línea por cambio con el formato `antes → ahora`). El control de calidad avisa si se cuela algo técnico y "Arreglar lo automático" lo saca.
