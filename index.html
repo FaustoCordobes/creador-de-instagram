@@ -1601,6 +1601,8 @@ function localFooter(ctx, W, H, T, u, bottom, L, swipe, tone){
   if (swipe) { ctx.textAlign = 'right'; ctx.fillStyle = tone === 'acc' ? T.accInk : T.ink; ctx.font = `700 ${28*u}px ${FB}`; ctx.fillText('Deslizá  →', W - 80*u, y); }
   ctx.textBaseline = 'alphabetic';
 }
+// capturas de pantalla (celu o compu): van en un marco, no de fondo
+function isScreenshot(sh){ if (!sh) return false; const r = (sh.h || 1) / (sh.w || 1); return r >= 1.9 || r <= 0.65 || /captura|screenshot|screen ?shot|pantallazo/i.test(sh.name || ''); }
 function photoBackdrop(ctx, W, H, T, img, zoom, from){
   ctx.fillStyle = T.bg; ctx.fillRect(0, 0, W, H);
   photoFill(ctx, img, 0, 0, W, H, zoom, 0.45);
@@ -1624,8 +1626,9 @@ function buildLocalSlides(L){
   L.itemList.slice(0, 5).forEach((it, i) => s.push({ type: 'litem', it, n: i + 1, photo: next() }));
   if (!L.itemList.length) {
     const seen = new Set([L.hook, L.sub].map(z => (z || '').trim()));
-    const pool = [L.bio, L.hours && `Te esperamos: ${L.hours}`, L.address && `📍 ${L.address}`, L.igH && `Seguinos en ${L.igH}`].filter(z => z && !seen.has(z.trim()));
-    ph.slice(1, 4).forEach((p, i) => s.push({ type: 'lphoto', photo: p, caption: p.caption || pool[i] || '' }));
+    const city = readBrand().city;
+    const pool = [L.bio, L.hours && `Te esperamos: ${L.hours}`, L.address && `📍 ${L.address}`, L.igH && `Seguinos en ${L.igH}`, L.rubro && city && `Tu ${L.rubro.toLowerCase()} en ${city}`, L.promo, 'Pasá a conocernos', L.cta].filter(z => z && !seen.has(z.trim()));
+    ph.slice(1, 4).forEach((p, i) => s.push({ type: 'lphoto', photo: p, caption: p.caption || pool[i % pool.length] || L.name || '' }));
   }
   if (L.reviewText) s.push({ type: 'lreview' });
   if (L.address || L.hours) s.push({ type: 'linfo' });
@@ -1643,8 +1646,10 @@ function drawLocalSlide(ctx, W, H, slide, fmt, L, b, T, opts){
   let tone = '';
 
   if (t === 'lcover' || t === 'lphoto') {
-    if (slide.photo) { photoBackdrop(ctx, W, H, T, slide.photo.img, kb, t === 'lcover' ? 0.32 : 0.45); tone = 'photo'; }
+    const shotLike = isScreenshot(slide.photo);
+    if (slide.photo && !shotLike) { photoBackdrop(ctx, W, H, T, slide.photo.img, kb, t === 'lcover' ? 0.32 : 0.45); tone = 'photo'; }
     else drawBg(ctx, W, H, T, opts.index || 0, opts.tt);
+    const frameShot = yText => { if (shotLike) { const hh = yText - top - 60*u; anim(ctx, A(0.1, 0.7), 80*u, () => drawShot(ctx, slide.photo, P, top + 20*u, maxW, hh, T, u, readBrand(), opts.index || 0)); } };
     localHeader(ctx, W, T, u, top, counter, L, tone);
     const textBottom = H - bottom - 10*u;
     if (t === 'lcover') {
@@ -1652,12 +1657,14 @@ function drawLocalSlide(ctx, W, H, slide, fmt, L, b, T, opts){
       const sub = L.sub ? fit(ctx, L.sub, { maxW, maxH: 110*u, size: 38*u, min: 26*u, weight: 400, family: FB, lh: 1.3, maxLines: 2 }) : null;
       let y = textBottom - F.h - (sub ? sub.h + 24*u : 0) - (L.kicker ? 82*u : 0);
       if (!slide.photo && S.logo) { const d = Math.min(380*u, y - top - 80*u); if (d > 140*u) { const ly = top + (y - top - d) / 2; anim(ctx, A(0.05), 30*u, () => { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 50*u; ctx.beginPath(); ctx.arc(W/2, ly + d/2, d/2, 0, 7); ctx.fillStyle = S.logoBg || '#fff'; ctx.fill(); ctx.restore(); logoCircle(ctx, (W - d)/2, ly, d); }); } }
+      frameShot(y);
       if (L.kicker) { const yy = y; anim(ctx, A(0.1), 30*u, () => pill(ctx, L.kicker, P, yy, u, T, true)); y += 82*u; }
       const y1 = y; anim(ctx, A(0.2), 50*u, () => drawHook(ctx, F, P, y1, T.ink, T, L.hook)); y += F.h + 24*u;
       if (sub) { const y2 = y; anim(ctx, A(0.35), 30*u, () => draw(ctx, sub, P, y2, tone ? alpha(T.ink, .82) : T.muted)); }
     } else {
-      const cap = slide.caption || '';
-      if (cap) { const F = fit(ctx, cap, { maxW, maxH: 300*u, size: 66*u, min: 34*u, weight: 700, lh: 1.08, maxLines: 4 }); anim(ctx, A(0.2), 40*u, () => draw(ctx, F, P, textBottom - F.h, T.ink)); }
+      const cap = slide.caption || L.name || '';
+      if (cap) { const F = fit(ctx, cap, { maxW, maxH: 300*u, size: 66*u, min: 34*u, weight: 700, lh: 1.08, maxLines: 4 }); frameShot(textBottom - F.h); anim(ctx, A(0.2), 40*u, () => drawHook(ctx, F, P, textBottom - F.h, T.ink, T, cap)); }
+      else frameShot(textBottom);
     }
   }
   else if (t === 'litem') {
@@ -1741,9 +1748,9 @@ function drawLocalPost(ctx, W, H, L, b, T){
   y -= F.h; draw(ctx, F, P, y, T.ink);
 }
 function drawLocalStory(ctx, W, H, L, b, T){
-  const u = W / 1080, P = 80*u, top = SAFE.story.top*u, bottom = SAFE.story.bottom*u, ph = activeShots()[0];
-  if (ph) photoBackdrop(ctx, W, H, T, ph.img, 1, 0.3); else drawBg(ctx, W, H, T, 2);
-  localHeader(ctx, W, T, u, top, '', L, ph ? 'photo' : '');
+  const u = W / 1080, P = 80*u, top = SAFE.story.top*u, bottom = SAFE.story.bottom*u, ph = activeShots()[0], shotLike = isScreenshot(ph);
+  if (ph && !shotLike) photoBackdrop(ctx, W, H, T, ph.img, 1, 0.3); else drawBg(ctx, W, H, T, 2);
+  localHeader(ctx, W, T, u, top, '', L, ph && !shotLike ? 'photo' : '');
   if (!ph && S.logo) { const d = 360*u; logoCircle(ctx, (W - d)/2, top + 80*u, d); }
   let y = H - bottom;
   // botón
@@ -1759,6 +1766,7 @@ function drawLocalStory(ctx, W, H, L, b, T){
   const F = fit(ctx, L.hook, { maxW: W - 2*P, maxH: 330*u, size: 112*u, min: 54*u, weight: 700, lh: 1.03, maxLines: 4 });
   y -= F.h; draw(ctx, F, P, y, T.ink);
   if (L.kicker) { y -= 82*u; pill(ctx, L.kicker, P, y, u, T, true); }
+  if (shotLike) drawShot(ctx, ph, P, top + 30*u, W - 2*P, y - top - 80*u, T, u, b, 2);
 }
 
 /* ============ servidor propio (versión Vercel) ============ */
@@ -1962,8 +1970,10 @@ function fromBio(bio){
   if (wa) out.wa = phoneDigits(wa[1]);
   const lines = bio.split('\n').map(z => z.trim()).filter(Boolean);
   const addr = lines.find(l => /📍|direcci[oó]n|^av\.?\s|calle\s/i.test(l)); if (addr) out.address = addr.replace(/📍/g, '').replace(/^direcci[oó]n:?\s*/i, '').trim();
-  const hrs = lines.find(l => /(\d{1,2}\s*(a|-|–)\s*\d{1,2}\s*(hs|h\b))|horario|🕒|⏰/i.test(l)); if (hrs) out.hours = hrs.replace(/🕒|⏰|horarios?:?/gi, '').trim();
-  out.bio = lines.filter(l => l !== addr && l !== hrs && !/wa\.me|whats/i.test(l)).join(' ').replace(/\s+/g, ' ').trim();
+  const HR = /((?:lun|mar|mi[eé]|jue|vie|s[aá]b|dom)[a-záé]*\.?(?:\s*(?:a|-|–|y)\s*(?:lun|mar|mi[eé]|jue|vie|s[aá]b|dom)[a-záé]*\.?)?\s*(?:de\s*)?)?\d{1,2}(?::\d{2})?\s*(?:a|-|–)\s*\d{1,2}(?::\d{2})?\s*(?:hs|h)\b\.?/i;
+  let hrs = lines.find(l => HR.test(l) || /horario|🕒|⏰/i.test(l));
+  if (hrs) { const m = hrs.match(HR); out.hours = (m ? m[0] : hrs).replace(/🕒|⏰|horarios?:?/gi, '').trim(); }
+  out.bio = lines.filter(l => l !== addr && !/wa\.me|whats/i.test(l)).map(l => l === hrs ? l.replace(HR, '').replace(/🕒|⏰|horarios?:?/gi, '') : l).join(' ').replace(/\s+/g, ' ').replace(/\s+([.,])/g, '$1').trim();
   return out;
 }
 async function imgFromUrl(url, name){ const b = await netFetch(url); if (!b || !b.size) return null; return makeShot(b, name); }
@@ -1980,8 +1990,8 @@ async function localFromLink(){
   try {
     if (!S.server && L.kind !== 'web' && L.kind !== 'tiktok') { lstatus('Traer datos de Google o Instagram funciona en tu versión de Vercel (con las claves configuradas). Acá completá los datos a mano.', true); return; }
     // validar antes de borrar nada
-    if (L.kind === 'ig' && !S.server.ig) {
-      if (!S.server.google) throw new Error('Para leer links de Instagram conectá Meta o Google (pestaña "🚀 Subir a IG").');
+    if (L.kind === 'ig' && !L.user) throw new Error('No encontré el usuario en ese link de Instagram.');
+    if (false) {
       const handle = (L.user || '').replace(/[._]+/g, ' ').trim();
       L = { kind: 'query', q: `${handle} ${readBrand().city || ''}`.trim(), igUser: L.user };
       notes.push(`Instagram sin conectar: busqué "${handle}" en Google`);
@@ -2004,10 +2014,17 @@ async function localFromLink(){
 
     if (L.kind === 'ig') {
       lstatus(`Leyendo @${L.user} en Instagram…`);
-      let d = null;
-      try { d = await api('api/ig', { action: 'discover', username: L.user }); }
+      let d = null, dErr = null;
+      try { if (!S.server.ig) throw Object.assign(new Error('Instagram sin conectar'), { code: 'noig' }); d = await api('api/ig', { action: 'discover', username: L.user }); }
       catch (e) {
         if (e.status === 401) throw e;
+        dErr = e;
+        if (e.code !== 'personal' && /\(#10\)|permission|permiso/i.test(e.message || '')) e.code = 'perm';
+        // respaldo: el perfil público (sin permisos de Meta)
+        try { lstatus(`Leyendo el perfil público de @${L.user}…`); d = await api('api/ig', { action: 'public', username: L.user }); if (d && d.private) { warn = '@' + L.user + ' es una cuenta privada: solo pude traer el nombre y el logo.'; } } catch (e2) { d = null; }
+      }
+      if (!d) {
+        const e = dErr && dErr.code !== 'noig' ? dErr : { code: 'none', message: 'Instagram no dejó ver el perfil público' };
         // no se pudo leer: igual armamos el contenido con lo que hay
         warn = e.code === 'perm' ? 'Instagram no me dejó leer @' + L.user + ': a tu conexión le falta el permiso instagram_manage_insights. Se arregla en 2 minutos (GUIA-INSTAGRAM.md, paso 7). Mientras tanto cargué el nombre: pegá la bio y subí 3 o 4 fotos del local.'
           : e.code === 'personal' ? '@' + L.user + ' es una cuenta personal: Instagram solo deja leer cuentas de empresa o creador. Cargué el nombre: pegá la bio y subí 3 o 4 fotos del local.'
@@ -2017,6 +2034,7 @@ async function localFromLink(){
         if (S.server.google) { try { place = await fetchPlace(`${$('#l-name').value} ${readBrand().city || ''}`); } catch {} }
       }
       if (d) {
+      if (d.category) set('rubro', d.category); if (d.phone) set('wa', phoneDigits(d.phone)); if (d.address) set('address', d.address);
       set('name', d.name || d.username); set('ig', '@' + (d.username || L.user)); set('web', d.website && !/instagram\.com|linktr\.ee/i.test(d.website) ? d.website.replace(/^https?:\/\//, '').replace(/\/$/, '') : '');
       const fb = fromBio(d.biography || ''); set('bio', fb.bio); set('wa', fb.wa); set('address', fb.address); set('hours', fb.hours);
       if (d.profile_picture_url) { const lg = await imgFromUrl(d.profile_picture_url, 'perfil.jpg'); if (lg) { S.logo = lg; const pp = imagePalette(lg.img); S.logoBg = pp.dominant || '#fff'; $('#logoSlot').innerHTML = `<img src="${lg.url}" alt="">`; $('#delLogo').classList.remove('hidden'); design = designFromImage(lg.img, true); } }
@@ -2025,7 +2043,7 @@ async function localFromLink(){
       lstatus(`Bajando ${media.length} fotos de Instagram…`);
       const shots = await Promise.all(media.map(async (m, i) => { const sh = await imgFromUrl(m.u, `ig-${i + 1}.jpg`).catch(() => null); if (sh) sh.caption = shortCap(m.c); return sh; }));
       shots.filter(Boolean).forEach(sh => { sh.manual = true; S.shots.push(sh); });
-      notes.push(`Instagram: ${S.shots.length} fotos y el logo`);
+      notes.push(d.source === 'og' ? 'Instagram: nombre y logo (no dejó ver las fotos: subí 3 o 4 del local)' : `Instagram: ${S.shots.length} fotos y el logo`);
       if (S.server.google) { try { place = await fetchPlace(`${$('#l-name').value} ${readBrand().city || ''}`); } catch {} }
       }
     } else if (L.kind === 'query') {

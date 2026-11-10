@@ -12,6 +12,35 @@
 const { cors, authorized, readBody, graph, studioPass, passInfo } = require('./_lib');
 
 const TOKEN = () => process.env.IG_PAGE_TOKEN;
+
+const unent = s => String(s || '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#039;|&#x27;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)));
+async function igPublic(user){
+  const ctl = () => AbortSignal.timeout(9000);
+  // 1) el JSON que usa la web de Instagram (trae bio, logo, datos de contacto y las últimas fotos)
+  try {
+    const r = await fetch(`https://i.instagram.com/api/v1/users/web_profile_info/?username=${user}`, { signal: ctl(), headers: {
+      'x-ig-app-id': '936619743392459', 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 330.0.0.0', 'Accept-Language': 'es-AR,es;q=0.9' } });
+    if (r.ok) {
+      const u = ((await r.json()).data || {}).user;
+      if (u) {
+        let addr = ''; try { const a = JSON.parse(u.business_address_json || '{}'); addr = [a.street_address, a.city_name].filter(Boolean).join(', '); } catch {}
+        const edges = ((u.edge_owner_to_timeline_media || {}).edges || []).map(e => e.node);
+        return { source: 'public', username: u.username, name: u.full_name, biography: u.biography, website: u.external_url, profile_picture_url: u.profile_pic_url_hd || u.profile_pic_url,
+          category: u.category_name || u.business_category_name || '', phone: u.business_phone_number || u.public_phone_number || '', address: addr, private: !!u.is_private,
+          media: { data: edges.slice(0, 12).map(n => ({ media_type: n.is_video ? 'VIDEO' : 'IMAGE', media_url: n.display_url, thumbnail_url: n.thumbnail_src || n.display_url, caption: (((n.edge_media_to_caption || {}).edges || [])[0] || { node: { text: '' } }).node.text })) } };
+      }
+    }
+  } catch {}
+  // 2) las etiquetas de la página (nombre y foto de perfil)
+  const r = await fetch(`https://www.instagram.com/${user}/`, { signal: ctl(), headers: { 'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)', 'Accept-Language': 'es-AR,es;q=0.9' } });
+  const html = await r.text();
+  const meta = k => unent((html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${k}["'][^>]+content=["']([^"']*)`, 'i')) || [])[1]);
+  const title = meta('og:title'), desc = meta('og:description');
+  if (!title && !desc) { const x = new Error('Instagram no dejó ver el perfil de @' + user + ' desde el servidor.'); x.code = 'blocked'; throw x; }
+  const name = (title.match(/^(.*?)\s*\(@/) || [])[1] || '';
+  const bio = (desc.match(/[“"](.+)[”"]\s*$/) || [])[1] || '';
+  return { source: 'og', username: user, name, biography: bio, profile_picture_url: meta('og:image'), media: { data: [] } };
+}
 const IGID = () => process.env.IG_USER_ID;
 
 module.exports = async (req, res) => {
@@ -67,6 +96,13 @@ module.exports = async (req, res) => {
       } catch {}
       const need = ['instagram_basic', 'instagram_content_publish', 'instagram_manage_insights', 'pages_read_engagement', 'pages_show_list'];
       return res.json({ ...me, limit: limit && limit.data && limit.data[0], scopes, missing: scopes ? need.filter(x => !scopes.includes(x)) : null });
+    }
+
+    if (action === 'public') {
+      // perfil público de Instagram sin permisos de Meta (respaldo cuando business discovery no anda)
+      const user = String(body.username || '').replace(/^@/, '').trim();
+      if (!/^[A-Za-z0-9._]{1,30}$/.test(user)) throw new Error('Usuario de Instagram inválido.');
+      return res.json(await igPublic(user));
     }
 
     if (action === 'discover') {
