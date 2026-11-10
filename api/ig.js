@@ -135,6 +135,8 @@ module.exports = async (req, res) => {
       const k = body.kind;
       if (k === 'image') { p.image_url = body.url; p.caption = body.caption || ''; }
       else if (k === 'item') { p.image_url = body.url; p.is_carousel_item = 'true'; }
+      // texto alternativo (accesibilidad): solo imágenes del feed y del carrusel
+      if ((k === 'image' || k === 'item') && body.alt) p.alt_text = String(body.alt).slice(0, 1000);
       else if (k === 'story') { p.media_type = 'STORIES'; if (body.video) p.video_url = body.url; else p.image_url = body.url; }
       else if (k === 'reel') { p.media_type = 'REELS'; p.video_url = body.url; p.caption = body.caption || ''; p.share_to_feed = body.shareToFeed === false ? 'false' : 'true'; }
       else if (k === 'carousel') { p.media_type = 'CAROUSEL'; p.children = (body.children || []).join(','); p.caption = body.caption || ''; }

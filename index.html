@@ -119,6 +119,42 @@ aside{counter-reset:st}
 .pcol input{width:42px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);padding:2px}
 .bmbox{display:flex;gap:10px;align-items:center;margin-top:8px;padding:10px;border:1px dashed #3a4153;border-radius:10px}
 .bmbox .btn{flex:0 0 auto;cursor:grab}
+.offstep{display:none!important}
+.card .step{display:none}
+.wiz{position:sticky;top:-18px;z-index:3;background:var(--bg);padding:6px 0 10px;margin:-6px 0 -6px}
+.wiztop{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:6px}
+.savest.ok{color:#9fe7a4}
+.wizbar{height:4px;background:var(--panel2);border-radius:99px;overflow:hidden;margin-bottom:8px}
+.wizbar i{display:block;height:100%;background:var(--acc);transition:width .25s}
+.stepper{display:flex;gap:6px}
+.stp{flex:1;display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 8px;cursor:pointer;min-height:44px;text-align:left;font-size:12.5px;line-height:1.15}
+.stp b{flex:0 0 22px;height:22px;border-radius:99px;display:grid;place-items:center;background:var(--panel2);font-size:12px}
+.stp.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+.stp.on b{background:var(--acc);color:var(--acc-ink)}
+.stp.done b{background:#2c4a2e;color:#9fe7a4}
+.wiznav{position:sticky;bottom:-18px;display:flex;gap:8px;padding:12px 0 6px;background:linear-gradient(transparent,var(--bg) 30%);margin-top:auto}
+.wiznav .btn{min-height:46px}
+.wiznav .pri{flex:1}
+.btn.pulse{animation:pulse 1.2s ease 2}
+@keyframes pulse{50%{box-shadow:0 0 0 6px #c6ff3d40}}
+details.more{margin-top:12px;border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+details.more summary{margin:0;color:var(--ink);font-size:13px}
+h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:18px 0 4px;padding-top:12px;border-top:1px solid var(--line)}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.toast.show{pointer-events:auto}
+.toast .tact{margin-left:12px;background:transparent;border:0;color:#2a5bd7;font-weight:800;cursor:pointer;text-decoration:underline;padding:4px}
+.shot .star{position:absolute;left:3px;bottom:3px;background:#000b;border:0;border-radius:99px;width:24px;height:24px;cursor:pointer;font-size:12px;color:#fff}
+.shot:focus-visible{outline:2px solid var(--acc)}
+@media (max-width:980px){
+  aside{padding-bottom:0}
+  .chip,.tab,.btn{min-height:44px}
+  .btn.sm{min-height:40px}
+  input[type=text],input[type=url],input[type=password],textarea,select{font-size:16px}
+  .stp span{display:none}
+  .stp.on span{display:inline}
+  .shot .x,.shot .star{width:30px;height:30px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .hidden{display:none!important}
 </style>
 </head>
@@ -127,20 +163,25 @@ aside{counter-reset:st}
   <div class="logo">IG</div>
   <div>
     <h1>Estudio de Contenido</h1>
-    <p>Subí tu proyecto (ZIP, carpeta o GitHub) y sacá carrusel, post, historia, reel y texto listos para Instagram.</p>
+    <p>Elegí tu proyecto, tu marca o un local y armá en 4 pasos carrusel, post, historia y reel listos para Instagram.</p>
   </div>
 </header>
 
 <div class="wrap">
 <aside>
-  <div class="modes" id="modes">
+  <div class="wiz" id="wiz">
+    <div class="wiztop"><span id="stepCount">Paso 1</span><span id="saveState" class="savest"></span></div>
+    <div class="wizbar" aria-hidden="true"><i id="stepBar"></i></div>
+    <nav class="stepper" id="stepper" aria-label="Pasos"></nav>
+  </div>
+  <div class="modes" id="modes" data-step="1">
     <button class="mode on" data-mode="dev"><b>Mi app o web</b><span>Promocionar un proyecto tuyo</span></button>
     <button class="mode" data-mode="local"><b>Un local</b><span>Contenido para un negocio</span></button>
     <button class="mode" data-mode="brand"><b>Mi marca</b><span>Presentarte y tus servicios</span></button>
   </div>
 
   <!-- Mi marca -->
-  <div class="card" data-show="brand">
+  <div class="card" data-show="brand" data-step="1">
     <h2><span class="step"></span> Tu presentación</h2>
     <p class="hint" style="margin-top:0">Carrusel para arrancar el perfil: quién sos, qué hacés, cómo trabajás y qué incluye. Subí tu logo o una foto tuya y capturas de tus trabajos en el paso siguiente.</p>
     <label class="f">Tema del carrusel</label>
@@ -167,8 +208,8 @@ aside{counter-reset:st}
   </div>
 
   <!-- Local: datos -->
-  <div class="card" data-show="local">
-    <h2><span class="step"></span> Datos del local <span class="demo-badge hidden" id="lDemoBadge">ejemplo</span></h2>
+  <div class="card" data-show="local" data-step="1">
+    <h2><span class="step"></span> ¿De dónde saco los datos? <span class="demo-badge hidden" id="lDemoBadge">ejemplo</span></h2>
     <label class="f" style="margin-top:0">Link del local</label>
     <div class="row">
       <input type="text" id="lLink" placeholder="Google, Google Maps, Instagram, TikTok, su web… o el nombre">
@@ -179,12 +220,16 @@ aside{counter-reset:st}
       <a class="btn sm" id="bmLink" href="#" title="Arrastralo a la barra de favoritos">📥 Traer de Instagram</a>
       <span class="hint" style="margin:0">Para Instagram, lo más seguro: <b>arrastrá este botón a tu barra de favoritos</b> (una sola vez). Después abrí el perfil del local en Instagram y tocalo: los datos y las fotos llegan solos acá.</span>
     </div>
-    <div class="status" id="lStatus"></div>
+    <div class="status" id="lStatus" role="status" aria-live="polite"></div>
     <label class="f">¿Para quién es el contenido?</label>
     <div class="chips" id="purpose">
       <span class="chip on" data-p="local">Para el Instagram del local</span>
       <span class="chip" data-p="caso">Para mi Instagram (mostrar mi trabajo)</span>
     </div>
+  </div>
+  <div class="card" data-show="local" data-step="3">
+    <h2><span class="step"></span> Datos del local</h2>
+    <p class="hint" style="margin-top:0">Revisá lo que trajo el link y completá lo que falte. Todo lo que cambies se ve al instante a la derecha.</p>
     <div class="row"><div><label class="f">Nombre del local</label><input type="text" id="l-name"></div><div><label class="f">Rubro</label><input type="text" id="l-rubro" placeholder="Panadería, barbería…"></div></div>
     <div class="row"><div><label class="f">Instagram</label><input type="text" id="l-ig" placeholder="@local o link"></div><div><label class="f">TikTok</label><input type="text" id="l-tiktok" placeholder="@local o link"></div></div>
     <div class="row"><div><label class="f">WhatsApp</label><input type="text" id="l-wa"></div><div><label class="f">Web (opcional)</label><input type="text" id="l-web"></div></div>
@@ -193,8 +238,10 @@ aside{counter-reset:st}
     <label class="f">Descripción / bio <span style="font-weight:400">(copiala del Instagram)</span></label><textarea id="l-bio"></textarea>
     <label class="f" id="itemsLabel">Productos o servicios <span style="font-weight:400">(uno por línea · <i>Nombre: precio o detalle</i>)</span></label><textarea id="l-items" rows="4"></textarea>
     <label class="f">Promo u oferta (opcional)</label><input type="text" id="l-promo" placeholder="Martes 2x1 en facturas">
-    <label class="f">Calificación en Google (opcional)</label><input type="text" id="l-rating" placeholder="4,7 ★ · 230 reseñas en Google">
-    <label class="f" id="reviewLabel">Reseña destacada (opcional)</label><textarea id="l-review" rows="2" placeholder="Texto de la reseña — Nombre"></textarea>
+    <details class="more"><summary>Más datos (opcional): calificación y reseña</summary>
+    <label class="f">Calificación en Google</label><input type="text" id="l-rating" placeholder="4,7 ★ · 230 reseñas en Google">
+    <label class="f" id="reviewLabel">Reseña destacada</label><textarea id="l-review" rows="2" placeholder="Texto de la reseña — Nombre"></textarea>
+    </details>
     <div data-show="caso"><label class="f">¿Qué le hiciste?</label><input type="text" id="l-work" placeholder="Página web con catálogo y pedidos por WhatsApp"></div>
     <div class="row" style="margin-top:14px">
       <button class="btn pri hidden" id="lGenAI">✨ Escribir con IA</button>
@@ -203,7 +250,7 @@ aside{counter-reset:st}
   </div>
 
   <!-- Proyecto (mi app/web, o la web que le hice al local) -->
-  <div class="card" data-show="devlike">
+  <div class="card" data-show="devlike" data-step="1">
     <h2><span class="step"></span> <span id="projTitle">Tu proyecto</span></h2>
     <div class="tabs" id="srcTabs">
       <button class="tab on" data-src="zip">Archivos</button>
@@ -230,7 +277,7 @@ aside{counter-reset:st}
     <div data-srcpane="text" class="hidden">
       <p class="hint" style="margin-top:0">Describí el proyecto en "Contexto extra" y completá los textos del paso 2 (o generalos con IA).</p>
     </div>
-    <div class="status" id="status"></div>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
 
 
     <div data-show="dev">
@@ -251,7 +298,7 @@ aside{counter-reset:st}
   </div>
 
   <!-- Imágenes -->
-  <div class="card">
+  <div class="card" data-step="2">
     <h2><span class="step"></span> <span id="imgTitle">Capturas de pantalla</span></h2>
     <div data-show="logo">
       <label class="f" style="margin-top:0" id="logoLabel">Logo del local</label>
@@ -263,29 +310,31 @@ aside{counter-reset:st}
       <label class="f" id="photosLabel">Fotos (productos, el local, la gente)</label>
     </div>
     <div class="shots" id="shots"></div>
-    <p class="hint" style="margin-top:6px">Clic = usar o no usar · doble clic = poner de portada</p>
+    <p class="hint" style="margin-top:6px">Tocá una imagen para usarla o no · <b>★</b> la pone de portada · <b>✕</b> la quita</p>
     <button class="btn sm" id="addShots" style="margin-top:8px">+ Agregar imágenes</button>
     <input type="file" id="inShots" accept="image/*" multiple hidden>
   </div>
 
   <!-- Textos: mi proyecto / caso -->
-  <div class="card" data-show="devlike">
+  <div class="card" data-show="devlike" data-step="3">
     <h2><span class="step"></span> Textos <span class="demo-badge" id="demoBadge">ejemplo</span></h2>
     <label class="f">Nombre del proyecto</label><input type="text" id="f-name">
-    <label class="f">Etiqueta chica (arriba)</label><input type="text" id="f-kicker">
     <label class="f">Gancho (frase grande de portada)</label><input type="text" id="f-hook">
     <label class="f">Qué es, en una línea</label><input type="text" id="f-tagline">
     <label class="f">Problema que resuelve</label><input type="text" id="f-problem">
     <label class="f">Para quién es</label><input type="text" id="f-audience">
     <label class="f">Funciones (una por línea · <i>Título: descripción</i>)</label><textarea id="f-features" rows="5"></textarea>
-    <label class="f">Resultado o lo que dijo el cliente <span style="font-weight:400">(opcional · <i>texto — nombre</i>)</span></label><textarea id="f-result" rows="2" placeholder="Ahora sé qué se le hizo a cada auto y le aviso al cliente en un minuto — Dueño de CKP"></textarea>
+    <label class="f">Llamado a la acción</label><input type="text" id="f-cta">
+    <details class="more"><summary>Más textos (opcional): etiqueta, resultado, qué incluye y tecnologías</summary>
+    <label class="f">Etiqueta chica (arriba)</label><input type="text" id="f-kicker">
+    <label class="f">Resultado o lo que dijo el cliente <span style="font-weight:400">(<i>texto — nombre</i>)</span></label><textarea id="f-result" rows="2" placeholder="Ahora sé qué se le hizo a cada auto y le aviso al cliente en un minuto — Dueño de CKP"></textarea>
     <label class="f">Qué incluye <span style="font-weight:400">(uno por línea · reemplaza la diapositiva de tecnología)</span></label><textarea id="f-includes" rows="4"></textarea>
     <label class="f">Tecnologías (separadas por coma)</label><input type="text" id="f-tech">
-    <label class="f">Llamado a la acción</label><input type="text" id="f-cta">
+    </details>
   </div>
 
   <!-- Textos: post del local -->
-  <div class="card" data-show="lp-local">
+  <div class="card" data-show="lp-local" data-step="3">
     <h2><span class="step"></span> Textos de la portada</h2>
     <label class="f" style="margin-top:0">Etiqueta (arriba)</label><input type="text" id="lf-kicker" placeholder="PANADERÍA">
     <label class="f">Frase principal</label><input type="text" id="lf-hook">
@@ -294,7 +343,7 @@ aside{counter-reset:st}
   </div>
 
   <!-- Estilo -->
-  <div class="card">
+  <div class="card" data-step="4">
     <h2><span class="step"></span> Estilo y marca</h2>
     <label class="f" style="margin-top:0">Colores</label>
     <div class="chips" id="themes">
@@ -313,18 +362,7 @@ aside{counter-reset:st}
       <span class="chip" data-l="anotado">Anotado a mano</span>
     </div>
     <p class="hint" id="lookInfo"></p>
-    <label class="f">Voz de reels e historias</label>
-    <select id="voiceSel"></select>
-    <p class="hint" id="voiceHint"></p>
-    <label class="f">Música de fondo</label>
-    <select id="musicSel">
-      <option value="auto">Automática (cambia en cada publicación)</option>
-      <option value="lofi">Lo-fi tranqui</option>
-      <option value="calma">Calma (ambiente suave)</option>
-      <option value="pulso">Con ritmo</option>
-      <option value="off">Sin música</option>
-    </select>
-    <p class="hint" id="musicInfo"></p>
+    <details class="more"><summary>Ajustes finos: color de acento y tipografía</summary>
     <div class="row" style="align-items:end">
       <div><label class="f">Color de acento</label><input type="color" id="accent" value="#c6ff3d" style="width:100%;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);padding:3px"></div>
       <div><button class="btn sm" id="useDetected" style="width:100%;height:40px" disabled>Restaurar detectados</button></div>
@@ -341,7 +379,24 @@ aside{counter-reset:st}
       <option value="nunito">Nunito (amigable)</option>
     </select>
     <p class="hint" id="fontInfo"></p>
-    <label class="f" id="brandLabel">Tu marca</label><input type="text" id="b-brand">
+    </details>
+    <h3 class="sub">Video: voz, música y subtítulos</h3>
+    <label class="f" style="margin-top:0">Voz de reels e historias</label>
+    <select id="voiceSel"></select>
+    <p class="hint" id="voiceHint"></p>
+    <label class="f">Música de fondo</label>
+    <select id="musicSel">
+      <option value="auto">Automática (cambia en cada publicación)</option>
+      <option value="lofi">Lo-fi tranqui</option>
+      <option value="calma">Calma (ambiente suave)</option>
+      <option value="pulso">Con ritmo</option>
+      <option value="off">Sin música</option>
+    </select>
+    <p class="hint" id="musicInfo"></p>
+    <label class="chk"><input type="checkbox" id="subsChk" checked> Subtítulos de lo que dice la voz <span class="hint" style="margin:0">(para quien mira sin sonido o no escucha)</span></label>
+    <h3 class="sub">Tu marca</h3>
+
+    <label class="f" id="brandLabel" style="margin-top:0">Nombre de tu marca</label><input type="text" id="b-brand">
     <div class="row">
       <div><label class="f">WhatsApp</label><input type="text" id="b-wa"></div>
       <div><label class="f">Instagram</label><input type="text" id="b-ig" placeholder="@tuusuario"></div>
@@ -354,6 +409,7 @@ aside{counter-reset:st}
       <label class="f">Oferta de lanzamiento (opcional)</label><input type="text" id="b-offer" placeholder="Primeros 3 locales: 20% off">
     </div>
   </div>
+  <div class="wiznav"><button class="btn" id="wizPrev" type="button">← Anterior</button><button class="btn pri" id="wizNext" type="button">Siguiente →</button></div>
 </aside>
 
 <main>
@@ -565,7 +621,7 @@ aside{counter-reset:st}
   </div>
 </main>
 </div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 "use strict";
@@ -573,7 +629,12 @@ aside{counter-reset:st}
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2600); }
+function toast(msg, o){
+  o = o || {}; const t = $('#toast'); t.innerHTML = '';
+  const sp = document.createElement('span'); sp.textContent = msg; t.appendChild(sp);
+  if (o.action) { const b = document.createElement('button'); b.type = 'button'; b.className = 'tact'; b.textContent = o.action; b.onclick = () => { t.classList.remove('show'); o.fn(); }; t.appendChild(b); }
+  t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), o.ms || (o.action ? 7000 : 2800));
+}
 function status(msg, err){ const s=$('#status'); s.textContent=msg; s.classList.toggle('show',!!msg); s.classList.toggle('err',!!err); }
 const store = { get(k,d){ try{ const v=localStorage.getItem('igstudio.'+k); return v==null?d:JSON.parse(v);}catch{return d} }, set(k,v){ try{ localStorage.setItem('igstudio.'+k, JSON.stringify(v)); }catch{} } };
 let debT; function debounce(fn, ms=220){ clearTimeout(debT); debT=setTimeout(fn, ms); }
@@ -783,21 +844,23 @@ async function makeShot(blob, name){
   const url = URL.createObjectURL(blob);
   const img = new Image(); img.src = url;
   try { await img.decode(); } catch { return null; }
-  return { id: Math.random().toString(36).slice(2), name, img, url, w: img.naturalWidth, h: img.naturalHeight, on: true };
+  return { id: Math.random().toString(36).slice(2), name, img, url, blob, w: img.naturalWidth, h: img.naturalHeight, on: true };
 }
 function activeShots(){ return S.shots.filter(s => s.on); }
 function renderShotList(){
   const box = $('#shots'); box.innerHTML = '';
-  if (!S.shots.length) { box.innerHTML = '<span class="hint" style="margin:0">Sin capturas: se usa un dibujo de código. Agregá capturas de tu app para que luzca mucho más.</span>'; return; }
+  if (!S.shots.length) { box.innerHTML = '<span class="hint" style="margin:0">Sin capturas: se usa un dibujo de código. Agregá capturas de tu app para que luzca mucho más.</span>'; saveImages(); return; }
   const firstOn = activeShots()[0];
   S.shots.forEach(s => {
     const d = document.createElement('div'); d.className = 'shot' + (s.on?'':' off') + (s===firstOn?' first':'');
-    d.title = s.name + ' — clic para activar/desactivar, doble clic para portada';
-    d.innerHTML = `<img src="${s.url}" alt="">${s===firstOn?'<span class="tag">★ portada</span>':''}<button class="x" title="Quitar">✕</button>`;
-    d.onclick = ev => { if (ev.target.classList.contains('x')) { S.shots = S.shots.filter(x=>x!==s); } else { s.on = !s.on; } renderShotList(); renderAll(); };
+    d.title = s.name + ' — tocá para usarla o no'; d.tabIndex = 0; d.setAttribute('role', 'button'); d.setAttribute('aria-pressed', s.on ? 'true' : 'false'); d.setAttribute('aria-label', `${s.name}${s===firstOn ? ', portada' : ''}, ${s.on ? 'en uso' : 'sin usar'}`);
+    d.innerHTML = `<img src="${s.url}" alt="">${s===firstOn?'<span class="tag">★ portada</span>':''}<button class="x" type="button" title="Quitar" aria-label="Quitar imagen">✕</button>${s!==firstOn?'<button class="star" type="button" title="Poner de portada" aria-label="Poner de portada">★</button>':''}`;
+    d.onclick = ev => { if (ev.target.classList.contains('x')) { pushUndo('Imagen quitada'); S.shots = S.shots.filter(x=>x!==s); toast('Imagen quitada', { action: 'Deshacer', fn: undo }); } else if (ev.target.classList.contains('star')) { s.on = true; S.shots = [s, ...S.shots.filter(x=>x!==s)]; } else { s.on = !s.on; } renderShotList(); renderAll(); };
+    d.onkeydown = ev => { if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); d.querySelector('.x').click(); } };
     d.ondblclick = () => { s.on = true; S.shots = [s, ...S.shots.filter(x=>x!==s)]; renderShotList(); renderAll(); };
     box.appendChild(d);
   });
+  saveImages();
 }
 
 /* ============ análisis automático (sin IA) ============ */
@@ -918,6 +981,7 @@ async function generateAI(){
   const prompt = `Sos redactor de marketing para Instagram de un desarrollador freelance argentino (${brand.brand || 'freelancer'}, ${brand.city || 'Argentina'}) que hace apps y webs para negocios.
 Escribí en español rioplatense (voseo), claro, sin tecnicismos salvo que el tono sea técnico. Nada inventado: basate en lo que muestra el proyecto. No uses emojis en los campos cortos.
 Que NO parezca escrito por una IA: frases cortas y concretas, como las diría el desarrollador en persona; detalles reales del proyecto (rubro, ciudad, qué resuelve); nada de "llevá tu negocio al siguiente nivel", "potenciá", "descubrí", "solución integral", "innovador", "en la era digital", "experiencia única"; sin rayas largas (—); sin signos de exclamación de más.
+Redacción web: lo más importante primero (pirámide invertida), voz activa, oraciones cortas (máximo 20 palabras), párrafos de hasta 3 oraciones, nada de lenguaje promocional (increíble, el mejor, imperdible: mejor un dato concreto), palabras simples y cercanas (usar, esperar, enseguida), sin renglones en mayúsculas.
 Tono: ${$('#tone').value}. Objetivo: ${$('#goal').value}.
 Contexto que dio el autor: ${$('#ctx').value.trim() || '(ninguno)'}${S.mode === 'local' ? `\nIMPORTANTE: es un CASO DE CLIENTE para el Instagram del desarrollador. Cliente: ${$('#l-name').value} (${$('#l-rubro').value}). Lo que se le hizo: ${$('#l-work').value || 'una web'}. Datos del cliente: ${$('#l-bio').value}. El 'name' es el nombre del cliente, 'kicker' debe ser tipo TRABAJO PARA CLIENTE y el hook debe contar qué se le hizo.` : ''}
 
@@ -1350,7 +1414,7 @@ function drawReelFrame(ctx, R, t, b, T){
     else if (trans !== 'cut') { ctx.save(); ctx.globalAlpha = p; ctx.fillStyle = T.bg; ctx.fillRect(0, 0, W, H); ctx.restore(); }
   }
   if (sc.index > 0 && trans === 'wipe' && inT < 0.3) { const p = ease(inT / 0.3); ctx.fillStyle = T.acc; ctx.fillRect(W * p, 0, W * (1 - p) + 1, H); }
-  if (sc.index > 0 && trans === 'cut' && inT < 0.07) { ctx.fillStyle = alpha(T.acc, 0.3); ctx.fillRect(0, 0, W, H); }
+  drawSubs(ctx, R, t, sc);
   if (curLook() !== 'limpio' || R.fmt === 'story') return;
   // barras de progreso estilo historia (solo en el estilo limpio)
   const n = R.scenes.length, gap = 10, x0 = 80, bw = (W - 160 - gap*(n-1)) / n, yb = 180;
@@ -1567,7 +1631,7 @@ async function generateLocalAI(){
     let images = [];
     try { const lim = typeof AI.limits === 'function' ? await AI.limits() : null; if (lim && lim.images) { for (const sh of activeShots().slice(0, 4)) { const bl = await shrinkBlob(sh.img, 768); if (bl) images.push(bl); } } } catch {}
     const prompt = `Sos community manager de comercios argentinos. Actuás como director de arte y asistente de marketing de comercios chicos: tono acorde a la personalidad del local, profesional y cuidado, nada de exageraciones ni de estética "IA saturada".
-Escribí en español rioplatense (voseo), cálido y vendedor, sin exagerar. Que suene a una persona del local, no a una IA: frases cortas, nada de "descubrí", "experiencia única", "no te lo pierdas", "al siguiente nivel"; sin rayas largas (—).
+Escribí en español rioplatense (voseo), cálido y vendedor, sin exagerar. Que suene a una persona del local, no a una IA: frases cortas, nada de "descubrí", "experiencia única", "no te lo pierdas", "al siguiente nivel"; sin rayas largas (—). Redacción web: lo más importante primero, oraciones cortas, palabras simples, sin lenguaje promocional ni renglones en mayúsculas.
 Armá los textos de un carrusel de Instagram PARA EL PROPIO LOCAL (lo publica el local en su cuenta).
 No inventes precios, horarios, direcciones ni datos: usá solo lo que está acá${images.length ? ' y lo que se ve en las fotos adjuntas' : ''}.
 
@@ -1835,9 +1899,11 @@ async function keyDiagnosis(){
 async function api(path, body, method){
   method = method || (body ? 'POST' : 'GET');
   const url = method === 'GET' && body ? path + '?' + new URLSearchParams(body) : path;
-  const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'x-studio-key': studioKey() }, body: method === 'POST' ? JSON.stringify(body || {}) : undefined });
+  let r;
+  try { r = await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'x-studio-key': studioKey() }, body: method === 'POST' ? JSON.stringify(body || {}) : undefined }); }
+  catch { const e = new Error('No hay conexión con el servidor. Revisá internet y probá de nuevo.'); e.status = 0; throw e; }
   const j = await r.json().catch(() => ({}));
-  if (!r.ok || j.error) { const e = new Error(j.error || ('Error ' + r.status)); e.status = r.status; e.code = j.code; throw e; }
+  if (!r.ok || j.error) { const e = new Error(j.error || (r.status >= 500 ? 'El servidor tuvo un problema. Probá de nuevo en un minuto.' : r.status === 404 ? 'Esa función no está disponible en esta versión.' : 'Algo salió mal (código ' + r.status + ').')); e.status = r.status; e.code = j.code; throw e; }
   return j;
 }
 async function detectServer(){
@@ -1924,7 +1990,7 @@ async function publishFlow(){
       const cs = $$('#carousel canvas').slice(0, 10);
       const li = plog(`Subiendo ${cs.length} imágenes del carrusel…`);
       const ids = [];
-      for (let i = 0; i < cs.length; i++) { const url = await up(await jpegBlob(cs[i]), `slide-${i + 1}.jpg`, 'image/jpeg'); ids.push((await api('api/ig', { action: 'container', kind: 'item', url })).id); li.textContent = `Preparando carrusel ${i + 1}/${cs.length}…`; }
+      for (let i = 0; i < cs.length; i++) { const url = await up(await jpegBlob(cs[i]), `slide-${i + 1}.jpg`, 'image/jpeg'); ids.push((await api('api/ig', { action: 'container', kind: 'item', url, alt: cs[i].dataset.alt || '' })).id); li.textContent = `Preparando carrusel ${i + 1}/${cs.length}…`; }
       const parent = (await api('api/ig', { action: 'container', kind: 'carousel', children: ids, caption })).id;
       await waitReady(parent, false);
       done('Carrusel', await api('api/ig', { action: 'publish', id: parent }));
@@ -1932,7 +1998,7 @@ async function publishFlow(){
     if (want.post) {
       plog('Subiendo el post…');
       const url = await up(await jpegBlob($('#cPost')), 'post.jpg', 'image/jpeg');
-      const id = (await api('api/ig', { action: 'container', kind: 'image', url, caption })).id;
+      const id = (await api('api/ig', { action: 'container', kind: 'image', url, caption, alt: $('#cPost').dataset.alt || '' })).id;
       await waitReady(id, false); done('Post', await api('api/ig', { action: 'publish', id }));
     }
     if (want.story && S.storyFmt === 'video') {
@@ -2844,8 +2910,11 @@ const AI_TELLS = [
   [AIW('revolucionari[oa]|disruptiv[oa]'), null, 'revolucionario'], [AIW('innovador[a]?'), null, 'innovador'],
   [AIW('desbloque(?:á|a|ar)'), null, 'desbloquear'], [AIW('(?:el |tu )?aliado (?:perfecto|ideal)'), null, 'aliado perfecto'],
   [AIW('mundo de posibilidades'), null, 'mundo de posibilidades'], [AIW('a otro nivel'), '', 'a otro nivel'],
+  [AIW('utilizar'), 'usar', 'utilizar'], [AIW('utilizá'), 'usá', 'utilizá'], [AIW('aguardar'), 'esperar', 'aguardar'], [AIW('aguardá'), 'esperá', 'aguardá'], [AIW('en breve'), 'enseguida', 'en breve'],
+  [AIW('(?:hac[eé]|haz) clic (?:aquí|acá)'), null, 'hacé clic acá'],
 ];
 const EMO = /\p{Extended_Pictographic}️?/gu;
+const PROMO = /(?<![\p{L}])(incre[ií]bles?|imperdibles?|espectaculares?|el mejor|la mejor|los mejores|las mejores|insuperables?|de primer nivel|calidad premium|[uú]nic[oa]s? en (?:su tipo|el mercado))(?![\p{L}])/giu;
 const TAGRE = /#[\p{L}\p{N}_]+/gu;
 function fmtD(d){ const p = (d || '').split('-'); return p.length === 3 ? `${+p[2]}/${+p[1]}` : d; }
 function pubHist(){ return store.get('hist', []); }
@@ -2872,6 +2941,13 @@ function qualityChecks(){
   add(emo <= 4, emo <= 4 ? `${emo} emoji${emo === 1 ? '' : 's'}` : `${emo} emojis: con 2 o 3 se ve más natural`, emo > 4 ? 'emoji' : null);
   const hw = hook.split(/\s+/).filter(Boolean).length;
   add(hw > 0 && hw <= 10, hw <= 10 ? `Gancho corto (${hw} palabras)` : `El gancho tiene ${hw} palabras: con 8 o menos se lee de un vistazo`);
+  const promo = [...new Set((cap.match(PROMO) || []).map(z => z.toLowerCase()))];
+  add(!promo.length, promo.length ? `Lenguaje promocional ("${promo.slice(0, 3).join('", "')}"): le quita credibilidad. Mejor un dato concreto.` : 'Sin lenguaje promocional exagerado');
+  const longS = cap.split(/[.!?\n]+/).filter(z => z.trim().split(/\s+/).length > 25).length;
+  const longP = cap.split(/\n\s*\n/).filter(z => z.trim().split(/\s+/).length > 75).length;
+  add(!longS && !longP, longS || longP ? `${longS ? longS + ' oración(es) de más de 25 palabras' : ''}${longS && longP ? ' y ' : ''}${longP ? longP + ' párrafo(s) de más de 75 palabras' : ''}: cortalos para que se lea de un vistazo` : 'Oraciones y párrafos cortos');
+  const caps = cap.split('\n').filter(l => { const w = l.match(/\p{L}{3,}/gu) || []; return w.length >= 4 && w.every(x => x === x.toUpperCase()); }).length;
+  if (caps) add(false, `${caps} renglón(es) en MAYÚSCULAS: cuestan más de leer`, 'caps');
   const used = pubHist().find(h => normT(h.hook) === normT(hook));
   add(!used, used ? `Ese gancho ya lo usaste el ${fmtD(used.d)}: tocá "✍️ Otro gancho"` : 'Gancho que todavía no usaste', used ? 'hook' : null);
   const first = (cap.split('\n')[0] || '');
@@ -2898,6 +2974,7 @@ function fixAll(){
   let cap = $('#f-caption').value;
   AI_TELLS.forEach(([re, rep]) => { if (rep == null) return; re.lastIndex = 0; cap = cap.replace(re, m => keepCase(m, rep)); });
   cap = noDash(cap).replace(/ {2,}/g, ' ').replace(/ +([.,:])/g, '$1');
+  cap = cap.split('\n').map(l => { const w = l.match(/\p{L}{3,}/gu) || []; return w.length >= 4 && w.every(x => x === x.toUpperCase()) ? cap1(l.toLowerCase()) : l; }).join('\n');
   let k = 0; cap = cap.replace(EMO, e => (++k <= 3 ? e : '')).replace(/^[ \t]+/gm, '');
   const t = trimTags(cap, $('#f-hashtags').value, 5);
   $('#f-caption').value = t.cap.trim(); $('#f-hashtags').value = t.tags;
@@ -3468,6 +3545,191 @@ async function clientPackage(){
 }
 
 const BM_CODE = "(async()=>{const APP='__APP__';if(!/(^|\\.)instagram\\.com$/.test(location.hostname)){alert('Abrí primero el Instagram del local (instagram.com/usuario) y tocá este botón ahí.');return}const user=location.pathname.split('/').filter(Boolean)[0];if(!user||/^(p|reel|reels|explore|stories|direct|accounts)$/.test(user)){alert('Entrá al perfil del local (instagram.com/usuario) y tocá el botón de nuevo.');return}const w=window.open(APP,'igstudio');let ok=false;window.addEventListener('message',e=>{if(e.data&&e.data.type==='igstudio-ok')ok=true});try{const r=await fetch('/api/v1/users/web_profile_info/?username='+encodeURIComponent(user),{headers:{'X-IG-App-ID':'936619743392459'},credentials:'include'});const u=((await r.json()).data||{}).user;if(!u)throw new Error('Instagram no devolvió el perfil');let addr='';try{const a=JSON.parse(u.business_address_json||'{}');addr=[a.street_address,a.city_name].filter(Boolean).join(', ')}catch(e){}const toData=async url=>{try{const b=await(await fetch(url)).blob();return await new Promise(res=>{const f=new FileReader();f.onload=()=>res(f.result);f.readAsDataURL(b)})}catch(e){return url}};const nodes=((u.edge_owner_to_timeline_media||{}).edges||[]).map(e=>e.node).slice(0,10);const media=[];for(const n of nodes){media.push({media_type:n.is_video?'VIDEO':'IMAGE',media_url:await toData(n.display_url),caption:(((n.edge_media_to_caption||{}).edges||[])[0]||{node:{text:''}}).node.text})}const d={source:'navegador',username:u.username,name:u.full_name,biography:u.biography,website:u.external_url,profile_picture_url:await toData(u.profile_pic_url_hd||u.profile_pic_url),category:u.category_name||'',phone:u.business_phone_number||u.public_phone_number||'',address:addr,private:!!u.is_private,media:{data:media}};for(let i=0;i<90&&!ok;i++){try{w.postMessage({type:'igstudio-import',data:d},new URL(APP).origin)}catch(e){}await new Promise(r=>setTimeout(r,500))}if(!ok)alert('No pude pasar los datos al Estudio. Fijate que se haya abierto la pestaña y probá de nuevo.')}catch(e){alert('No pude leer el perfil ('+e.message+'). ¿Iniciaste sesión en Instagram en este navegador?')}})();";
+/* ---- subtítulos de la voz (accesibilidad y para quien mira sin sonido) ---- */
+S.subs = store.get('subs', true);
+function subChunks(text){
+  const words = speakable(text).split(/\s+/).filter(Boolean), out = []; let cur = [];
+  words.forEach(w => { cur.push(w); if (cur.length >= 7 || (/[.,;:?!]$/.test(w) && cur.length >= 3)) { out.push(cur.join(' ')); cur = []; } });
+  if (cur.length) { if (out.length && cur.length < 3) out[out.length - 1] += ' ' + cur.join(' '); else out.push(cur.join(' ')); }
+  return out;
+}
+function drawSubs(ctx, R, t, sc){
+  if (!S.subs || !sc || !sc.audio || !sc.text) return;
+  const st = sc.start + sc.lead, dur = sc.audio.duration, rel = t - st;
+  if (rel < 0 || rel > dur + 0.2) return;
+  const ch = sc._subs || (sc._subs = subChunks(sc.text)); if (!ch.length) return;
+  const tot = ch.reduce((a, c) => a + c.length, 0); let acc = 0, cur = ch[ch.length - 1];
+  for (const c of ch) { acc += c.length; if (rel <= dur * acc / tot) { cur = c; break; } }
+  const W = 1080, y = R.fmt === 'story' ? 1450 : 1445;
+  const F = fit(ctx, cur, { maxW: W - 240, maxH: 130, size: 46, min: 32, weight: 800, family: FB, lh: 1.2, maxLines: 2 });
+  ctx.save(); ctx.font = F.font;
+  const tw = Math.max(...F.lines.map(l => ctx.measureText(l).width)), bw = tw + 56, bh = F.h + 30, bx = (W - bw) / 2, by = y - bh / 2;
+  rr(ctx, bx, by, bw, bh, 18); ctx.fillStyle = 'rgba(0,0,0,.74)'; ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  F.lines.forEach((l, i) => ctx.fillText(l, W / 2, by + 15 + F.size * 0.86 + i * F.lh));
+  ctx.restore();
+}
+
+/* ============ asistente paso a paso, autoguardado y deshacer (UX) ============ */
+// Nielsen: visibilidad del estado, control y libertad (deshacer), reconocer antes que recordar.
+// Tognazzini: proteger el trabajo del usuario (autoguardado) y guardar el estado.
+// Ley de Hick: un paso a la vez, con lo avanzado plegado.
+const STEP_NAMES = { 1: 'Qué creás', 2: 'Imágenes', 3: 'Textos', 4: 'Estilo y marca' };
+S.step = store.get('step', 1); S.visited = new Set();
+function visibleSteps(){ return [1, 2, 3, 4].filter(n => $$(`aside [data-step="${n}"]`).some(el => !el.classList.contains('hidden'))); }
+function stepDone(n){
+  if (n === 1) return S.mode === 'brand' ? !!$('#m-hook').value.trim() : S.mode === 'local' ? !!$('#l-name').value.trim() : (!!S.raw || !S.isDemo);
+  if (n === 2) return activeShots().length > 0 || !!S.logo;
+  if (n === 3) return !!currentHook() && (!S.isDemo || S.visited.has(3));
+  return S.visited.has(n);
+}
+function goStep(n, focus){
+  const vs = visibleSteps(); if (!vs.length) return;
+  if (!vs.includes(n)) n = vs.find(x => x >= n) || vs[vs.length - 1];
+  S.step = n; store.set('step', n); S.visited.add(n);
+  $$('aside [data-step]').forEach(el => el.classList.toggle('offstep', +el.dataset.step !== n));
+  renderStepper();
+  if (focus) {
+    const aside = $('aside'); aside.scrollTop = 0;
+    if (window.innerWidth <= 980) $('#stepper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const h = $$(`aside [data-step="${n}"]:not(.hidden) h2`)[0]; if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+  }
+}
+function renderStepper(){
+  const vs = visibleSteps(), i = vs.indexOf(S.step), box = $('#stepper'); if (!box) return;
+  box.innerHTML = vs.map((n, k) => { const done = stepDone(n) && n !== S.step; return `<button type="button" class="stp${n === S.step ? ' on' : ''}${done ? ' done' : ''}" data-go="${n}" ${n === S.step ? 'aria-current="step"' : ''} title="Paso ${k + 1}: ${STEP_NAMES[n]}"><b>${done ? '✓' : k + 1}</b><span>${STEP_NAMES[n]}</span></button>`; }).join('');
+  box.querySelectorAll('[data-go]').forEach(b => b.onclick = () => goStep(+b.dataset.go, true));
+  $('#stepBar').style.width = Math.round(100 * (i + 1) / vs.length) + '%';
+  $('#stepCount').textContent = `Paso ${i + 1} de ${vs.length}`;
+  $('#wizPrev').disabled = i <= 0;
+  const next = vs[i + 1];
+  $('#wizNext').textContent = next ? `Siguiente: ${STEP_NAMES[next]} →` : 'Ver el resultado ↓';
+}
+function wizNext(){
+  const vs = visibleSteps(), i = vs.indexOf(S.step);
+  if (vs[i + 1]) { goStep(vs[i + 1], true); return; }
+  if (window.innerWidth <= 980) $('main').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  else toast('Tu contenido está a la derecha: elegí la pestaña y descargalo');
+  $('#outTabs .tab.on').focus();
+}
+function wizPrev(){ const vs = visibleSteps(), i = vs.indexOf(S.step); if (i > 0) goStep(vs[i - 1], true); }
+function pulseNext(){ const b = $('#wizNext'); if (!b) return; b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); renderStepper(); }
+
+/* ---- estado del formulario ---- */
+const FORM_SEL = 'aside input[id]:not([type=file]), aside textarea[id], aside select[id], #f-caption, #f-hashtags, [data-pane=poster] input[id], [data-pane=poster] textarea[id], #pkgVideo, #hl-labels, #hl-style';
+function readForm(){ const f = {}; $$(FORM_SEL).forEach(el => { f[el.id] = el.type === 'checkbox' ? el.checked : el.value; }); return f; }
+function writeForm(f){ Object.entries(f || {}).forEach(([id, v]) => { const el = document.getElementById(id); if (!el || el.type === 'file') return; if (el.type === 'checkbox') el.checked = !!v; else el.value = v; }); }
+
+/* ---- deshacer ---- */
+const UNDO = [];
+function pushUndo(label){
+  UNDO.push({ label, form: readForm(), shots: S.shots.slice(), logo: S.logo, logoBg: S.logoBg, purpose: S.purpose, raw: S.raw, isDemo: S.isDemo, auto: S.auto, theme: S.theme, capAI: S.capAI });
+  if (UNDO.length > 15) UNDO.shift();
+}
+function undo(){
+  const u = UNDO.pop(); if (!u) { toast('No hay nada para deshacer'); return; }
+  writeForm(u.form); S.shots = u.shots; S.logo = u.logo; S.logoBg = u.logoBg; S.purpose = u.purpose; S.raw = u.raw; S.isDemo = u.isDemo; S.auto = u.auto; S.capAI = u.capAI; setTheme(u.theme);
+  $('#logoSlot').innerHTML = S.logo ? `<img src="${S.logo.url}" alt="Logo">` : 'sin logo'; $('#delLogo').classList.toggle('hidden', !S.logo);
+  S.poster.filled = true; S.poster.colorsSet = true;
+  applyMode(); renderShotList(); renderAll(); saveDraft(); toast('Deshecho: ' + u.label);
+}
+// envuelve las acciones que pisan lo que el usuario escribió
+function undoable(fn, label){
+  return async function(...a){ pushUndo(label); const r = await fn.apply(this, a); toast(label, { action: 'Deshacer', fn: undo }); return r; };
+}
+nextHook = undoable(nextHook, 'Gancho nuevo');
+applyTopic = undoable(applyTopic, 'Tema cambiado');
+fixAll = undoable(fixAll, 'Texto corregido');
+generateAI = undoable(generateAI, 'Textos escritos con IA');
+generateLocalAI = undoable(generateLocalAI, 'Textos escritos con IA');
+localFromLink = undoable(localFromLink, 'Datos del local cargados');
+buildLocal = undoable(buildLocal, 'Contenido armado');
+
+/* ---- autoguardado: textos en el navegador, imágenes en IndexedDB ---- */
+const IDB = {
+  db: null,
+  open(){ if (this.db) return Promise.resolve(this.db); return new Promise((ok, ko) => { try { const r = indexedDB.open('igstudio', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => ok(this.db = r.result); r.onerror = () => ko(r.error); } catch (e) { ko(e); } }); },
+  async put(k, v){ const db = await this.open(); return new Promise((ok, ko) => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = ok; t.onerror = () => ko(t.error); }); },
+  async get(k){ const db = await this.open(); return new Promise((ok, ko) => { const t = db.transaction('kv', 'readonly'); const r = t.objectStore('kv').get(k); r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); }); },
+  async del(k){ const db = await this.open(); return new Promise(ok => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').delete(k); t.oncomplete = ok; t.onerror = ok; }); }
+};
+let draftT = 0, imgT = 0, restoring = false;
+function saveDraft(){
+  if (restoring) return;
+  clearTimeout(draftT);
+  draftT = setTimeout(() => {
+    store.set('draft', { v: 1, at: Date.now(), mode: S.mode, purpose: S.purpose, step: S.step, storyKind: S.storyKind, form: readForm(), capAI: !!S.capAI, isDemo: S.isDemo });
+    const st = $('#saveState'); if (st) { st.textContent = '✓ Guardado en este navegador'; st.classList.add('ok'); }
+  }, 500);
+}
+function saveImages(){
+  if (restoring) return;
+  clearTimeout(imgT);
+  imgT = setTimeout(async () => {
+    try {
+      const pack = list => (list || []).filter(s => s && s.blob).map(s => ({ blob: s.blob, name: s.name, on: s.on, manual: !!s.manual, caption: s.caption || '' }));
+      await IDB.put('imgs:' + S.mode, { shots: pack(S.shots), logo: S.logo && S.logo.blob ? { blob: S.logo.blob, name: S.logo.name } : null, logoBg: S.logoBg || null });
+    } catch {}
+  }, 1200);
+}
+async function loadImages(mode){
+  try {
+    const d = await IDB.get('imgs:' + mode); if (!d) return null;
+    const shots = [];
+    for (const s of d.shots || []) { const sh = await makeShot(s.blob, s.name); if (sh) { sh.on = s.on; sh.manual = s.manual; sh.caption = s.caption; shots.push(sh); } }
+    const logo = d.logo ? await makeShot(d.logo.blob, d.logo.name) : null;
+    return { shots, logo, logoBg: d.logoBg };
+  } catch { return null; }
+}
+async function restoreDraft(){
+  const d = store.get('draft', null); if (!d || !d.form) return false;
+  restoring = true;
+  try {
+    if (d.mode && d.mode !== S.mode) setMode(d.mode);
+    writeForm(d.form);
+    S.purpose = d.purpose || S.purpose; S.storyKind = d.storyKind || 'auto'; S.capAI = d.capAI; S.isDemo = !!d.isDemo;
+    if (!S.isDemo) $('#demoBadge').classList.add('hidden');
+    if (S.mode === 'local') $('#lDemoBadge').classList.add('hidden');
+    $('#m-pres').classList.toggle('hidden', $('#m-topic').value !== 'presentacion'); $('#m-tips').classList.toggle('hidden', $('#m-topic').value === 'presentacion');
+    const im = await loadImages(S.mode);
+    if (im) { S.shots = im.shots; S.logo = im.logo; S.logoBg = im.logoBg; $('#logoSlot').innerHTML = S.logo ? `<img src="${S.logo.url}" alt="Logo">` : 'sin logo'; $('#delLogo').classList.toggle('hidden', !S.logo); }
+    S.poster.filled = true; S.poster.colorsSet = !!d.form['pc-bg'] && d.form['pc-bg'] !== '#000000';
+    applyMode(); renderShotList(); renderAll();
+    if (d.step) goStep(d.step);
+  } finally { restoring = false; }
+  const mins = Math.round((Date.now() - d.at) / 60000);
+  toast(`Recuperé tu trabajo anterior${mins > 1 ? ` (de hace ${mins < 60 ? mins + ' min' : Math.round(mins / 60) + ' h'})` : ''}`, { action: 'Empezar de cero', fn: resetAll, ms: 9000 });
+  return true;
+}
+async function resetAll(){
+  store.set('draft', null); store.set('step', 1);
+  try { for (const m of ['dev', 'local', 'brand']) await IDB.del('imgs:' + m); } catch {}
+  location.reload();
+}
+document.addEventListener('input', e => { if (e.target.matches && e.target.matches(FORM_SEL)) saveDraft(); });
+document.addEventListener('change', e => { if (e.target.matches && e.target.matches(FORM_SEL)) saveDraft(); });
+
+/* ---- accesibilidad: chips y miniaturas con teclado, etiquetas asociadas ---- */
+function a11yPass(root){
+  (root || document).querySelectorAll('.chip:not([tabindex])').forEach(c => { c.setAttribute('role', 'button'); c.setAttribute('tabindex', '0'); });
+  (root || document).querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c.classList.contains('on') ? 'true' : 'false'));
+  (root || document).querySelectorAll('label.f:not([for])').forEach(lb => {
+    let n = lb.nextElementSibling; if (!n) return;
+    const ctl = n.matches('input,textarea,select') ? n : n.querySelector && n.querySelector('input,textarea,select');
+    if (ctl && ctl.id) lb.htmlFor = ctl.id;
+  });
+}
+document.addEventListener('keydown', e => {
+  const t = e.target;
+  if ((e.key === 'Enter' || e.key === ' ') && t.matches && t.matches('.chip, .shot')) { e.preventDefault(); t.click(); return; }
+  const typing = t.matches && t.matches('input, textarea, select, [contenteditable]');
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && !typing && UNDO.length) { e.preventDefault(); undo(); }
+  if (e.altKey && e.key === 'ArrowRight') { e.preventDefault(); wizNext(); }
+  if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); wizPrev(); }
+});
+new MutationObserver(ms => ms.forEach(m => { if (m.target.classList && m.target.classList.contains('chip')) m.target.setAttribute('aria-pressed', m.target.classList.contains('on') ? 'true' : 'false'); }))
+  .observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: true });
+
 /* ============ render ============ */
 let fontsReady = false;
 async function ensureFonts(){
@@ -3479,14 +3741,15 @@ function renderAll(){
   store.set('brand', readBrand());
   const b = readBrand(), T = themeColors();
   let slides, drawOne;
-  if (isLocalOwn()) { const L = readLocal(); slides = buildLocalSlides(L); drawOne = (ctx, sl, o) => drawLocalSlide(ctx, 1080, 1350, sl, 'carousel', L, b, T, o);
+  if (isLocalOwn()) { const L = readLocal(); slides = buildLocalSlides(L); drawOne = (ctx, sl, o) => drawLocalSlide(ctx, 1080, 1350, sl, 'carousel', L, b, T, o); S.altFn = sl => speechFor(sl, null, L, b); S.postAlt = `${L.name || 'Local'}: ${L.hook}${L.sub ? '. ' + L.sub : ''}`;
     drawLocalPost($('#cPost').getContext('2d'), 1080, 1080, L, b, T); drawLocalStory($('#cStory').getContext('2d'), 1080, 1920, L, b, T); }
-  else { const m = S.mode === 'brand' ? readBrandModel() : readModel(); slides = buildSlides(m); drawOne = (ctx, sl, o) => drawSlide(ctx, 1080, 1350, sl, 'carousel', m, b, T, o);
+  else { const m = S.mode === 'brand' ? readBrandModel() : readModel(); slides = buildSlides(m); drawOne = (ctx, sl, o) => drawSlide(ctx, 1080, 1350, sl, 'carousel', m, b, T, o); S.altFn = sl => speechFor(sl, m, null, b); S.postAlt = `${m.name}: ${m.hook}${m.tagline ? '. ' + m.tagline : ''}`;
     drawPost($('#cPost').getContext('2d'), 1080, 1080, m, b, T); drawStory($('#cStory').getContext('2d'), 1080, 1920, m, b, T); }
   const box = $('#carousel'); box.innerHTML = '';
   slides.forEach((sl, i) => {
     const fr = document.createElement('div'); fr.className = 'frame';
     const c = document.createElement('canvas'); c.width = 1080; c.height = 1350; c.dataset.slide = i;
+    { const im = sl.shot || sl.photo; const alt = (`Diapositiva ${i + 1} de ${slides.length}. ` + (S.altFn ? S.altFn(sl) : '') + (im ? (isScreenshot(im) || sl.shot ? ' Muestra una captura de pantalla.' : ' Muestra una foto.') : '')).replace(/\s+/g, ' ').trim().slice(0, 1000); c.dataset.alt = alt; c.setAttribute('role', 'img'); c.setAttribute('aria-label', alt); }
     drawOne(c.getContext('2d'), sl, { index: i, counter: `${String(i+1).padStart(2,'0')}/${String(slides.length).padStart(2,'0')}`, swipe: i < slides.length - 1 });
     fr.appendChild(c);
     const meta = document.createElement('div'); meta.className = 'meta';
@@ -3495,11 +3758,12 @@ function renderAll(){
     btn.onclick = async () => saveFile(`${fileBase()}-carrusel-${String(i+1).padStart(2,'0')}.png`, await canvasBlob(c));
     meta.appendChild(btn); fr.appendChild(meta); box.appendChild(fr);
   });
+  $('#cPost').dataset.alt = (S.postAlt || '').slice(0, 1000); $('#cPost').setAttribute('role', 'img'); $('#cPost').setAttribute('aria-label', S.postAlt || 'Post');
   renderHighlights();
   renderChecks();
   if (!playing || playing.kind !== 'reel') { const R = reelScenes({ fmt: 'reel' }); $('#reelLen').textContent = `1080×1920 · ${R.scenes.some(z => z.audio) ? '' : '≈ '}${Math.round(R.total)} s`; drawReelFrame($('#cReel').getContext('2d'), R, 2.6, b, T); }
   if (S.storyFmt === 'video' && (!playing || playing.kind !== 'story')) { const R = reelScenes({ fmt: 'story' }); $('#storyLen').textContent = `${R.scenes.some(z => z.audio) ? '' : '≈ '}${Math.round(R.total)} s`; drawReelFrame($('#cStory').getContext('2d'), R, 2.6, b, T); }
-  renderScripts(); syncStoryFmt(); syncMusicInfo(); renderPoster();
+  renderScripts(); syncStoryFmt(); syncMusicInfo(); renderPoster(); renderStepper(); saveDraft();
 }
 function fileBase(){ if (S.mode === 'brand') return 'mi-marca'; return ((isLocal() ? $('#l-name').value.trim() : '') || readModel().name || 'proyecto').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase() || 'proyecto'; }
 
@@ -3541,7 +3805,7 @@ async function ingest(srcPromise, label){
     if (isLocal()) { caseFromLocal(); } else { const m = heuristic(raw); writeModel(m); }
     makeCaption();
     await applyAuto(extractDesign(raw, shots));
-    S.isDemo = false; $('#demoBadge').classList.add('hidden');
+    S.isDemo = false; $('#demoBadge').classList.add('hidden'); pulseNext();
     const found = [raw.site && !raw.gh && raw.site.host, raw.readme && !(raw.site && !raw.gh) && 'README', raw.pkg && 'package.json', raw.html && 'index.html', shots.length && `${shots.length} imagen(es)`].filter(Boolean).join(', ');
     status(`Listo: leí ${found || 'los archivos'}.${AI ? ' Tocá "Escribir con IA" para mejores textos.' : ''}${shots.length ? '' : ' No había capturas: agregá algunas para que luzca más.'}`);
     renderAll();
@@ -3606,6 +3870,7 @@ $('#inShots').onchange = async () => {
   if (isLocal() && !S.logo && !S.auto && added[0]) await applyAuto(designFromImage(added[0].img, false)); else renderAll();
 };
 $('#genAuto').onclick = () => {
+  pushUndo('Textos regenerados');
   if (!S.raw) { const m = readModel(); if ($('#ctx').value.trim() && S.isDemo) { status('Sin archivos cargados: completá los textos del paso 2 a mano o cargá el proyecto.', true); } makeCaption(); renderAll(); return; }
   writeModel(heuristic(S.raw)); makeCaption(); renderAll(); status('Textos regenerados desde los archivos.');
 };
@@ -3631,6 +3896,7 @@ function applyMode(){
   $('#reviewLabel').textContent = caso ? 'Lo que dijo el cliente (opcional · texto — nombre)' : 'Reseña destacada (opcional)';
   if (S.server) { const w = $('#pubWarn'); if (isLocalOwn()) { w.innerHTML = '<b>Ojo:</b> se publica en <b>tu</b> cuenta, no en la del local. Para la cuenta del local, descargá todo y subilo desde su celu.'; w.classList.remove('hidden'); } else w.classList.add('hidden'); }
   $('[data-out=publish]').textContent = isLocalOwn() ? '📦 Para el cliente' : '🚀 Subir a IG';
+  goStep(S.step);
   if (isLocalOwn() && $('[data-out=publish]').classList.contains('on')) {}
   $('#brandLabel').textContent = isLocalOwn() ? 'Tu marca (sale como crédito chico: "Diseño: …")' : 'Tu marca';
 }
@@ -3651,6 +3917,7 @@ function setMode(m){
   applyMode(); renderShotList();
   if (isLocalOwn()) makeLocalCaption(); else makeCaption();
   renderAll();
+  if (!S.shots.length && !restoring) loadImages(m).then(im => { if (!im || S.mode !== m || S.shots.length) return; S.shots = im.shots; if (!S.logo && im.logo) { S.logo = im.logo; S.logoBg = im.logoBg; $('#logoSlot').innerHTML = `<img src="${S.logo.url}" alt="Logo">`; $('#delLogo').classList.remove('hidden'); } renderShotList(); renderAll(); });
 }
 $$('#modes .mode').forEach(x => x.onclick = () => setMode(x.dataset.mode));
 $$('#purpose .chip').forEach(x => x.onclick = () => { S.purpose = x.dataset.p; applyMode(); if (S.purpose === 'caso') { caseFromLocal(); makeCaption(); } else makeLocalCaption(); renderAll(); });
@@ -3673,10 +3940,10 @@ $('#inLogo').onchange = async () => {
   S.logo = sh;
   const p = imagePalette(sh.img); S.logoBg = p.opaque > 0.85 && p.dominant ? p.dominant : null;
   $('#logoSlot').innerHTML = `<img src="${sh.url}" alt="">`; $('#delLogo').classList.remove('hidden');
-  S.poster.colorsSet = false;
+  S.poster.colorsSet = false; saveImages();
   await applyAuto(designFromImage(sh.img, true));
 };
-$('#delLogo').onclick = () => { S.logo = null; $('#logoSlot').textContent = 'sin logo'; $('#delLogo').classList.add('hidden'); renderAll(); };
+$('#delLogo').onclick = () => { pushUndo('Logo quitado'); S.logo = null; $('#logoSlot').textContent = 'sin logo'; $('#delLogo').classList.add('hidden'); saveImages(); renderAll(); toast('Logo quitado', { action: 'Deshacer', fn: undo }); };
 $$('[data-dl]').forEach(btn => btn.onclick = async () => { const k = btn.dataset.dl; const c = k === 'post' ? $('#cPost') : $('#cStory'); saveFile(`${fileBase()}-${k === 'post' ? 'post' : 'historia'}.png`, await canvasBlob(c)); });
 $('#reelPlay').onclick = () => playVideo('reel');
 $('#reelRender').onclick = () => renderVideoFile('reel');
@@ -3694,14 +3961,17 @@ $('#vDesign').onclick = () => { nextVariant(); syncLookUI(); renderAll(); toast(
 $('#vHook').onclick = nextHook;
 $$('#storyKinds .chip').forEach(c => c.onclick = () => { S.storyKind = c.dataset.k; $$('#storyKinds .chip').forEach(x => x.classList.toggle('on', x === c)); renderAll(); });
 $('#m-topic').onchange = applyTopic;
-$$('#pGoal .chip').forEach(c => c.onclick = () => { S.poster.goal = c.dataset.g; $$('#pGoal .chip').forEach(x => x.classList.toggle('on', x === c)); posterFill(); renderPoster(); });
+$$('#pGoal .chip').forEach(c => c.onclick = () => { pushUndo('Objetivo del cartel'); S.poster.goal = c.dataset.g; $$('#pGoal .chip').forEach(x => x.classList.toggle('on', x === c)); posterFill(); renderPoster(); });
 $$('#pFormat .chip').forEach(c => c.onclick = () => { S.poster.fmt = c.dataset.f; $$('#pFormat .chip').forEach(x => x.classList.toggle('on', x === c)); renderPoster(); });
 ['#pc-bg', '#pc-ink', '#pc-acc', '#p-title', '#p-body', '#p-terms', '#p-cta', '#p-photo'].forEach(id => $(id).addEventListener('input', () => debounce(renderPoster, 120)));
 $('#pColorsBrand').onclick = () => { posterColorsFromBrand(); renderPoster(); };
-$('#pFill').onclick = () => { posterFill(); renderPoster(); };
+$('#pFill').onclick = () => { pushUndo('Cartel rellenado'); posterFill(); renderPoster(); toast('Cartel rellenado con los datos del local', { action: 'Deshacer', fn: undo }); };
 $('#posterPng').onclick = async () => saveFile(`${fileBase()}-cartel-${S.poster.fmt}.png`, await canvasBlob(posterHiRes()));
 $('#posterPdf').onclick = async () => saveFile(`${fileBase()}-cartel-A4.pdf`, await posterPdfBlob());
 $('#pkgGo').onclick = clientPackage;
+$('#wizNext').onclick = wizNext;
+$('#wizPrev').onclick = wizPrev;
+$('#subsChk').checked = S.subs; $('#subsChk').onchange = () => { S.subs = $('#subsChk').checked; store.set('subs', S.subs); renderAll(); };
 // botón de favoritos: lee el perfil desde el navegador del usuario (con su sesión) y lo manda acá
 { const app = location.origin + location.pathname; $('#bmLink').href = 'javascript:' + encodeURIComponent(BM_CODE.replace('__APP__', app)); }
 $('#bmLink').onclick = e => { e.preventDefault(); toast('Arrastralo a la barra de favoritos y tocalo estando en el Instagram del local'); };
@@ -3742,6 +4012,8 @@ $('#copyCap').onclick = async () => {
   renderAll();
   try { $('#studioKey').value = localStorage.getItem('igstudio.key') || ''; } catch {}
   syncLookUI(); renderHist();
+  await restoreDraft();
+  a11yPass(); goStep(S.step);
   detectServer();
 })();
 </script>
