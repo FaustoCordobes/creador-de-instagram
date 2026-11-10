@@ -23,6 +23,10 @@ module.exports = async (req, res) => {
     return res.json({
       ok: true,
       ig: !!(TOKEN() && IGID()),
+      igToken: !!TOKEN(), igUserId: !!IGID(),
+      env: process.env.VERCEL_ENV || null,
+      version: (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || null,
+      vars: Object.keys(process.env).filter(k => /^(IG_|META_|STUDIO_|GOOGLE_|BLOB_)/.test(k)).sort(),
       metaApp: !!(process.env.META_APP_ID && process.env.META_APP_SECRET),
       google: !!process.env.GOOGLE_PLACES_KEY,
       blob: !!(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID),
