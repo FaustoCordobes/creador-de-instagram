@@ -115,6 +115,8 @@ aside{counter-reset:st}
 .vbar{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:4px}
 .vbar small{color:var(--muted);font-size:12px}
 .vbar span{display:flex;gap:4px}
+.pcol{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);flex:1}
+.pcol input{width:42px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);padding:2px}
 .hidden{display:none!important}
 </style>
 </head>
@@ -356,6 +358,7 @@ aside{counter-reset:st}
       <button class="tab" data-out="story">Historia</button>
       <button class="tab" data-out="reel">Reel (video)</button>
       <button class="tab" data-out="text">Texto del posteo</button>
+      <button class="tab" data-out="poster" data-show="lp-local">🪧 Cartel / promo</button>
       <button class="tab" data-out="hl">Destacadas</button>
       <button class="tab" data-out="publish">🚀 Subir a IG</button>
     </div>
@@ -439,7 +442,16 @@ aside{counter-reset:st}
 
   <div class="pane" data-pane="publish">
     <div class="single">
-      <div style="flex:1;min-width:300px;max-width:560px">
+      <div style="flex:1;min-width:300px;max-width:560px" data-show="lp-local">
+        <div class="card">
+          <h2>📦 Para el cliente</h2>
+          <p class="hint" style="margin-top:0">Este contenido lo sube el dueño del local en sus redes. Armá un ZIP con todo listo: carrusel, post, historia, reel, cartel A4 en PDF, el texto del posteo y un LEEME con los pasos.</p>
+          <label class="chk"><input type="checkbox" id="pkgVideo" checked> Incluir historia y reel en video (tarda un poco más)</label>
+          <button class="btn pri" id="pkgGo" style="width:100%;margin-top:10px">📦 Armar paquete para el cliente</button>
+          <p class="hint" id="pkgMsg"></p>
+        </div>
+      </div>
+      <div style="flex:1;min-width:300px;max-width:560px" data-show="notlocalown">
         <div class="card" id="pubOffline">
           <h2>Subir directo a Instagram</h2>
           <p class="hint" style="margin-top:0">Publicar y leer links de Google o Instagram funciona en tu versión publicada en Vercel. Acá adentro de Claude no hay conexión a internet: descargá los archivos y subilos desde el celu.</p>
@@ -481,6 +493,34 @@ aside{counter-reset:st}
           <button class="btn sm" id="igSetup" style="margin-top:8px">Convertir</button>
           <div id="igSetupOut" class="hint"></div>
         </details>
+      </div>
+    </div>
+  </div>
+  <div class="pane" data-pane="poster">
+    <div class="single">
+      <div class="frame" style="width:min(420px,100%)"><canvas id="cPoster" width="1240" height="1754"></canvas>
+        <div class="meta"><span id="posterSize">A4</span><span style="display:flex;gap:6px"><button class="btn sm pri" id="posterPng">⬇ PNG</button><button class="btn sm" id="posterPdf">⬇ PDF para imprimir</button></span></div></div>
+      <div class="side" style="max-width:480px">
+        <h3>Antes de diseñar</h3>
+        <label class="f" style="margin-top:0">1. ¿Cuál es el objetivo?</label>
+        <div class="chips" id="pGoal"><span class="chip on" data-g="descuento">Descuento</span><span class="chip" data-g="evento">Evento</span><span class="chip" data-g="nuevo">Producto nuevo</span><span class="chip" data-g="info">Info del local</span></div>
+        <label class="f">2. Colores de la marca (máximo 3)</label>
+        <div class="row" style="align-items:center">
+          <label class="pcol"><input type="color" id="pc-bg"> Fondo</label><label class="pcol"><input type="color" id="pc-ink"> Texto</label><label class="pcol"><input type="color" id="pc-acc"> Acento</label>
+        </div>
+        <button class="btn sm" id="pColorsBrand" style="margin-top:6px">Usar los de la marca</button>
+        <p class="hint" id="pColorsInfo"></p>
+        <label class="f">3. Logo</label><p class="hint" id="pLogoInfo" style="margin-top:0"></p>
+        <label class="f">4. ¿Dónde se va a usar?</label>
+        <div class="chips" id="pFormat"><span class="chip on" data-f="a4">A4 para imprimir</span><span class="chip" data-f="story">Historia de Instagram</span><span class="chip" data-f="post">Post cuadrado</span></div>
+        <h3 style="margin-top:16px">Textos</h3>
+        <label class="f" style="margin-top:0">Mensaje principal</label><input type="text" id="p-title" placeholder="20% OFF en toda la pastelería">
+        <label class="f">Detalles (uno por línea)</label><textarea id="p-body" rows="3" placeholder="Martes y jueves&#10;Facturas y tortas"></textarea>
+        <label class="f">Condiciones o fecha</label><input type="text" id="p-terms" placeholder="Válido hasta el 30/11 · No acumulable">
+        <label class="f">Llamado a la acción</label><input type="text" id="p-cta" placeholder="Pedí por WhatsApp">
+        <label class="chk"><input type="checkbox" id="p-photo" checked> Usar una foto del local</label>
+        <button class="btn sm" id="pFill">↺ Rellenar con los datos del local</button>
+        <p class="hint">Diseño limpio: logo arriba, mensaje, detalles y contacto abajo, solo con los colores de la marca.</p>
       </div>
     </div>
   </div>
@@ -1520,7 +1560,8 @@ async function generateLocalAI(){
   try {
     let images = [];
     try { const lim = typeof AI.limits === 'function' ? await AI.limits() : null; if (lim && lim.images) { for (const sh of activeShots().slice(0, 4)) { const bl = await shrinkBlob(sh.img, 768); if (bl) images.push(bl); } } } catch {}
-    const prompt = `Sos community manager de comercios argentinos. Escribí en español rioplatense (voseo), cálido y vendedor, sin exagerar. Que suene a una persona del local, no a una IA: frases cortas, nada de "descubrí", "experiencia única", "no te lo pierdas", "al siguiente nivel"; sin rayas largas (—).
+    const prompt = `Sos community manager de comercios argentinos. Actuás como director de arte y asistente de marketing de comercios chicos: tono acorde a la personalidad del local, profesional y cuidado, nada de exageraciones ni de estética "IA saturada".
+Escribí en español rioplatense (voseo), cálido y vendedor, sin exagerar. Que suene a una persona del local, no a una IA: frases cortas, nada de "descubrí", "experiencia única", "no te lo pierdas", "al siguiente nivel"; sin rayas largas (—).
 Armá los textos de un carrusel de Instagram PARA EL PROPIO LOCAL (lo publica el local en su cuenta).
 No inventes precios, horarios, direcciones ni datos: usá solo lo que está acá${images.length ? ' y lo que se ve en las fotos adjuntas' : ''}.
 
@@ -1574,6 +1615,7 @@ function drawContain(ctx, img, x, y, w, h){
 }
 function logoCircle(ctx, x, y, d){
   if (!S.logo) return;
+  if (!S.logoBg) { drawContain(ctx, S.logo.img, x + d * 0.04, y + d * 0.04, d * 0.92, d * 0.92); return; } // sin fondo: directo, sin parche
   ctx.save(); ctx.beginPath(); ctx.arc(x + d/2, y + d/2, d/2, 0, 7); ctx.fillStyle = S.logoBg || '#ffffff'; ctx.fill(); ctx.clip();
   drawContain(ctx, S.logo.img, x + d * 0.1, y + d * 0.1, d * 0.8, d * 0.8); ctx.restore();
 }
@@ -1656,7 +1698,7 @@ function drawLocalSlide(ctx, W, H, slide, fmt, L, b, T, opts){
       const F = fit(ctx, L.hook, { maxW, maxH: avail * 0.3, size: 118*u, min: 56*u, weight: 700, lh: 1.03 });
       const sub = L.sub ? fit(ctx, L.sub, { maxW, maxH: 110*u, size: 38*u, min: 26*u, weight: 400, family: FB, lh: 1.3, maxLines: 2 }) : null;
       let y = textBottom - F.h - (sub ? sub.h + 24*u : 0) - (L.kicker ? 82*u : 0);
-      if (!slide.photo && S.logo) { const d = Math.min(380*u, y - top - 80*u); if (d > 140*u) { const ly = top + (y - top - d) / 2; anim(ctx, A(0.05), 30*u, () => { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 50*u; ctx.beginPath(); ctx.arc(W/2, ly + d/2, d/2, 0, 7); ctx.fillStyle = S.logoBg || '#fff'; ctx.fill(); ctx.restore(); logoCircle(ctx, (W - d)/2, ly, d); }); } }
+      if (!slide.photo && S.logo) { const d = Math.min(380*u, y - top - 80*u); if (d > 140*u) { const ly = top + (y - top - d) / 2; anim(ctx, A(0.05), 30*u, () => { if (S.logoBg) { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 50*u; ctx.beginPath(); ctx.arc(W/2, ly + d/2, d/2, 0, 7); ctx.fillStyle = S.logoBg || '#fff'; ctx.fill(); ctx.restore(); } logoCircle(ctx, (W - d)/2, ly, d); }); } }
       frameShot(y);
       if (L.kicker) { const yy = y; anim(ctx, A(0.1), 30*u, () => pill(ctx, L.kicker, P, yy, u, T, true)); y += 82*u; }
       const y1 = y; anim(ctx, A(0.2), 50*u, () => drawHook(ctx, F, P, y1, T.ink, T, L.hook)); y += F.h + 24*u;
@@ -1973,7 +2015,7 @@ function fromBio(bio){
   const HR = /((?:lun|mar|mi[eé]|jue|vie|s[aá]b|dom)[a-záé]*\.?(?:\s*(?:a|-|–|y)\s*(?:lun|mar|mi[eé]|jue|vie|s[aá]b|dom)[a-záé]*\.?)?\s*(?:de\s*)?)?\d{1,2}(?::\d{2})?\s*(?:a|-|–)\s*\d{1,2}(?::\d{2})?\s*(?:hs|h)\b\.?/i;
   let hrs = lines.find(l => HR.test(l) || /horario|🕒|⏰/i.test(l));
   if (hrs) { const m = hrs.match(HR); out.hours = (m ? m[0] : hrs).replace(/🕒|⏰|horarios?:?/gi, '').trim(); }
-  out.bio = lines.filter(l => l !== addr && !/wa\.me|whats/i.test(l)).map(l => l === hrs ? l.replace(HR, '').replace(/🕒|⏰|horarios?:?/gi, '') : l).join(' ').replace(/\s+/g, ' ').replace(/\s+([.,])/g, '$1').trim();
+  out.bio = lines.filter(l => l !== addr && !/wa\.me|whats/i.test(l)).map(l => (l === hrs ? l.replace(HR, '').replace(/🕒|⏰|horarios?:?/gi, '') : l).trim()).filter(Boolean).reduce((acc, l) => !acc ? l : acc + (/[.!?…]$/.test(acc) ? ' ' : '. ') + l, '').replace(/\s+/g, ' ').replace(/\s+([.,])/g, '$1').trim();
   return out;
 }
 async function imgFromUrl(url, name){ const b = await netFetch(url); if (!b || !b.size) return null; return makeShot(b, name); }
@@ -2015,16 +2057,12 @@ async function localFromLink(){
     if (L.kind === 'ig') {
       lstatus(`Leyendo @${L.user} en Instagram…`);
       let d = null, dErr = null;
-      try { if (!S.server.ig) throw Object.assign(new Error('Instagram sin conectar'), { code: 'noig' }); d = await api('api/ig', { action: 'discover', username: L.user }); }
-      catch (e) {
-        if (e.status === 401) throw e;
-        dErr = e;
-        if (e.code !== 'personal' && /\(#10\)|permission|permiso/i.test(e.message || '')) e.code = 'perm';
-        // respaldo: el perfil público (sin permisos de Meta)
-        try { lstatus(`Leyendo el perfil público de @${L.user}…`); d = await api('api/ig', { action: 'public', username: L.user }); if (d && d.private) { warn = '@' + L.user + ' es una cuenta privada: solo pude traer el nombre y el logo.'; } } catch (e2) { d = null; }
-      }
+      // solo lo que el local publica: perfil público, sin pedir permisos de Meta
+      try { d = await api('api/ig', { action: 'public', username: L.user }); if (d && d.private) warn = '@' + L.user + ' es una cuenta privada: solo pude traer el nombre y el logo.'; }
+      catch (e) { if (e.status === 401) throw e; dErr = e; }
+      if (!d && S.server.ig) { try { d = await api('api/ig', { action: 'discover', username: L.user }); } catch {} }
       if (!d) {
-        const e = dErr && dErr.code !== 'noig' ? dErr : { code: 'none', message: 'Instagram no dejó ver el perfil público' };
+        const e = { code: 'none', message: 'Instagram no dejó ver el perfil público desde el servidor' };
         // no se pudo leer: igual armamos el contenido con lo que hay
         warn = e.code === 'perm' ? 'Instagram no me dejó leer @' + L.user + ': a tu conexión le falta el permiso instagram_manage_insights. Se arregla en 2 minutos (GUIA-INSTAGRAM.md, paso 7). Mientras tanto cargué el nombre: pegá la bio y subí 3 o 4 fotos del local.'
           : e.code === 'personal' ? '@' + L.user + ' es una cuenta personal: Instagram solo deja leer cuentas de empresa o creador. Cargué el nombre: pegá la bio y subí 3 o 4 fotos del local.'
@@ -2091,6 +2129,7 @@ async function localFromLink(){
     if (!design && S.shots[0]) design = designFromImage(S.shots[0].img, false);
     renderShotList();
     if (S.purpose === 'caso') { caseFromLocal(); makeCaption(); } else { localAutoTexts(true); makeLocalCaption(); }
+    S.poster.filled = false; S.poster.colorsSet = false;
     if (design) await applyAuto(design); else renderAll();
     if (warn) lstatus('⚠️ ' + warn + (notes.length ? ' (También: ' + notes.join(' · ') + '.)' : ''), true);
     else lstatus(`Listo: ${notes.join(' · ') || 'datos cargados'}. Revisá todo${$('#l-wa').value ? ' (fijate que el teléfono sea el WhatsApp)' : ''}.`);
@@ -2178,7 +2217,7 @@ function drawExtraSlide(ctx, W, H, slide, fmt, m, b, T, o){
   }
   if (t === 'tcover') { drawTopicCover(ctx, W, H, m, b, T, o); return true; }
   if (t === 'bcover') {
-    if (S.logo) { const d = 210*u; anim(ctx, A(0.05), 30*u, () => { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 40*u; ctx.beginPath(); ctx.arc(P + d/2, y + d/2, d/2, 0, 7); ctx.fillStyle = S.logoBg || '#fff'; ctx.fill(); ctx.restore(); logoCircle(ctx, P, y, d); }); y += d + 50*u; }
+    if (S.logo) { const d = 210*u; anim(ctx, A(0.05), 30*u, () => { if (S.logoBg) { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 40*u; ctx.beginPath(); ctx.arc(P + d/2, y + d/2, d/2, 0, 7); ctx.fillStyle = S.logoBg || '#fff'; ctx.fill(); ctx.restore(); } logoCircle(ctx, P, y, d); }); y += d + 50*u; }
     else { anim(ctx, A(0.05), 30*u, () => pill(ctx, 'HOLA 👋', P, y, u, T, false)); y += 52*u + 50*u; }
     const F = fit(ctx, m.hook, { maxW, maxH: avail * 0.36, size: 124*u, min: 60*u, weight: 700, lh: 1.02 });
     const y1 = y; anim(ctx, A(0.15), 50*u, () => drawHook(ctx, F, P, y1, T.ink, T, m.hook)); y += F.h + 30*u;
@@ -3262,6 +3301,165 @@ async function buildSoundtrack(R){
 
 function syncMusicInfo(){ const i = $('#musicInfo'); if (i) i.textContent = S.music === 'auto' ? `Esta vez: ${MUSIC_NAMES[musicStyle()]}. Baja sola cuando habla la voz.` : ''; }
 
+/* ============ cartel / promo para "Un local" (A4, historia o post) ============ */
+// Reglas de diseño: paleta de la marca (máx. 3 colores), logo arriba integrado, jerarquía clara
+// (logo → mensaje → detalles → llamado y contacto), sin efectos ni colores saturados.
+const POSTER_FMT = { a4: { w: 1240, h: 1754, label: 'A4 para imprimir' }, story: { w: 1080, h: 1920, label: 'Historia 1080×1920' }, post: { w: 1080, h: 1080, label: 'Post 1080×1080' } };
+const GOALS = { descuento: 'PROMO', evento: 'EVENTO', nuevo: 'NUEVO', info: '' };
+S.poster = { goal: 'descuento', fmt: 'a4', filled: false };
+function posterColors(){ return { bg: $('#pc-bg').value, ink: $('#pc-ink').value, acc: $('#pc-acc').value }; }
+function posterColorsFromBrand(){
+  const T = themeColors();
+  let bg = T.bg, ink = T.ink, acc = T.acc;
+  const brand = !!(S.auto || S.logo);
+  if (!brand) { bg = '#f4efe6'; ink = '#1f1d1a'; acc = '#8a5a3b'; } // propuesta sobria si no hay marca
+  else { const h = hsl(acc); if (h.s > 0.9 && h.l > 0.45 && h.l < 0.7) acc = mix(acc, ink === '#ffffff' ? '#000000' : '#555555', 0.12); }
+  if (contrast(ink, bg) < 4.5) ink = lum(bg) < 0.35 ? '#ffffff' : '#16181d';
+  $('#pc-bg').value = normHex(bg); $('#pc-ink').value = normHex(ink); $('#pc-acc').value = normHex(acc);
+  $('#pColorsInfo').textContent = brand ? 'Tomados del logo / la marca del local.' : 'El local no tiene colores cargados: te propongo una paleta sobria de 3 colores. Cambiala si querés.';
+}
+function posterFill(){
+  const L = readLocal(), it = L.itemList, g = S.poster.goal;
+  const set = (id, v) => $(id).value = v || '';
+  const items = it.slice(0, 3).map(i => i.detail ? `${i.title}: ${i.detail}` : i.title).join('\n');
+  if (g === 'descuento') { set('#p-title', L.promo || 'Promo de la semana'); set('#p-body', items); set('#p-terms', ''); }
+  else if (g === 'evento') { set('#p-title', L.promo || `Te esperamos en ${L.name || 'el local'}`); set('#p-body', [L.address, L.hours].filter(Boolean).join('\n')); set('#p-terms', ''); }
+  else if (g === 'nuevo') { set('#p-title', it[0] ? `Nuevo: ${it[0].title}` : 'Llegó algo nuevo'); set('#p-body', it[0] && it[0].detail ? it[0].detail : (L.sub || '')); set('#p-terms', ''); }
+  else { set('#p-title', L.hook || L.name); set('#p-body', [L.sub || L.bio, L.hours && 'Horario: ' + L.hours].filter(Boolean).join('\n')); set('#p-terms', ''); }
+  set('#p-cta', L.wa ? 'Pedí por WhatsApp' : (L.address ? 'Te esperamos' : 'Seguinos'));
+  S.poster.filled = true;
+}
+function posterPhoto(){ if (!$('#p-photo').checked) return null; return activeShots().find(sh => !isScreenshot(sh)) || null; }
+function drawLogoIntegrated(ctx, cx, y, h, C){
+  if (!S.logo) return 0;
+  const img = S.logo.img, iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+  if (!S.logoBg) { // logo sin fondo: va directo sobre el cartel, sin parche
+    const s = Math.min(h / ih, (h * 2.6) / iw), w = iw * s, hh = ih * s;
+    ctx.drawImage(img, cx - w / 2, y + (h - hh) / 2, w, hh); return h;
+  }
+  // logo con fondo: círculo de su propio color, con un aro fino del color de acento
+  ctx.save(); ctx.beginPath(); ctx.arc(cx, y + h / 2, h / 2, 0, 7); ctx.fillStyle = S.logoBg; ctx.fill();
+  if (cdist(S.logoBg, C.bg) < 90) { ctx.strokeStyle = alpha(C.ink, 0.15); ctx.lineWidth = Math.max(2, h * 0.012); ctx.stroke(); }
+  ctx.clip(); const s = Math.max(h / iw, h / ih) * 0.98; ctx.drawImage(img, cx - iw * s / 2, y + h / 2 - ih * s / 2, iw * s, ih * s); ctx.restore();
+  return h;
+}
+function drawPoster(ctx, W, H, cfg){
+  const C = cfg.colors, L = readLocal(), b = readBrand();
+  const u = Math.min(W / 1240, H / 1754) * (cfg.fmt === 'a4' ? 1 : 1.15), M = (cfg.fmt === 'post' ? 70 : 90) * W / 1240 * (cfg.fmt === 'a4' ? 1 : 1.15);
+  const muted = mix(C.ink, C.bg, 0.38), line = mix(C.bg, C.ink, 0.16), accInk = lum(C.acc) > 0.45 ? '#16181d' : '#ffffff';
+  const accTxt = contrast(C.acc, C.bg) >= 3 ? C.acc : (lum(C.bg) < 0.35 ? mix(C.acc, '#ffffff', 0.5) : mix(C.acc, '#000000', 0.45));
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H); grain(ctx, W, H, 0.14);
+  const cx = W / 2, maxW = W - 2 * M;
+  // pie (de abajo hacia arriba)
+  const contact = [L.igH, L.wa && 'WhatsApp ' + fmtWa(L.wa), L.web].filter(Boolean).join('   ·   ');
+  const credit = b.brand ? 'Diseño: ' + b.brand : '';
+  let yb = H - M * 0.7;
+  ctx.textAlign = 'center';
+  if (credit) { ctx.font = `500 ${15 * u}px ${FB}`; ctx.fillStyle = alpha(C.ink, 0.35); ctx.fillText(credit, cx, yb); yb -= 34 * u; }
+  const addr = L.address ? fit(ctx, L.address + (L.hours && cfg.goal !== 'info' ? '  ·  ' + L.hours : ''), { maxW, maxH: 80 * u, size: 26 * u, min: 18 * u, weight: 500, family: FB, lh: 1.3, maxLines: 2 }) : null;
+  if (addr) { yb -= addr.h; draw(ctx, addr, cx, yb, muted, 'center'); yb -= 10 * u; }
+  if (contact) { const Cf = fit(ctx, contact, { maxW, maxH: 50 * u, size: 30 * u, min: 18 * u, weight: 700, family: FB, maxLines: 1 }); yb -= Cf.h; draw(ctx, Cf, cx, yb, C.ink, 'center'); yb -= 26 * u; }
+  ctx.fillStyle = line; ctx.fillRect(M, yb, maxW, Math.max(1, 2 * u)); yb -= 40 * u;
+  const cta = $('#p-cta').value.trim();
+  if (cta) {
+    ctx.font = `800 ${36 * u}px ${FB}`; const tw = Math.min(maxW, ctx.measureText(cta).width + 90 * u), ph = 84 * u;
+    yb -= ph; rr(ctx, cx - tw / 2, yb, tw, ph, ph / 2); ctx.fillStyle = C.acc; ctx.fill();
+    const Ct = fit(ctx, cta, { maxW: tw - 60 * u, maxH: 50 * u, size: 36 * u, min: 20 * u, weight: 800, family: FB, maxLines: 1 });
+    ctx.font = Ct.font; ctx.fillStyle = accInk; ctx.textBaseline = 'middle'; ctx.fillText(Ct.lines[0], cx, yb + ph / 2 + 2 * u); ctx.textBaseline = 'alphabetic';
+    yb -= 44 * u;
+  }
+  const terms = $('#p-terms').value.trim();
+  if (terms) { const Tm = fit(ctx, terms, { maxW, maxH: 70 * u, size: 24 * u, min: 17 * u, weight: 500, family: FB, lh: 1.3, maxLines: 2 }); yb -= Tm.h; draw(ctx, Tm, cx, yb, muted, 'center'); yb -= 30 * u; }
+  // cabecera (de arriba hacia abajo)
+  let y = M;
+  const logoH = (cfg.fmt === 'post' ? 130 : 210) * u;
+  if (S.logo) { drawLogoIntegrated(ctx, cx, y, logoH, C); y += logoH + 36 * u; }
+  else if (L.name) { const N = fit(ctx, L.name.toUpperCase(), { maxW, maxH: 70 * u, size: 46 * u, min: 26 * u, weight: 700, maxLines: 1 }); ls(ctx, 6 * u); draw(ctx, N, cx, y, C.ink, 'center'); ls(ctx, 0); y += N.h + 30 * u; }
+  ctx.fillStyle = C.acc; ctx.fillRect(cx - 50 * u, y, 100 * u, Math.max(2, 4 * u)); y += 46 * u;
+  const kick = GOALS[cfg.goal] || '';
+  if (kick) { ctx.font = `700 ${26 * u}px ${FB}`; ls(ctx, 8 * u); ctx.fillStyle = accTxt; ctx.textAlign = 'center'; ctx.fillText(kick, cx, y + 22 * u); ls(ctx, 0); y += 60 * u; }
+  const title = $('#p-title').value.trim() || L.name || '';
+  const room = yb - y;
+  const F = fit(ctx, title, { maxW, maxH: room * 0.34, size: (cfg.fmt === 'post' ? 112 : 140) * u, min: 50 * u, weight: 700, lh: 1.05, maxLines: 3 });
+  draw(ctx, F, cx, y, C.ink, 'center'); y += F.h + 30 * u;
+  const body = $('#p-body').value.split('\n').map(z => z.trim()).filter(Boolean).slice(0, 4);
+  const B = body.map(t => fit(ctx, t, { maxW: maxW * 0.9, maxH: 110 * u, size: 38 * u, min: 22 * u, weight: 500, family: FB, lh: 1.25, maxLines: 2 }));
+  const bodyH = B.reduce((a, z) => a + z.h + 18 * u, 0);
+  const badge = cfg.goal === 'descuento' ? ((title + ' ' + body.join(' ')).match(/\d+\s?%(\s?off)?|\d\s?x\s?\d/i) || [])[0] : '';
+  const photo = posterPhoto(), phH = yb - y - bodyH - 50 * u;
+  if (photo && phH > 220 * u) {
+    const pw = Math.min(maxW, phH * 1.5), px = cx - pw / 2, r = 22 * u;
+    ctx.save(); rr(ctx, px, y, pw, phH, r); ctx.clip(); photoFill(ctx, photo.img, px, y, pw, phH, 1, 0.5); ctx.restore();
+    if (badge) { const d = Math.min(210 * u, phH * 0.5); ctx.save(); ctx.translate(px + pw - d * 0.35, y + d * 0.35); ctx.rotate(-0.08); ctx.beginPath(); ctx.arc(0, 0, d / 2, 0, 7); ctx.fillStyle = C.acc; ctx.fill(); const Bd = fit(ctx, badge.toUpperCase(), { maxW: d * 0.78, maxH: d * 0.5, size: 64 * u, min: 22 * u, weight: 800, maxLines: 2, lh: 0.95 }); ctx.font = Bd.font; ctx.fillStyle = accInk; ctx.textAlign = 'center'; Bd.lines.forEach((l, i) => ctx.fillText(l, 0, -Bd.h / 2 + Bd.size * 0.82 + i * Bd.lh)); ctx.restore(); }
+    y += phH + 40 * u;
+  } else {
+    if (badge) { const d = 190 * u; ctx.beginPath(); ctx.arc(cx, y + d / 2, d / 2, 0, 7); ctx.fillStyle = C.acc; ctx.fill(); const Bd = fit(ctx, badge.toUpperCase(), { maxW: d * 0.78, maxH: d * 0.5, size: 60 * u, min: 22 * u, weight: 800, maxLines: 2, lh: 0.95 }); ctx.font = Bd.font; ctx.fillStyle = accInk; ctx.textAlign = 'center'; Bd.lines.forEach((l, i) => ctx.fillText(l, cx, y + d / 2 - Bd.h / 2 + Bd.size * 0.82 + i * Bd.lh)); y += d + 34 * u; }
+    y += Math.max(0, (yb - y - bodyH) * 0.3);
+  }
+  B.forEach((z, i) => { if (y + z.h > yb) return; draw(ctx, z, cx, y, i === 0 && !photo ? C.ink : mix(C.ink, C.bg, 0.15), 'center'); y += z.h + 18 * u; });
+  ctx.textAlign = 'left';
+}
+function renderPoster(){
+  const c = $('#cPoster'); if (!c || !isLocalOwn()) return;
+  if (!S.poster.colorsSet) { posterColorsFromBrand(); S.poster.colorsSet = true; }
+  if (!S.poster.filled) posterFill();
+  const f = POSTER_FMT[S.poster.fmt];
+  if (c.width !== f.w || c.height !== f.h) { c.width = f.w; c.height = f.h; }
+  drawPoster(c.getContext('2d'), f.w, f.h, { fmt: S.poster.fmt, goal: S.poster.goal, colors: posterColors() });
+  $('#posterSize').textContent = f.label;
+  $('#posterPdf').classList.toggle('hidden', S.poster.fmt !== 'a4');
+  $('#pLogoInfo').textContent = S.logo ? (S.logoBg ? 'Logo cargado: va arriba, en un círculo de su propio color.' : 'Logo cargado (sin fondo): va arriba, directo sobre el cartel.') : 'No hay logo: subilo en "Logo y fotos" (si tiene fondo transparente, mejor). Mientras tanto va el nombre.';
+}
+function posterHiRes(){
+  const f = POSTER_FMT[S.poster.fmt], k = S.poster.fmt === 'a4' ? 2 : 1;
+  const c = document.createElement('canvas'); c.width = f.w * k; c.height = f.h * k;
+  drawPoster(c.getContext('2d'), c.width, c.height, { fmt: S.poster.fmt, goal: S.poster.goal, colors: posterColors() });
+  return c;
+}
+// PDF A4 de una página con la imagen JPEG (sin librerías)
+function jpegToPdf(jpg, wpx, hpx){
+  const enc = new TextEncoder(), parts = [], offs = []; let len = 0;
+  const push = x => { const b = typeof x === 'string' ? enc.encode(x) : x; parts.push(b); len += b.length; };
+  const obj = (n, body) => { offs[n] = len; push(`${n} 0 obj\n`); body(); push('\nendobj\n'); };
+  const PW = 595.28, PH = 841.89, content = `q ${PW} 0 0 ${PH} 0 0 cm /Im0 Do Q`;
+  push('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+  obj(1, () => push('<< /Type /Catalog /Pages 2 0 R >>'));
+  obj(2, () => push('<< /Type /Pages /Kids [3 0 R] /Count 1 >>'));
+  obj(3, () => push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`));
+  obj(4, () => { push(`<< /Type /XObject /Subtype /Image /Width ${wpx} /Height ${hpx} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`); push(jpg); push('\nendstream'); });
+  obj(5, () => push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`));
+  const xref = len;
+  push(`xref\n0 6\n0000000000 65535 f \n${[1, 2, 3, 4, 5].map(n => String(offs[n]).padStart(10, '0') + ' 00000 n \n').join('')}trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob(parts, { type: 'application/pdf' });
+}
+async function posterPdfBlob(){ const c = posterHiRes(); const jb = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.93)); return jpegToPdf(new Uint8Array(await jb.arrayBuffer()), c.width, c.height); }
+
+/* ---- paquete para el cliente: todo listo para que lo suba el dueño ---- */
+async function clientPackage(){
+  const btn = $('#pkgGo'), msg = $('#pkgMsg'); btn.disabled = true; msg.textContent = '';
+  try {
+    await ensureFonts(); renderAll();
+    const zip = new JSZip(), L = readLocal(), name = fileBase();
+    const cs = $$('#carousel canvas');
+    for (let i = 0; i < cs.length; i++) zip.file(`1-carrusel/${String(i + 1).padStart(2, '0')}.png`, await canvasBlob(cs[i]));
+    zip.file('2-post-cuadrado.png', await canvasBlob($('#cPost')));
+    if ($('#pkgVideo').checked) {
+      btn.textContent = 'Creando la historia…';
+      const st = await encodeStory(p => btn.textContent = `Historia ${Math.round(p * 100)}%`); zip.file(`3-historia.${st.ext}`, st.blob); S.lastStory = st;
+      btn.textContent = 'Creando el reel…';
+      const rl = await encodeReel(p => btn.textContent = `Reel ${Math.round(p * 100)}%`); zip.file(`4-reel.${rl.ext}`, rl.blob); S.lastReel = rl;
+    } else { const sv = S.storyFmt; S.storyFmt = 'imagen'; renderAll(); zip.file('3-historia.png', await canvasBlob($('#cStory'))); S.storyFmt = sv; renderAll(); }
+    btn.textContent = 'Armando el cartel…';
+    const keep = S.poster.fmt; S.poster.fmt = 'a4'; zip.file('5-cartel-A4.pdf', await posterPdfBlob()); zip.file('5-cartel-A4.png', await canvasBlob(posterHiRes())); S.poster.fmt = keep;
+    zip.file('6-texto-del-posteo.txt', finalCaption());
+    zip.file('LEEME.txt', [`Contenido para ${L.name || 'el local'}`, '', 'Cómo subirlo:', '1. Carrusel: en Instagram tocá + → Publicación, elegí las imágenes de "1-carrusel" en orden y pegá el texto de "6-texto-del-posteo.txt".', '2. Historia: subí "3-historia" y sumale un sticker de enlace o de WhatsApp.', '3. Reel: subí "4-reel" como Reel con el mismo texto; si querés música, ponela con volumen bajo para que se escuche la voz.', '4. Cartel: "5-cartel-A4.pdf" para imprimir en A4 (o el PNG para mandar por WhatsApp).', '', 'Consejo: publicá el carrusel primero y el reel 2 o 3 días después.'].join('\n'));
+    await saveFile(`${name}-para-el-cliente.zip`, await zip.generateAsync({ type: 'blob' }));
+    addHist(['paquete cliente']);
+    msg.textContent = 'Listo: mandale el ZIP al dueño (por WhatsApp o Drive).';
+  } catch (e) { msg.textContent = 'No se pudo armar el paquete: ' + (e.message || e); }
+  finally { btn.disabled = false; btn.textContent = '📦 Armar paquete para el cliente'; }
+}
+
 /* ============ render ============ */
 let fontsReady = false;
 async function ensureFonts(){
@@ -3293,7 +3491,7 @@ function renderAll(){
   renderChecks();
   if (!playing || playing.kind !== 'reel') { const R = reelScenes({ fmt: 'reel' }); $('#reelLen').textContent = `1080×1920 · ${R.scenes.some(z => z.audio) ? '' : '≈ '}${Math.round(R.total)} s`; drawReelFrame($('#cReel').getContext('2d'), R, 2.6, b, T); }
   if (S.storyFmt === 'video' && (!playing || playing.kind !== 'story')) { const R = reelScenes({ fmt: 'story' }); $('#storyLen').textContent = `${R.scenes.some(z => z.audio) ? '' : '≈ '}${Math.round(R.total)} s`; drawReelFrame($('#cStory').getContext('2d'), R, 2.6, b, T); }
-  renderScripts(); syncStoryFmt(); syncMusicInfo();
+  renderScripts(); syncStoryFmt(); syncMusicInfo(); renderPoster();
 }
 function fileBase(){ if (S.mode === 'brand') return 'mi-marca'; return ((isLocal() ? $('#l-name').value.trim() : '') || readModel().name || 'proyecto').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase() || 'proyecto'; }
 
@@ -3424,6 +3622,8 @@ function applyMode(){
   $('#itemsLabel').innerHTML = caso ? 'Qué hace lo que le hiciste <span style="font-weight:400">(uno por línea · <i>Función: detalle</i>)</span>' : 'Productos o servicios <span style="font-weight:400">(uno por línea · <i>Nombre: precio o detalle</i>)</span>';
   $('#reviewLabel').textContent = caso ? 'Lo que dijo el cliente (opcional · texto — nombre)' : 'Reseña destacada (opcional)';
   if (S.server) { const w = $('#pubWarn'); if (isLocalOwn()) { w.innerHTML = '<b>Ojo:</b> se publica en <b>tu</b> cuenta, no en la del local. Para la cuenta del local, descargá todo y subilo desde su celu.'; w.classList.remove('hidden'); } else w.classList.add('hidden'); }
+  $('[data-out=publish]').textContent = isLocalOwn() ? '📦 Para el cliente' : '🚀 Subir a IG';
+  if (isLocalOwn() && $('[data-out=publish]').classList.contains('on')) {}
   $('#brandLabel').textContent = isLocalOwn() ? 'Tu marca (sale como crédito chico: "Diseño: …")' : 'Tu marca';
 }
 function setMode(m){
@@ -3436,7 +3636,7 @@ function setMode(m){
   if (m === 'brand' && !MFIELDS.some(k => $('#m-' + k).value.trim())) MFIELDS.forEach(k => $('#m-' + k).value = BRAND_MODEL_DEFAULT[k]);
   const ds = S.designSets[m];
   if (ds) { S.auto = ds.auto; S.autoOrig = ds.orig; $('#accent').value = ds.acc; $('#autoInfo').textContent = ds.info; setTheme(ds.theme); }
-  else { S.auto = null; S.autoOrig = null; $('#autoInfo').textContent = ''; if (S.theme === 'auto') setTheme('noche'); }
+  else { S.auto = null; S.autoOrig = null; $('#autoInfo').textContent = ''; if (S.theme === 'auto') setTheme('noche'); if (m === 'local') { $('#accent').value = '#8a5a3b'; setTheme('claro'); } }
   $('#useDetected').disabled = !S.autoOrig;
   applyFontChoice().then(renderAll);
   if (m === 'local' && !LFIELDS.some(k => $('#l-' + k).value.trim())) { Object.entries(LDEMO).forEach(([k, v]) => $('#l-' + k).value = v); localAutoTexts(true); $('#lDemoBadge').classList.remove('hidden'); }
@@ -3463,8 +3663,9 @@ $('#inLogo').onchange = async () => {
   const f = $('#inLogo').files[0]; $('#inLogo').value = ''; if (!f) return;
   const sh = await makeShot(f, f.name); if (!sh) return;
   S.logo = sh;
-  const p = imagePalette(sh.img); S.logoBg = p.opaque > 0.85 && p.dominant ? p.dominant : '#ffffff';
+  const p = imagePalette(sh.img); S.logoBg = p.opaque > 0.85 && p.dominant ? p.dominant : null;
   $('#logoSlot').innerHTML = `<img src="${sh.url}" alt="">`; $('#delLogo').classList.remove('hidden');
+  S.poster.colorsSet = false;
   await applyAuto(designFromImage(sh.img, true));
 };
 $('#delLogo').onclick = () => { S.logo = null; $('#logoSlot').textContent = 'sin logo'; $('#delLogo').classList.add('hidden'); renderAll(); };
@@ -3485,6 +3686,14 @@ $('#vDesign').onclick = () => { nextVariant(); syncLookUI(); renderAll(); toast(
 $('#vHook').onclick = nextHook;
 $$('#storyKinds .chip').forEach(c => c.onclick = () => { S.storyKind = c.dataset.k; $$('#storyKinds .chip').forEach(x => x.classList.toggle('on', x === c)); renderAll(); });
 $('#m-topic').onchange = applyTopic;
+$$('#pGoal .chip').forEach(c => c.onclick = () => { S.poster.goal = c.dataset.g; $$('#pGoal .chip').forEach(x => x.classList.toggle('on', x === c)); posterFill(); renderPoster(); });
+$$('#pFormat .chip').forEach(c => c.onclick = () => { S.poster.fmt = c.dataset.f; $$('#pFormat .chip').forEach(x => x.classList.toggle('on', x === c)); renderPoster(); });
+['#pc-bg', '#pc-ink', '#pc-acc', '#p-title', '#p-body', '#p-terms', '#p-cta', '#p-photo'].forEach(id => $(id).addEventListener('input', () => debounce(renderPoster, 120)));
+$('#pColorsBrand').onclick = () => { posterColorsFromBrand(); renderPoster(); };
+$('#pFill').onclick = () => { posterFill(); renderPoster(); };
+$('#posterPng').onclick = async () => saveFile(`${fileBase()}-cartel-${S.poster.fmt}.png`, await canvasBlob(posterHiRes()));
+$('#posterPdf').onclick = async () => saveFile(`${fileBase()}-cartel-A4.pdf`, await posterPdfBlob());
+$('#pkgGo').onclick = clientPackage;
 $('#m-points').addEventListener('input', () => debounce(() => { makeBrandCaption(); renderAll(); }));
 ['#f-caption', '#f-hashtags'].forEach(id => $(id).addEventListener('input', () => debounce(renderChecks, 300)));
 $('#copyCap').onclick = async () => {

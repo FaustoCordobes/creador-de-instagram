@@ -39,6 +39,12 @@ Además: diapositiva **Qué incluye**, **oferta de lanzamiento** opcional, cierr
 - En el **Guion de voz** (pestañas Reel e Historia) se edita lo que dice cada pantalla, se escucha con ▶ y se graba con tu voz con 🎙. Las grabaciones quedan solo mientras la página está abierta.
 - El audio va dentro del MP4 en AAC (Chrome o Edge en la compu). Si el navegador no puede, lo graba en tiempo real.
 
+## "Un local": contenido para que lo suba el dueño
+
+- Lee solo lo que el local publica: perfil público de Instagram (sin permisos de Meta), Google Maps o su web.
+- **🪧 Cartel / promo**: antes de diseñar pide objetivo (descuento, evento, producto nuevo, info), colores de la marca (máx. 3), logo y dónde se usa (A4 para imprimir en PDF, historia o post). Logo arriba e integrado, mensaje, detalles y contacto abajo, sin estética "IA saturada".
+- **📦 Para el cliente**: arma un ZIP con carrusel, post, historia y reel (con voz), cartel A4 en PDF y PNG, el texto del posteo y un LEEME con los pasos para subirlo.
+
 ## Estructura
 
 ```
