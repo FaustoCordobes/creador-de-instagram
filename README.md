@@ -20,6 +20,16 @@ Tres modos:
 
 Además: diapositiva **Qué incluye**, **oferta de lanzamiento** opcional, cierre con **palabra clave** ("Comentá WEB o escribime al DM" + link en la bio) y **portadas para historias destacadas**.
 
+## Que cada publicación sea distinta
+
+- **Estilo visual** (paso "Estilo y marca"): Limpio, Editorial, Póster o Anotado a mano (post-it, cinta, resaltador, letra a mano). Con **🔄 Rotar** el estilo cambia solo después de cada publicación.
+- **🎲 Otro diseño**: cambia estilo, palabra resaltada del gancho, tipo de historia y transiciones del reel.
+- **✍️ Otro gancho**: prueba otro gancho de portada (de la IA o del banco propio) que no hayas usado antes.
+- **Historias**: Resumen, Pregunta (invita a responder por DM) o Captura.
+- **Mi marca**: temas de carrusel (señales de que tu web pierde clientes, qué tiene que traer una web, preguntas antes de contratar, mitos, cómo arrancar).
+- **Chequeo antes de publicar**: máximo 5 hashtags (límite de Instagram desde dic. 2025), frases típicas de IA, rayas largas, exceso de emojis, ganchos repetidos y mismo estilo que la última vez. "🧹 Arreglar lo automático" corrige lo que se puede.
+- Cada publicación queda anotada en "Últimas publicaciones" (en el navegador) para no repetir.
+
 ## Estructura
 
 ```
