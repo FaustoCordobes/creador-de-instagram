@@ -18,9 +18,6 @@
     },
     "api/fetch.js": {
       "maxDuration": 60
-    },
-    "api/investigar.js": {
-      "maxDuration": 60
     }
   }
 }

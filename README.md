@@ -14,8 +14,8 @@ y **publicarlo directo en tu cuenta** desde la pestaña 🚀 Subir a IG (o desca
 | Un link de TikTok | Nombre y miniatura |
 
 Tres modos:
-- **Mi app o web**: promocionar tus proyectos.
-- **Un local**: contenido para un negocio, con destino *Instagram del local* o *mi Instagram* (caso de cliente, con diapositiva de resultado/testimonio).
+- **Para mi Instagram** (F-C Web Studio): mostrar tus apps y webs.
+- **Negocio o local de otra persona**: contenido para un negocio, con destino *Instagram del local* o *mi Instagram* (caso de cliente, con diapositiva de resultado/testimonio).
 - **Mi marca**: carrusel de presentación (quién sos, qué hacés, cómo trabajás, qué incluye).
 
 Además: diapositiva **Qué incluye**, **oferta de lanzamiento** opcional, cierre con **palabra clave** ("Comentá WEB o escribime al DM" + link en la bio) y **portadas para historias destacadas**.
@@ -39,7 +39,7 @@ Además: diapositiva **Qué incluye**, **oferta de lanzamiento** opcional, cierr
 - En el **Guion de voz** (pestañas Reel e Historia) se edita lo que dice cada pantalla, se escucha con ▶ y se graba con tu voz con 🎙. Las grabaciones quedan solo mientras la página está abierta.
 - El audio va dentro del MP4 en AAC (Chrome o Edge en la compu). Si el navegador no puede, lo graba en tiempo real.
 
-## "Un local": contenido para que lo suba el dueño
+## "Negocio o local de otra persona": contenido para que lo suba el dueño
 
 - Lee solo lo que el local publica: Google Maps, su web o su Instagram. Instagram bloquea las lecturas desde servidores, así que lo seguro es el botón de favoritos **📥 Traer de Instagram**: se arrastra una vez a la barra de favoritos, se toca estando en el perfil del local y manda nombre, bio, rubro, contacto, logo y fotos al Estudio desde tu propio navegador.
 - **🪧 Cartel / promo**: antes de diseñar pide objetivo (descuento, evento, producto nuevo, info), colores de la marca (máx. 3), logo y dónde se usa (A4 para imprimir en PDF, historia o post). Logo arriba e integrado, mensaje, detalles y contacto abajo, sin estética "IA saturada".
@@ -89,14 +89,10 @@ Cuando traés un proyecto con link publicado (o un repo de GitHub con su web), l
 
 Lo que se publica es para dueños de locales: el estudio no muestra lenguajes, frameworks ni servicios (React, Supabase, Vercel, etc.). En su lugar hay una diapositiva "Antes y ahora" con lo que gana el negocio (campo "Lo que gana el negocio", una línea por cambio con el formato `antes → ahora`). El control de calidad avisa si se cuela algo técnico y "Arreglar lo automático" lo saca.
 
-## Propuesta: mi app para un local (historias)
+## Historias de funciones (Para mi Instagram)
 
-En **Un local → "Propuesta: mi app para este local"** el estudio arma de 4 a 6 historias para tu Instagram que le muestran a ese local cómo le sirve una de tus apps, con capturas reales.
+En **Para mi Instagram**, cuando traés una app con su link publicado, el estudio la recorre entera en celular (sin contar el menú abierto) y guarda una captura por sección. Cada captura queda asociada a una función: reserva automática, recordatorio o confirmación por WhatsApp, mensajes pregrabados, contacto directo, historial, impresión de tickets, caja, stock, pedidos, cuotas, órdenes de trabajo, etc. Cada app muestra las suyas.
 
-1. **El local:** pegá su link (Instagram, Google Maps o web) y tocá "Traer todo".
-2. **Tu app:** cargá una vez cada app que vendés (nombre y link). El estudio la recorre sola, saca una captura por sección y detecta qué función muestra cada una (turnos, recordatorios, historial, caja, stock…). Podés corregir el nombre de cada función o subir capturas a mano.
-3. **Investigación:** busca al local en sus datos, su web, Google Maps y reseñas (`GOOGLE_PLACES_KEY`) y en toda la web: Facebook, prensa y directorios (`OPENAI_API_KEY`, usa `api/investigar.js`). Si falta algo esencial (por ejemplo el rubro), se frena y te lo pregunta.
-4. **Fase 1 · Borrador:** elige la app y las funciones que más valor le dan a ese rubro y arma las historias (texto, llamado a la acción y captura en cada una).
-5. **Fase 2 · Cambios:** te pregunta si querés cambiar algo y sugiere intercambios (por ejemplo, "Historial del cliente" por "Reserva automática"). Después armás la versión final y la descargás o la publicás en tus historias.
-
-Variable opcional: `OPENAI_SEARCH_MODEL` para elegir el modelo de búsqueda (por defecto prueba `gpt-5-mini` y después `gpt-4.1-mini`).
+1. **Antes:** en el paso 2, "Funciones para las historias", elegís para qué tipo de negocio es la app (o lo detecta solo) y marcás de 4 a 6 funciones. Ya vienen marcadas las que más le sirven a ese rubro. Podés corregir qué muestra cada pantalla o subir capturas a mano.
+2. **Muestra:** "Armar historias" crea una historia por función, con su captura real, texto, llamado a la acción y tu contacto en la última.
+3. **Después:** en la pestaña "Historias de funciones" podés cambiar la función, la pantalla, los textos o el orden de cada historia; el estudio te sugiere intercambios (por ejemplo, "Historial del paciente" por "Recordatorio por WhatsApp"). Al confirmar queda la versión final para descargar (.zip) o publicar en tus historias.
