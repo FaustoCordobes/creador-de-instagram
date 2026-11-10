@@ -108,6 +108,13 @@ aside{counter-reset:st}
 .checks li.bad{color:#ffd36b}
 #histList{padding-left:18px;font-size:13px;color:var(--muted)}
 #histList li{margin:4px 0}
+.script{display:flex;flex-direction:column;gap:8px;margin:8px 0 12px}
+.vrow{display:grid;grid-template-columns:22px 1fr;gap:6px;align-items:start}
+.vrow>b{color:var(--muted);font-size:13px;padding-top:9px}
+.vrow textarea{min-height:52px;font-size:13.5px}
+.vbar{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:4px}
+.vbar small{color:var(--muted);font-size:12px}
+.vbar span{display:flex;gap:4px}
 .hidden{display:none!important}
 </style>
 </head>
@@ -298,6 +305,12 @@ aside{counter-reset:st}
       <span class="chip" data-l="anotado">Anotado a mano</span>
     </div>
     <p class="hint" id="lookInfo"></p>
+    <label class="f">Voz de reels e historias</label>
+    <select id="voiceSel">
+      <option value="es-AR-TomasNeural">Tomás (hombre, Argentina)</option>
+      <option value="es-AR-ElenaNeural">Elena (mujer, Argentina)</option>
+      <option value="off">Sin voz automática (solo mi voz grabada)</option>
+    </select>
     <div class="row" style="align-items:end">
       <div><label class="f">Color de acento</label><input type="color" id="accent" value="#c6ff3d" style="width:100%;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);padding:3px"></div>
       <div><button class="btn sm" id="useDetected" style="width:100%;height:40px" disabled>Restaurar detectados</button></div>
@@ -362,9 +375,21 @@ aside{counter-reset:st}
   <div class="pane" data-pane="story">
     <div class="single v">
       <div class="frame"><canvas id="cStory" width="1080" height="1920"></canvas>
-        <div class="meta"><span>1080×1920</span><button class="btn sm" data-dl="story">⬇ PNG</button></div></div>
+        <div class="meta"><span>1080×1920 <span id="storyLen"></span></span>
+          <span style="display:flex;gap:6px"><button class="btn sm" id="storyPlay">▶ Ver</button><button class="btn sm pri" id="storyRender">⬇ MP4</button><button class="btn sm" data-dl="story">⬇ PNG</button></span></div>
+        <div class="bar" id="storyBar"><i></i></div><span id="storyMsg" class="hint"></span></div>
       <div class="side"><h3>Historia</h3>
-        <div data-show="notlocalown">
+        <div class="chips" id="storyFmt" style="margin-bottom:10px">
+          <span class="chip" data-f="video">🎬 Video con voz</span>
+          <span class="chip" data-f="imagen">🖼 Imagen fija</span>
+        </div>
+        <div id="storyVideoOpts">
+          <p class="hint" style="margin-top:0">Video de hasta 59 s con las pantallas principales y una voz que lee cada una. Tocá ▶ para escucharla.</p>
+          <h3 style="margin-top:14px">Guion de voz</h3>
+          <p class="hint" style="margin-top:0">Editá lo que se dice o tocá 🎙 para grabarlo con tu voz.</p>
+          <div id="scriptStory" class="script"></div>
+        </div>
+        <div data-show="notlocalown" id="storyImgOpts">
           <div class="chips" id="storyKinds">
             <span class="chip on" data-k="auto">Automática</span>
             <span class="chip" data-k="resumen">Resumen</span>
@@ -391,9 +416,12 @@ aside{counter-reset:st}
       </div>
       <div class="side">
         <h3>Reel animado</h3>
-        Video vertical de 15–20 segundos con las mismas escenas del carrusel, animadas. Se genera en tu navegador.
+        Video vertical con las escenas del carrusel, animadas y con voz. Se genera en tu navegador.
+        <h3 style="margin-top:14px">Guion de voz</h3>
+        <p class="hint" style="margin-top:0">Lo que dice la voz en cada pantalla. Editalo, escuchalo con ▶ o grabalo con tu voz con 🎙 (tu grabación reemplaza la voz automática).</p>
+        <div id="script" class="script"></div>
         <ul>
-          <li>Al subirlo, agregale música desde la biblioteca de Instagram (sale sin audio para que elijas una tendencia).</li>
+          <li>Si querés música de fondo, sumala desde el celu al subirlo, con el volumen bajo para que se escuche la voz.</li>
           <li>Funciona mejor en Chrome o Edge en la compu.</li>
           <li>Los textos quedan lejos de los bordes para que no los tape la interfaz del reel.</li>
         </ul>
@@ -1249,25 +1277,6 @@ function storyResumen(ctx, W, H, m, b, T){
 }
 
 /* ---- reel ---- */
-function reelScenes(){
-  if (isLocalOwn()) {
-    const L = readLocal(), b = readBrand(), T = themeColors();
-    const slides = buildLocalSlides(L);
-    const items = slides.filter(z => z.type === 'litem').slice(0, 4), photos = slides.filter(z => z.type === 'lphoto').slice(0, 3);
-    const order = [slides.find(z => z.type === 'lcover'), slides.find(z => z.type === 'lpromo'), ...items, ...photos, slides.find(z => z.type === 'lreview'), slides.find(z => z.type === 'linfo'), slides.find(z => z.type === 'lcta')].filter(Boolean);
-    const dur = { lcover: 3.2, lpromo: 2.6, litem: 2.6, lphoto: 2.4, lreview: 3.2, linfo: 3.0, lcta: 3.4 };
-    let t = 0; const scenes = order.map((z, i) => { const d = dur[z.type]; const sc = { slide: z, start: t, dur: d, index: i }; t += d; return sc; });
-    return { scenes, total: t, draw: (ctx, W, H, sl, fmt, o, bb, TT) => drawLocalSlide(ctx, W, H, sl, fmt, L, bb, TT, o) };
-  }
-  const m = S.mode === 'brand' ? readBrandModel() : readModel();
-  const slides = buildSlides(m);
-  const feats = slides.filter(s => s.type === 'feature').slice(0, 3);
-  const order = m.brandMode ? slides : [slides.find(s=>s.type==='cover'), slides.find(s=>s.type==='problem'), ...feats, slides.find(s=>s.type==='result'), slides.find(s=>s.type==='includes') || slides.find(s=>s.type==='tech'), slides.find(s=>s.type==='cta')].filter(Boolean);
-  const dur = { cover: 3.4, problem: 3.0, feature: 2.8, tech: 2.6, result: 3.2, includes: 3.0, cta: 3.8, bcover: 3.4, bservices: 3.4, bprocess: 3.6, bworks: 2.8, tcover: 3.2 };
-  const pace = 0.84 + rv(23) * 0.2;
-  let t = 0; const scenes = order.map((s, i) => { const d = (dur[s.type] || 3) * (s.type === 'cta' ? 1 : pace); const sc = { slide: s, start: t, dur: d, index: i }; t += d; return sc; });
-  return { scenes, total: t, draw: (ctx, W, H, sl, fmt, o, bb, TT) => drawSlide(ctx, W, H, sl, fmt, m, bb, TT, o) };
-}
 function drawReelFrame(ctx, R, t, b, T){
   const W = 1080, H = 1920, last = R.scenes[R.scenes.length - 1];
   let sc = last;
@@ -1281,7 +1290,7 @@ function drawReelFrame(ctx, R, t, b, T){
   if (t < 0.45) z = 1 + 0.07 * (1 - ease(t / 0.45));
   else if (trans === 'zoom' && sc.index > 0 && inT < 0.32) z = 1.06 - 0.06 * ease(inT / 0.32);
   if (z !== 1) { ctx.translate(W/2, H/2); ctx.scale(z, z); ctx.translate(-W/2, -H/2); }
-  R.draw(ctx, W, H, sc.slide, 'reel', { tt: local, index: sc.index }, b, T);
+  R.draw(ctx, W, H, sc.slide, R.fmt || 'reel', { tt: local, index: sc.index }, b, T);
   ctx.restore();
   if (sc !== last && outT < 0.3) {
     const p = 1 - outT / 0.3;
@@ -1290,7 +1299,7 @@ function drawReelFrame(ctx, R, t, b, T){
   }
   if (sc.index > 0 && trans === 'wipe' && inT < 0.3) { const p = ease(inT / 0.3); ctx.fillStyle = T.acc; ctx.fillRect(W * p, 0, W * (1 - p) + 1, H); }
   if (sc.index > 0 && trans === 'cut' && inT < 0.07) { ctx.fillStyle = alpha(T.acc, 0.3); ctx.fillRect(0, 0, W, H); }
-  if (curLook() !== 'limpio') return;
+  if (curLook() !== 'limpio' || R.fmt === 'story') return;
   // barras de progreso estilo historia (solo en el estilo limpio)
   const n = R.scenes.length, gap = 10, x0 = 80, bw = (W - 160 - gap*(n-1)) / n, yb = 180;
   R.scenes.forEach((s, i) => {
@@ -1863,7 +1872,17 @@ async function publishFlow(){
       const id = (await api('api/ig', { action: 'container', kind: 'image', url, caption })).id;
       await waitReady(id, false); done('Post', await api('api/ig', { action: 'publish', id }));
     }
-    if (want.story) {
+    if (want.story && S.storyFmt === 'video') {
+      const li = plog('Creando el video de la historia…');
+      const r = await encodeStory(p => li.textContent = `Creando el video de la historia… ${Math.round(p * 100)}%`);
+      if (r.ext !== 'mp4') throw new Error('Este navegador solo crea WEBM y Instagram pide MP4. Usá Chrome o Edge actualizados.');
+      if (r.note) plog('⚠️ ' + r.note);
+      S.lastStory = r; li.textContent = 'Subiendo la historia…';
+      const url = await up(r.blob, 'historia.mp4', 'video/mp4');
+      const id = (await api('api/ig', { action: 'container', kind: 'story', url, video: true })).id;
+      li.textContent = 'Instagram está procesando la historia…';
+      await waitReady(id, true); done('Historia', await api('api/ig', { action: 'publish', id }));
+    } else if (want.story) {
       plog('Subiendo la historia…');
       const url = await up(await jpegBlob($('#cStory')), 'historia.jpg', 'image/jpeg');
       const id = (await api('api/ig', { action: 'container', kind: 'story', url })).id;
@@ -1872,6 +1891,7 @@ async function publishFlow(){
     if (want.reel) {
       const li = plog('Creando el video del reel…');
       const r = await encodeReel(p => li.textContent = `Creando el video del reel… ${Math.round(p * 100)}%`);
+      if (r.note) plog('⚠️ ' + r.note);
       if (r.ext !== 'mp4') throw new Error('Este navegador solo crea WEBM y Instagram pide MP4. Usá Chrome o Edge actualizados.');
       S.lastReel = r;
       li.textContent = 'Subiendo el reel…';
@@ -2806,6 +2826,300 @@ function syncLookUI(){
   const i = $('#lookInfo'); if (i) i.textContent = S.lookSel === 'rotar' ? `Ahora: ${LOOK_NAMES[curLook()]}. Cambia solo después de cada publicación, así el feed no se ve repetido.` : '';
 }
 
+/* ============ voz y video (reel e historia) ============ */
+S.voice = { name: store.get('voice', 'es-AR-TomasNeural'), lines: {}, recs: {}, cache: new Map() };
+S.storyFmt = store.get('storyFmt', 'video');
+const voiceOn = () => S.voice.name !== 'off';
+const SLOW = 1.35; // todo pasa un poco más lento para que se llegue a leer
+let ACTX = null;
+function actx(){ if (!ACTX) { const C = window.AudioContext || window.webkitAudioContext; ACTX = new C({ sampleRate: 48000 }); } return ACTX; }
+function speakable(s){
+  return String(s || '').replace(EMO, '').replace(/24\/7/g, 'las 24 horas, todos los días').replace(/\$\s?([\d.]+)/g, (_, n) => n.replace(/\./g, '') + ' pesos')
+    .replace(/(\d)\s?hs\b\.?/gi, '$1 horas').replace(/[“”"«»]/g, '').replace(/[→·|•]/g, ', ').replace(/\s*[—–]\s*/g, ', ')
+    .replace(/\s+/g, ' ').replace(/\s+([,.;:?!])/g, '$1').replace(/,\s*,/g, ',').trim();
+}
+const endDot = x => { x = (x || '').trim(); return x ? (/[.?!…]$/.test(x) ? x : x + '.') : ''; };
+function speechFor(s, m, L, b){
+  const kw = (b.keyword || 'WEB').toLowerCase(), t = s.type;
+  if (L) {
+    if (t === 'lcover') return [endDot(L.hook), endDot(L.sub)].join(' ');
+    if (t === 'lpromo') return endDot(L.promo);
+    if (t === 'litem') return endDot(s.it.title + (s.it.detail ? ', ' + s.it.detail : ''));
+    if (t === 'lphoto') return endDot(s.caption || '');
+    if (t === 'lreview') return endDot(`${L.reviewAuthor || 'Un cliente'} dice: ${L.reviewText}`);
+    if (t === 'linfo') return [L.address && `Estamos en ${L.address}.`, endDot(L.hours)].filter(Boolean).join(' ');
+    if (t === 'lcta') return endDot(L.cta) + ' Te esperamos.';
+    return '';
+  }
+  if (t === 'cover') return [endDot(m.hook || m.name), m.hook && m.name && !normT(m.hook).includes(normT(m.name)) ? `Esto es ${m.name}.` : ''].join(' ');
+  if (t === 'problem') return [endDot(m.problem), m.name ? `${m.name} lo resuelve.` : ''].join(' ');
+  if (t === 'feature') return [endDot(s.f.title), endDot(cap1(s.f.desc || ''))].join(' ');
+  if (t === 'result') return endDot(`${m.resultAuthor || 'El cliente'} dice: ${m.resultText}`);
+  if (t === 'includes') return endDot('Incluye ' + lc1(joinY(m.includesList.slice(0, 4).map(lc1))));
+  if (t === 'tech') return 'Está hecho con tecnología actual, rápida y segura.';
+  if (t === 'cta') return `${endDot(m.cta || '¿Hablamos?')} Comentá ${kw}, o escribime por WhatsApp.`;
+  if (t === 'bcover') return [endDot(m.hook), endDot(m.who)].join(' ');
+  if (t === 'tcover') return [endDot(m.hook), endDot(m.tagline)].join(' ');
+  if (t === 'bservices') return endDot('Hago ' + joinY(m.services.map(x => lc1(x.title))));
+  if (t === 'bprocess') return 'Así trabajo: ' + m.process.map(p => lc1(p.title)).join(', ') + '.';
+  if (t === 'bworks') return 'Algunos de mis trabajos.';
+  return '';
+}
+const sceneKey = s => s.type + (s.n || '') + (s.type === 'lphoto' && s.photo ? ':' + (s.photo.name || '') : '');
+function audioFor(key, text){ return S.voice.recs[key] || (voiceOn() && text ? S.voice.cache.get(S.voice.name + '|' + speakable(text)) : null) || null; }
+
+// escenas del video. fmt 'reel' o 'story' (la historia es más corta: máximo 59 s)
+function reelScenes(opts){
+  opts = opts || {}; const story = opts.fmt === 'story', b = readBrand();
+  let order, dur, draw, sp;
+  const pick = (sl, t) => sl.find(z => z.type === t);
+  if (isLocalOwn()) {
+    const L = readLocal(), slides = buildLocalSlides(L);
+    const items = slides.filter(z => z.type === 'litem').slice(0, story ? 2 : 4), photos = slides.filter(z => z.type === 'lphoto').slice(0, story ? 1 : 3);
+    order = [pick(slides, 'lcover'), pick(slides, 'lpromo'), ...items, ...photos, pick(slides, 'lreview'), story ? null : pick(slides, 'linfo'), pick(slides, 'lcta')].filter(Boolean);
+    dur = { lcover: 3.2, lpromo: 2.6, litem: 2.6, lphoto: 2.4, lreview: 3.2, linfo: 3.0, lcta: 3.4 };
+    draw = (ctx, W, H, sl, fmt, o, bb, TT) => drawLocalSlide(ctx, W, H, sl, fmt, L, bb, TT, o);
+    sp = s => speechFor(s, null, L, b);
+  } else {
+    const m = S.mode === 'brand' ? readBrandModel() : readModel(), slides = buildSlides(m);
+    if (m.brandMode) order = story ? [slides[0], ...slides.slice(1, -1).slice(0, 3), slides[slides.length - 1]] : slides.slice();
+    else { const feats = slides.filter(s => s.type === 'feature').slice(0, story ? 2 : 3); order = [pick(slides, 'cover'), pick(slides, 'problem'), ...feats, pick(slides, 'result'), story ? null : (pick(slides, 'includes') || pick(slides, 'tech')), pick(slides, 'cta')].filter(Boolean); }
+    dur = { cover: 3.4, problem: 3.0, feature: 2.8, tech: 2.6, result: 3.2, includes: 3.0, cta: 3.8, bcover: 3.4, bservices: 3.4, bprocess: 3.6, bworks: 2.8, tcover: 3.2 };
+    draw = (ctx, W, H, sl, fmt, o, bb, TT) => drawSlide(ctx, W, H, sl, fmt, m, bb, TT, o);
+    sp = s => speechFor(s, m, null, b);
+  }
+  const pace = (0.84 + rv(23) * 0.2) * SLOW;
+  const build = list => {
+    let t = 0;
+    const scenes = list.map((s, i) => {
+      const key = sceneKey(s), auto = sp(s), text = S.voice.lines[key] != null ? S.voice.lines[key] : auto;
+      const audio = audioFor(key, text), lead = i === 0 ? 0.2 : 0.45;
+      let d = (dur[s.type] || 3) * (s.type === 'cta' ? SLOW : pace);
+      if (audio) d = Math.max(d, lead + audio.duration + 0.9);
+      const sc = { slide: s, start: t, dur: d, index: i, key, auto, text, audio, lead }; t += d; return sc;
+    });
+    return { scenes, total: t };
+  };
+  let res = build(order);
+  while (story && res.total > 59 && order.length > 2) { order.splice(order.length - 2, 1); res = build(order); }
+  return { ...res, fmt: story ? 'story' : 'reel', draw };
+}
+
+/* ---- voz automática ---- */
+async function ttsBuffer(text){
+  const say = speakable(text), key = S.voice.name + '|' + say;
+  if (S.voice.cache.has(key)) return S.voice.cache.get(key);
+  const r = await fetch('api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-studio-key': studioKey() }, body: JSON.stringify({ text: say, voice: S.voice.name }) });
+  if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(r.status === 401 ? 'clave del estudio incorrecta' : (j.error || 'error ' + r.status)); }
+  const buf = await actx().decodeAudioData(await r.arrayBuffer());
+  S.voice.cache.set(key, buf); return buf;
+}
+async function prepareVoice(R, onMsg){
+  if (!voiceOn()) return;
+  const need = R.scenes.filter(sc => !S.voice.recs[sc.key] && speakable(sc.text) && !S.voice.cache.has(S.voice.name + '|' + speakable(sc.text)));
+  if (!need.length) return;
+  if (!S.server) { if (!S.voiceWarned) { toast('La voz automática funciona en tu versión de Vercel. Acá podés grabar tu voz en el guion.'); S.voiceWarned = 1; } return; }
+  let done = 0, fails = 0, err = '';
+  const queue = need.slice();
+  const worker = async () => { while (queue.length) { const sc = queue.shift(); try { await ttsBuffer(sc.text); } catch (e) { fails++; err = e.message; } done++; if (onMsg) onMsg(`Generando la voz… ${done}/${need.length}`); } };
+  await Promise.all([worker(), worker(), worker()]);
+  if (fails) toast('No se pudo generar parte de la voz: ' + err);
+}
+async function scenesWithVoice(opts, onMsg){ await prepareVoice(reelScenes(opts), onMsg); return reelScenes(opts); }
+
+/* ---- tu propia voz ---- */
+function trimNorm(buf){
+  const ch = buf.getChannelData(0), th = 0.02, sr = buf.sampleRate;
+  let a = 0, z = ch.length - 1; while (a < z && Math.abs(ch[a]) < th) a++; while (z > a && Math.abs(ch[z]) < th) z--;
+  a = Math.max(0, a - Math.round(sr * 0.08)); z = Math.min(ch.length - 1, z + Math.round(sr * 0.15));
+  let peak = 0; for (let i = a; i <= z; i++) peak = Math.max(peak, Math.abs(ch[i]));
+  const g = peak > 0 ? Math.min(4, 0.9 / peak) : 1, n = Math.max(1, z - a + 1);
+  const out = actx().createBuffer(1, n, sr), o = out.getChannelData(0);
+  for (let i = 0; i < n; i++) o[i] = ch[a + i] * g;
+  return out;
+}
+async function recordLine(key, btn){
+  if (S.rec) { if (S.rec.key === key) S.rec.mr.stop(); return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+  catch { toast('No pude usar el micrófono: dale permiso al navegador'); return; }
+  const mr = new MediaRecorder(stream), chunks = [];
+  mr.ondataavailable = e => e.data.size && chunks.push(e.data);
+  mr.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop()); S.rec = null;
+    try { S.voice.recs[key] = trimNorm(await actx().decodeAudioData(await new Blob(chunks).arrayBuffer())); toast('Grabado con tu voz'); }
+    catch { toast('No se pudo leer la grabación'); }
+    renderScripts(true); renderAll();
+  };
+  S.rec = { key, mr }; mr.start(); btn.textContent = '■ Listo'; btn.classList.add('pri');
+}
+function playBuf(buf){ const ac = actx(); ac.resume(); if (S.linePlay) try { S.linePlay.stop(); } catch {} const s = ac.createBufferSource(); s.buffer = buf; s.connect(ac.destination); s.start(); S.linePlay = s; }
+async function playLine(key, text){
+  if (S.voice.recs[key]) return playBuf(S.voice.recs[key]);
+  if (!voiceOn()) { toast('Elegí una voz en "Estilo y marca"'); return; }
+  if (!S.server) { toast('La voz automática funciona en tu versión de Vercel'); return; }
+  try { playBuf(await ttsBuffer(text)); } catch (e) { toast('No se pudo generar la voz: ' + e.message); }
+}
+
+/* ---- guion de voz (editable) ---- */
+function renderScripts(force){
+  [['#script', 'reel'], ['#scriptStory', 'story']].forEach(([id, fmt]) => {
+    const box = $(id); if (!box) return;
+    if (!force && box.contains(document.activeElement)) return;
+    const R = reelScenes({ fmt });
+    const sig = R.scenes.map(sc => sc.key + '|' + sc.text + '|' + !!S.voice.recs[sc.key]).join('¦') + voiceOn();
+    if (!force && box.dataset.sig === sig) return;
+    box.dataset.sig = sig;
+    const esc = z => String(z || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    box.innerHTML = R.scenes.map((sc, i) => {
+      const rec = S.voice.recs[sc.key], edited = S.voice.lines[sc.key] != null;
+      const st = rec ? `🎙 tu voz · ${rec.duration.toFixed(1).replace('.', ',')} s` : (edited ? 'texto editado' : (voiceOn() ? 'voz automática' : 'sin voz'));
+      return `<div class="vrow" data-k="${esc(sc.key)}"><b>${i + 1}</b><div><textarea rows="2">${esc(sc.text)}</textarea><div class="vbar"><small>${st}</small><span><button class="btn sm" data-a="play" title="Escuchar">▶</button><button class="btn sm" data-a="rec" title="Grabar con tu voz">🎙</button>${rec || edited ? '<button class="btn sm" data-a="reset" title="Volver a lo automático">↺</button>' : ''}</span></div></div></div>`;
+    }).join('');
+    box.querySelectorAll('.vrow').forEach(row => {
+      const key = row.dataset.k, sc = R.scenes.find(z => z.key === key), ta = row.querySelector('textarea');
+      ta.addEventListener('input', () => { const v = ta.value; if (v.trim() === (sc.auto || '').trim()) delete S.voice.lines[key]; else S.voice.lines[key] = v; delete S.voice.recs[key]; debounce(renderAll, 400); });
+      row.querySelector('[data-a=play]').onclick = () => playLine(key, ta.value);
+      row.querySelector('[data-a=rec]').onclick = e => recordLine(key, e.currentTarget);
+      const rs = row.querySelector('[data-a=reset]'); if (rs) rs.onclick = () => { delete S.voice.lines[key]; delete S.voice.recs[key]; renderScripts(true); renderAll(); };
+    });
+  });
+}
+
+/* ---- vista previa con sonido ---- */
+let playing = null;
+async function playVideo(kind){
+  if (playing) { const k = playing.kind; stopPlay(); if (k === kind) return; }
+  const btn = kind === 'reel' ? $('#reelPlay') : $('#storyPlay');
+  btn.textContent = 'Preparando…';
+  const R = await scenesWithVoice({ fmt: kind }, m => btn.textContent = m.replace('Generando la voz… ', 'Voz '));
+  const canvas = kind === 'reel' ? $('#cReel') : $('#cStory'), ctx = canvas.getContext('2d'), b = readBrand(), T = themeColors();
+  const ac = actx(); try { await ac.resume(); } catch {}
+  const t0 = ac.currentTime + 0.15, srcs = [];
+  R.scenes.forEach(sc => { if (!sc.audio) return; const s = ac.createBufferSource(); s.buffer = sc.audio; s.connect(ac.destination); s.start(t0 + sc.start + sc.lead); srcs.push(s); });
+  playing = { kind, srcs, raf: 0 }; btn.textContent = '■ Parar';
+  const loop = () => { if (!playing || playing.kind !== kind) return; const t = ac.currentTime - t0; if (t >= R.total) { stopPlay(); return; } drawReelFrame(ctx, R, Math.max(0, t), b, T); playing.raf = requestAnimationFrame(loop); };
+  loop();
+}
+function stopPlay(){
+  if (!playing) return;
+  playing.srcs.forEach(s => { try { s.stop(); } catch {} }); cancelAnimationFrame(playing.raf); playing = null;
+  $('#reelPlay').textContent = '▶ Ver'; $('#storyPlay').textContent = '▶ Ver'; renderAll();
+}
+
+/* ---- exportar MP4 con voz ---- */
+function mixVoice(R, sr){
+  const len = Math.ceil(R.total * sr); let any = false; const out = new Float32Array(len);
+  R.scenes.forEach(sc => {
+    const ab = sc.audio; if (!ab) return; any = true;
+    const ch = ab.getChannelData(0), off = Math.round((sc.start + sc.lead) * sr), ratio = ab.sampleRate / sr;
+    for (let i = 0; off + i < len; i++) { const j = Math.floor(i * ratio); if (j >= ch.length) break; out[off + i] += ch[j]; }
+  });
+  if (!any) return null;
+  for (let i = 0; i < len; i++) out[i] = Math.max(-1, Math.min(1, out[i]));
+  return out;
+}
+async function encodeVideo(R, onProg){
+  const b = readBrand(), T = themeColors();
+  const W = 1080, H = 1920, fps = 30, N = Math.ceil(R.total * fps), SR = 48000;
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const ctx = c.getContext('2d');
+  const pcm = voiceOn() || Object.keys(S.voice.recs).length ? mixVoice(R, SR) : null;
+  let note = '';
+  if ('VideoEncoder' in window && window.Mp4Muxer) {
+    let cfg = null;
+    for (const codec of ['avc1.640028', 'avc1.4d0028', 'avc1.42e028', 'avc1.640033']) {
+      const t = { codec, width: W, height: H, bitrate: 9_000_000, framerate: fps };
+      try { const s = await VideoEncoder.isConfigSupported(t); if (s.supported) { cfg = t; break; } } catch {}
+    }
+    let acfg = null;
+    if (cfg && pcm && 'AudioEncoder' in window) {
+      const tries = [['mp4a.40.2', 2], ['mp4a.40.2', 1]].concat(window.__allowOpus ? [['opus', 2]] : []);
+      for (const [codec, ch] of tries) { const t = { codec, sampleRate: SR, numberOfChannels: ch, bitrate: 128000 }; try { const s = await AudioEncoder.isConfigSupported(t); if (s.supported) { acfg = t; break; } } catch {} }
+    }
+    // sin codificador AAC: se graba en tiempo real con MediaRecorder, que sí mete la voz
+    if (cfg && pcm && !acfg && rtAac()) cfg = null;
+    if (cfg) {
+      if (pcm && !acfg) note = 'Este navegador no puede meter la voz en el MP4: usá Chrome o Edge actualizados en la compu. El video salió sin voz.';
+      const muxer = new Mp4Muxer.Muxer({ target: new Mp4Muxer.ArrayBufferTarget(), video: { codec: 'avc', width: W, height: H },
+        audio: acfg ? { codec: acfg.codec === 'opus' ? 'opus' : 'aac', sampleRate: SR, numberOfChannels: acfg.numberOfChannels } : undefined,
+        fastStart: 'in-memory', firstTimestampBehavior: 'offset' });
+      let err = null;
+      const enc = new VideoEncoder({ output: (ch, meta) => muxer.addVideoChunk(ch, meta), error: e => { err = e; } });
+      enc.configure(cfg);
+      for (let i = 0; i < N; i++) {
+        if (err) throw err;
+        drawReelFrame(ctx, R, i / fps, b, T);
+        const vf = new VideoFrame(c, { timestamp: Math.round(i * 1e6 / fps), duration: Math.round(1e6 / fps) });
+        enc.encode(vf, { keyFrame: i % (fps * 2) === 0 }); vf.close();
+        while (enc.encodeQueueSize > 6) await sleep(4);
+        if (i % 6 === 0) { onProg(0.95 * i / N); await sleep(0); }
+      }
+      await enc.flush(); if (err) throw err;
+      if (acfg) {
+        const aenc = new AudioEncoder({ output: (ch, meta) => muxer.addAudioChunk(ch, meta), error: e => { err = e; } });
+        aenc.configure(acfg);
+        const nch = acfg.numberOfChannels, F = 1024;
+        for (let i = 0; i < pcm.length; i += F) {
+          const n = Math.min(F, pcm.length - i), data = new Float32Array(n * nch);
+          for (let k = 0; k < nch; k++) data.set(pcm.subarray(i, i + n), k * n);
+          const ad = new AudioData({ format: 'f32-planar', sampleRate: SR, numberOfFrames: n, numberOfChannels: nch, timestamp: Math.round(i * 1e6 / SR), data });
+          aenc.encode(ad); ad.close();
+          if (i % (F * 64) === 0) await sleep(0);
+        }
+        await aenc.flush(); aenc.close(); if (err) throw err;
+      }
+      muxer.finalize(); onProg(1);
+      return { blob: new Blob([muxer.target.buffer], { type: 'video/mp4' }), ext: 'mp4', audio: !!acfg, note };
+    }
+  }
+  // respaldo: grabación en tiempo real (tarda lo que dura el video)
+  if (!c.captureStream || !window.MediaRecorder) throw new Error('Este navegador no puede crear video. Probá con Chrome o Edge.');
+  const withAudio = pcm && rtAac();
+  const types = withAudio ? ['video/mp4;codecs=avc1,mp4a.40.2'] : ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+  const type = types.find(t => MediaRecorder.isTypeSupported(t)) || '';
+  const stream = c.captureStream(fps);
+  let src = null;
+  if (withAudio) {
+    const ac = actx(); try { await ac.resume(); } catch {}
+    const buf = ac.createBuffer(1, pcm.length, SR); buf.getChannelData(0).set(pcm);
+    const dest = ac.createMediaStreamDestination(); src = ac.createBufferSource(); src.buffer = buf; src.connect(dest);
+    dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
+  }
+  const rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 9_000_000, audioBitsPerSecond: 128000 });
+  const chunks = []; rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+  const done = new Promise(r => rec.onstop = r);
+  rec.start(250); if (src) src.start(); const t0 = performance.now();
+  await new Promise(res => { const step = () => { const t = (performance.now() - t0) / 1000; if (t >= R.total) { res(); return; } drawReelFrame(ctx, R, t, b, T); onProg(t / R.total); requestAnimationFrame(step); }; step(); });
+  rec.stop(); await done; onProg(1);
+  const ext = type.includes('mp4') ? 'mp4' : 'webm';
+  return { blob: new Blob(chunks, { type: type || 'video/webm' }), ext, audio: !!withAudio, note: pcm && !withAudio ? 'Este navegador grabó el video sin voz.' : '' };
+}
+function rtAac(){ try { return !!(window.MediaRecorder && MediaRecorder.isTypeSupported('video/mp4;codecs=avc1,mp4a.40.2')); } catch { return false; } }
+async function encodeReel(onProg){ return encodeVideo(await scenesWithVoice({ fmt: 'reel' }), onProg); }
+async function encodeStory(onProg){ return encodeVideo(await scenesWithVoice({ fmt: 'story' }), onProg); }
+async function renderVideoFile(kind){
+  if (playing) stopPlay();
+  const p = kind === 'reel' ? { btn: '#reelRender', bar: '#reelBar', msg: '#reelMsg', label: '⬇ Crear MP4' } : { btn: '#storyRender', bar: '#storyBar', msg: '#storyMsg', label: '⬇ MP4' };
+  const btn = $(p.btn), bar = $(p.bar), msg = $(p.msg);
+  btn.disabled = true; bar.classList.add('show'); msg.textContent = '';
+  try {
+    await ensureFonts();
+    const R = await scenesWithVoice({ fmt: kind }, m => btn.textContent = m.replace('Generando la voz… ', 'Voz '));
+    const r = await encodeVideo(R, pr => { bar.firstElementChild.style.width = Math.round(pr * 100) + '%'; btn.textContent = Math.round(pr * 100) + '%'; });
+    if (kind === 'reel') S.lastReel = r; else S.lastStory = r;
+    if (r.ext === 'webm') msg.innerHTML = '<b>Ojo:</b> este navegador solo pudo crear .webm. Instagram prefiere MP4: abrí esta página en Chrome o Edge actualizados.';
+    else if (r.note) msg.textContent = r.note;
+    await saveFile(`${fileBase()}-${kind === 'reel' ? 'reel' : 'historia'}.${r.ext}`, r.blob);
+  } catch (e) { msg.textContent = 'No se pudo crear el video: ' + (e.message || e); }
+  finally { btn.disabled = false; btn.textContent = p.label; setTimeout(() => bar.classList.remove('show'), 1200); }
+}
+function syncStoryFmt(){
+  const vid = S.storyFmt === 'video';
+  $$('#storyFmt .chip').forEach(x => x.classList.toggle('on', x.dataset.f === S.storyFmt));
+  ['#storyPlay', '#storyRender', '#storyLen', '#storyVideoOpts'].forEach(id => $(id) && $(id).classList.toggle('hidden', !vid));
+  ['#storyImgOpts'].forEach(id => $(id) && $(id).classList.toggle('hidden', vid || isLocalOwn()));
+}
+
 /* ============ render ============ */
 let fontsReady = false;
 async function ensureFonts(){
@@ -2835,76 +3149,11 @@ function renderAll(){
   });
   renderHighlights();
   renderChecks();
-  if (!reelPlaying) { const R = reelScenes(); $('#reelLen').textContent = `1080×1920 · ${Math.round(R.total)} s`; drawReelFrame($('#cReel').getContext('2d'), R, 2.2, b, T); }
+  if (!playing || playing.kind !== 'reel') { const R = reelScenes({ fmt: 'reel' }); $('#reelLen').textContent = `1080×1920 · ${R.scenes.some(z => z.audio) ? '' : '≈ '}${Math.round(R.total)} s`; drawReelFrame($('#cReel').getContext('2d'), R, 2.6, b, T); }
+  if (S.storyFmt === 'video' && (!playing || playing.kind !== 'story')) { const R = reelScenes({ fmt: 'story' }); $('#storyLen').textContent = `${R.scenes.some(z => z.audio) ? '' : '≈ '}${Math.round(R.total)} s`; drawReelFrame($('#cStory').getContext('2d'), R, 2.6, b, T); }
+  renderScripts(); syncStoryFmt();
 }
 function fileBase(){ if (S.mode === 'brand') return 'mi-marca'; return ((isLocal() ? $('#l-name').value.trim() : '') || readModel().name || 'proyecto').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase() || 'proyecto'; }
-
-/* ---- vista previa del reel ---- */
-let reelPlaying = false, reelRaf = 0;
-function playReel(){
-  if (reelPlaying) { stopReel(); return; }
-  reelPlaying = true; $('#reelPlay').textContent = '■ Parar';
-  const R = reelScenes(), b = readBrand(), T = themeColors(), ctx = $('#cReel').getContext('2d');
-  const t0 = performance.now();
-  const loop = () => { if (!reelPlaying) return; const t = ((performance.now() - t0) / 1000) % R.total; drawReelFrame(ctx, R, t, b, T); reelRaf = requestAnimationFrame(loop); };
-  loop();
-}
-function stopReel(){ reelPlaying = false; cancelAnimationFrame(reelRaf); $('#reelPlay').textContent = '▶ Ver'; renderAll(); }
-
-/* ---- exportar MP4 ---- */
-async function encodeReel(onProg){
-  const R = reelScenes(), b = readBrand(), T = themeColors();
-  const W = 1080, H = 1920, fps = 30, N = Math.ceil(R.total * fps);
-  const c = document.createElement('canvas'); c.width = W; c.height = H; const ctx = c.getContext('2d');
-  if ('VideoEncoder' in window && window.Mp4Muxer) {
-    let cfg = null;
-    for (const codec of ['avc1.640028', 'avc1.4d0028', 'avc1.42e028', 'avc1.640033']) {
-      const t = { codec, width: W, height: H, bitrate: 9_000_000, framerate: fps };
-      try { const s = await VideoEncoder.isConfigSupported(t); if (s.supported) { cfg = t; break; } } catch {}
-    }
-    if (cfg) {
-      const muxer = new Mp4Muxer.Muxer({ target: new Mp4Muxer.ArrayBufferTarget(), video: { codec: 'avc', width: W, height: H }, fastStart: 'in-memory' });
-      let err = null;
-      const enc = new VideoEncoder({ output: (ch, meta) => muxer.addVideoChunk(ch, meta), error: e => { err = e; } });
-      enc.configure(cfg);
-      for (let i = 0; i < N; i++) {
-        if (err) throw err;
-        drawReelFrame(ctx, R, i / fps, b, T);
-        const vf = new VideoFrame(c, { timestamp: Math.round(i * 1e6 / fps), duration: Math.round(1e6 / fps) });
-        enc.encode(vf, { keyFrame: i % (fps * 2) === 0 }); vf.close();
-        while (enc.encodeQueueSize > 6) await sleep(4);
-        if (i % 6 === 0) { onProg(i / N); await sleep(0); }
-      }
-      await enc.flush(); if (err) throw err; muxer.finalize(); onProg(1);
-      return { blob: new Blob([muxer.target.buffer], { type: 'video/mp4' }), ext: 'mp4' };
-    }
-  }
-  // respaldo: grabación en tiempo real
-  if (!c.captureStream || !window.MediaRecorder) throw new Error('Este navegador no puede crear video. Probá con Chrome o Edge.');
-  const types = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
-  const type = types.find(t => MediaRecorder.isTypeSupported(t)) || '';
-  const stream = c.captureStream(fps); const rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 9_000_000 });
-  const chunks = []; rec.ondataavailable = e => e.data.size && chunks.push(e.data);
-  const done = new Promise(r => rec.onstop = r);
-  rec.start(250); const t0 = performance.now();
-  await new Promise(res => { const step = () => { const t = (performance.now() - t0) / 1000; if (t >= R.total) { res(); return; } drawReelFrame(ctx, R, t, b, T); onProg(t / R.total); requestAnimationFrame(step); }; step(); });
-  rec.stop(); await done; onProg(1);
-  const ext = type.includes('mp4') ? 'mp4' : 'webm';
-  return { blob: new Blob(chunks, { type: type || 'video/webm' }), ext };
-}
-async function renderReelFile(){
-  if (reelPlaying) stopReel();
-  const btn = $('#reelRender'), bar = $('#reelBar'), msg = $('#reelMsg');
-  btn.disabled = true; bar.classList.add('show'); msg.textContent = '';
-  try {
-    await ensureFonts();
-    const r = await encodeReel(p => { bar.firstElementChild.style.width = Math.round(p * 100) + '%'; btn.textContent = Math.round(p * 100) + '%'; });
-    S.lastReel = r;
-    if (r.ext === 'webm') msg.innerHTML = '<br><b>Ojo:</b> este navegador solo pudo crear .webm. Instagram prefiere MP4: abrí esta página en Chrome o Edge actualizados.';
-    await saveFile(`${fileBase()}-reel.${r.ext}`, r.blob);
-  } catch (e) { msg.textContent = 'No se pudo crear el video: ' + (e.message || e); }
-  finally { btn.disabled = false; btn.textContent = '⬇ Crear MP4'; setTimeout(() => bar.classList.remove('show'), 1200); }
-}
 
 /* ---- descargar todo ---- */
 async function downloadAll(){
@@ -2920,6 +3169,7 @@ async function downloadAll(){
     if (!$('#f-caption').value.trim()) makeCaption();
     zip.file('texto-del-posteo.txt', finalCaption());
     if (S.lastReel) zip.file(`reel.${S.lastReel.ext}`, S.lastReel.blob);
+    if (S.lastStory) zip.file(`historia.${S.lastStory.ext}`, S.lastStory.blob);
     const blob = await zip.generateAsync({ type: 'blob' });
     await saveFile(`${base}-instagram.zip`, blob);
     if (!S.lastReel) toast('El reel no va en el ZIP hasta que lo crees en la pestaña Reel');
@@ -2966,7 +3216,7 @@ function setSrc(k){ $$('#srcTabs .tab').forEach(t => t.classList.toggle('on', t.
 
 /* ============ eventos ============ */
 $$('#srcTabs .tab').forEach(t => t.onclick = () => setSrc(t.dataset.src));
-$$('#outTabs .tab').forEach(t => t.onclick = () => { $$('#outTabs .tab').forEach(x => x.classList.toggle('on', x === t)); $$('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === t.dataset.out)); if (t.dataset.out !== 'reel' && reelPlaying) stopReel(); if (t.dataset.out === 'publish') updatePublishUI(); });
+$$('#outTabs .tab').forEach(t => t.onclick = () => { $$('#outTabs .tab').forEach(x => x.classList.toggle('on', x === t)); $$('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === t.dataset.out)); if (playing) stopPlay(); if (t.dataset.out === 'publish') updatePublishUI(); });
 function dropify(zone, input, handler){
   zone.onclick = () => input.click();
   zone.ondragover = e => { e.preventDefault(); zone.classList.add('over'); };
@@ -3077,8 +3327,13 @@ $('#inLogo').onchange = async () => {
 };
 $('#delLogo').onclick = () => { S.logo = null; $('#logoSlot').textContent = 'sin logo'; $('#delLogo').classList.add('hidden'); renderAll(); };
 $$('[data-dl]').forEach(btn => btn.onclick = async () => { const k = btn.dataset.dl; const c = k === 'post' ? $('#cPost') : $('#cStory'); saveFile(`${fileBase()}-${k === 'post' ? 'post' : 'historia'}.png`, await canvasBlob(c)); });
-$('#reelPlay').onclick = playReel;
-$('#reelRender').onclick = renderReelFile;
+$('#reelPlay').onclick = () => playVideo('reel');
+$('#reelRender').onclick = () => renderVideoFile('reel');
+$('#storyPlay').onclick = () => playVideo('story');
+$('#storyRender').onclick = () => renderVideoFile('story');
+$$('#storyFmt .chip').forEach(c => c.onclick = () => { S.storyFmt = c.dataset.f; store.set('storyFmt', S.storyFmt); if (playing) stopPlay(); renderAll(); });
+$('#voiceSel').value = S.voice.name;
+$('#voiceSel').onchange = () => { S.voice.name = $('#voiceSel').value; store.set('voice', S.voice.name); renderScripts(true); renderAll(); };
 $('#dlAll').onclick = downloadAll;
 $('#regenCap').onclick = () => { S.capV = (capVersion() + 1) % 3; if (isLocalOwn()) makeLocalCaption(); else makeCaption(); renderChecks(); toast('Otra versión del texto'); };
 $$('#looks .chip').forEach(c => c.onclick = () => { S.lookSel = c.dataset.l; store.set('look', S.lookSel); syncLookUI(); renderAll(); });

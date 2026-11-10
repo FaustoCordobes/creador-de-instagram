@@ -4,6 +4,7 @@
   "description": "Estudio de Contenido IG - F-C Web Studio",
   "engines": { "node": ">=20" },
   "dependencies": {
-    "@vercel/blob": "^2.8.2"
+    "@vercel/blob": "^2.8.2",
+    "msedge-tts": "^2.1.1"
   }
 }

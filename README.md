@@ -30,6 +30,13 @@ Además: diapositiva **Qué incluye**, **oferta de lanzamiento** opcional, cierr
 - **Chequeo antes de publicar**: máximo 5 hashtags (límite de Instagram desde dic. 2025), frases típicas de IA, rayas largas, exceso de emojis, ganchos repetidos y mismo estilo que la última vez. "🧹 Arreglar lo automático" corrige lo que se puede.
 - Cada publicación queda anotada en "Últimas publicaciones" (en el navegador) para no repetir.
 
+## Voz en reels e historias
+
+- La historia sale como **video con voz** (hasta 59 s) o como imagen fija; el reel también lleva voz. Todo pasa más lento que antes para que se llegue a leer.
+- Voz automática con acento argentino (Tomás o Elena) generada por `api/tts.js` con el servicio "Leer en voz alta" de Microsoft Edge (paquete `msedge-tts`). No necesita claves, pero no es una API oficial y podría dejar de andar.
+- En el **Guion de voz** (pestañas Reel e Historia) se edita lo que dice cada pantalla, se escucha con ▶ y se graba con tu voz con 🎙. Las grabaciones quedan solo mientras la página está abierta.
+- El audio va dentro del MP4 en AAC (Chrome o Edge en la compu). Si el navegador no puede, lo graba en tiempo real.
+
 ## Estructura
 
 ```

@@ -31,6 +31,7 @@ module.exports = async (req, res) => {
       metaApp: !!(process.env.META_APP_ID && process.env.META_APP_SECRET),
       metaInfo: { idLen: String(process.env.META_APP_ID || '').trim().length, secretLen: String(process.env.META_APP_SECRET || '').trim().length },
       google: !!process.env.GOOGLE_PLACES_KEY,
+      tts: true,
       blob: !!(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID),
       blobMode: process.env.BLOB_READ_WRITE_TOKEN ? 'token' : (process.env.BLOB_STORE_ID ? 'presigned' : null),
       protected: !!studioPass(),
