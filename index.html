@@ -156,6 +156,19 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .hidden{display:none!important}
+.appcard{border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:10px}
+.appshots{display:flex;gap:8px;overflow-x:auto;padding:6px 0}
+.appshots figure{margin:0;position:relative;flex:0 0 96px}
+.appshots img{width:96px;height:170px;object-fit:cover;object-position:top;border-radius:10px;border:1px solid var(--line);display:block}
+.appshots input{width:100%;margin-top:4px;font-size:13px;padding:6px}
+.appshots .x{position:absolute;top:4px;right:4px;min-width:30px;min-height:30px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff}
+.pphase{padding:10px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin-bottom:12px}
+.pitem{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;margin-bottom:22px}
+.pitem .frame{flex:0 0 260px}.pitem canvas{width:260px;height:auto;display:block;border-radius:14px}
+.pside{flex:1;min-width:240px;max-width:520px}.pside h3{margin:0 0 4px}
+.pside input,.pside textarea,.pside select,#appPick{width:100%}
+.pask{padding:14px;border-radius:14px;border:2px solid var(--acc);margin:6px 0 20px}
+@media (max-width:640px){.pitem .frame{flex-basis:100%}.pitem canvas{width:min(100%,320px);margin:0 auto}}
 </style>
 </head>
 <body>
@@ -225,7 +238,9 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
     <div class="chips" id="purpose">
       <span class="chip on" data-p="local">Para el Instagram del local</span>
       <span class="chip" data-p="caso">Para mi Instagram (mostrar mi trabajo)</span>
+      <span class="chip" data-p="propuesta">Propuesta: mi app para este local</span>
     </div>
+    <p class="hint" data-show="pitch" style="margin-top:6px">Historias para tu Instagram que le muestran a este local cómo le sirve tu app, con pantallas reales y pensadas para su rubro.</p>
   </div>
   <div class="card" data-show="local" data-step="3">
     <h2><span class="step"></span> Datos del local</h2>
@@ -243,9 +258,33 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
     <label class="f" id="reviewLabel">Reseña destacada</label><textarea id="l-review" rows="2" placeholder="Texto de la reseña — Nombre"></textarea>
     </details>
     <div data-show="caso"><label class="f">¿Qué le hiciste?</label><input type="text" id="l-work" placeholder="Página web con catálogo y pedidos por WhatsApp"></div>
-    <div class="row" style="margin-top:14px">
+    <div class="row" style="margin-top:14px" data-show="nopitch">
       <button class="btn pri hidden" id="lGenAI">✨ Escribir con IA</button>
       <button class="btn" id="lGenAuto">⚡ Armar contenido</button>
+    </div>
+  </div>
+
+  <!-- Propuesta: catálogo de apps -->
+  <div class="card" data-show="pitch" data-step="2">
+    <h2><span class="step"></span> Tus apps</h2>
+    <p class="hint" style="margin-top:0">Cargá una vez cada app que vendés. El estudio la recorre sola, saca capturas reales y elige la que mejor encaja con el rubro del local. Debajo de cada pantalla, escribí qué función muestra.</p>
+    <div id="appList"></div>
+    <div class="row" style="margin-top:10px"><input type="text" id="appName" placeholder="Nombre (ej: Turnero)" aria-label="Nombre de la app"><input type="url" id="appUrl" placeholder="Link publicado (ej: turnero.vercel.app)" aria-label="Link publicado de la app"><button class="btn" id="appAdd" style="flex:0 0 auto">Agregar</button></div>
+    <label class="f" for="appPick">App para este local</label><select id="appPick"></select>
+  </div>
+  <!-- Propuesta: investigación -->
+  <div class="card" data-show="pitch" data-step="3">
+    <h2><span class="step"></span> Investigación del local</h2>
+    <p class="hint" style="margin-top:0" id="pSourcesOn"></p>
+    <button class="btn pri" id="pResearch">🔎 Investigar el local</button>
+    <div class="status" id="pStatus" role="status" aria-live="polite"></div>
+    <div id="pResearchBox" class="hidden">
+      <div class="row"><div><label class="f" for="p-rubro">Rubro</label><input type="text" id="p-rubro" placeholder="Gimnasio, peluquería…"></div><div><label class="f" for="p-tono">Tono de la marca</label><input type="text" id="p-tono"></div></div>
+      <label class="f" for="p-publico">Público</label><input type="text" id="p-publico">
+      <label class="f" for="p-vende">Qué vende <span style="font-weight:400">(uno por línea)</span></label><textarea id="p-vende" rows="3"></textarea>
+      <label class="f" for="p-dolores">Puntos de dolor <span style="font-weight:400">(lo que la app le resuelve, uno por línea)</span></label><textarea id="p-dolores" rows="3"></textarea>
+      <p class="hint" id="pSources"></p>
+      <button class="btn pri" id="pBuild" style="margin-top:8px">✨ Armar propuesta</button>
     </div>
   </div>
 
@@ -416,19 +455,20 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
 <main>
   <div class="outbar">
     <div class="tabs" id="outTabs">
-      <button class="tab on" data-out="carousel">Carrusel</button>
-      <button class="tab" data-out="post">Post</button>
-      <button class="tab" data-out="story">Historia</button>
-      <button class="tab" data-out="reel">Reel (video)</button>
-      <button class="tab" data-out="text">Texto del posteo</button>
+      <button class="tab on" data-out="carousel" data-show="nopitch">Carrusel</button>
+      <button class="tab" data-out="post" data-show="nopitch">Post</button>
+      <button class="tab" data-out="story" data-show="nopitch">Historia</button>
+      <button class="tab" data-out="reel" data-show="nopitch">Reel (video)</button>
+      <button class="tab" data-out="text" data-show="nopitch">Texto del posteo</button>
       <button class="tab" data-out="poster" data-show="lp-local">🪧 Cartel / promo</button>
-      <button class="tab" data-out="hl">Destacadas</button>
+      <button class="tab" data-out="hl" data-show="nopitch">Destacadas</button>
+      <button class="tab" data-out="pitch" data-show="pitch">📲 Propuesta</button>
       <button class="tab" data-out="publish">🚀 Subir a IG</button>
     </div>
     <div class="spacer"></div>
-    <button class="btn" id="vDesign" title="Cambia estilo, palabra resaltada, tipo de historia y transiciones del reel">🎲 Otro diseño</button>
-    <button class="btn" id="vHook" title="Prueba otro gancho de portada que no hayas usado">✍️ Otro gancho</button>
-    <button class="btn" id="dlAll">⬇ Descargar todo (.zip)</button>
+    <button class="btn" id="vDesign" data-show="nopitch" title="Cambia estilo, palabra resaltada, tipo de historia y transiciones del reel">🎲 Otro diseño</button>
+    <button class="btn" id="vHook" data-show="nopitch" title="Prueba otro gancho de portada que no hayas usado">✍️ Otro gancho</button>
+    <button class="btn" id="dlAll" data-show="nopitch">⬇ Descargar todo (.zip)</button>
   </div>
 
   <div class="pane on" data-pane="carousel">
@@ -502,6 +542,14 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
     </div>
   </div>
 
+
+  <div class="pane" data-pane="pitch">
+    <div id="pitchPhase" class="pphase"></div>
+    <div id="pitchList"></div>
+    <div id="pitchAsk" class="pask hidden" role="region" aria-label="Cambios a la propuesta"></div>
+    <div id="pitchFinal" class="pask hidden"><p style="margin:0 0 8px"><b>Listo para usar.</b> Subilas en orden. En la primera sumá el sticker de mención del local desde la app de Instagram (la API no deja ponerlo).</p>
+      <div class="row" style="flex-wrap:wrap"><button class="btn pri" id="pitchZip">⬇ Descargar las historias (.zip)</button><button class="btn" id="pitchPub">🚀 Publicar en mis historias</button><button class="btn" id="pitchEdit">✏️ Seguir editando</button></div></div>
+  </div>
 
   <div class="pane" data-pane="publish">
     <div class="single">
@@ -2383,7 +2431,8 @@ async function localFromLink(){
     if (warn) lstatus('⚠️ ' + warn + (notes.length ? ' (También: ' + notes.join(' · ') + '.)' : ''), true);
     else lstatus(`Listo: ${notes.join(' · ') || 'datos cargados'}. Revisá todo${$('#l-wa').value ? ' (fijate que el teléfono sea el WhatsApp)' : ''}.`);
   } catch (e) {
-    lstatus(e.status === 401 ? 'Clave del estudio incorrecta (ponela en la pestaña "🚀 Subir a IG").' : (e.message || 'No pude leer ese link.'), true);
+    const raw = String(e.message || '');
+    lstatus(e.status === 401 ? 'Clave del estudio incorrecta (ponela en la pestaña "🚀 Subir a IG").' : /^\(#\d+\)|permission|OAuth|access token/i.test(raw) ? 'Instagram no deja leer otras cuentas desde el servidor. Usá el botón "📥 Traer de Instagram" de abajo, o escribí el nombre del local para buscarlo en Google.' : (raw || 'No pude leer ese link.'), true);
     renderAll();
   } finally { btn.disabled = false; }
 }
@@ -3758,9 +3807,11 @@ function drawSubs(ctx, R, t, sc){
 // Tognazzini: proteger el trabajo del usuario (autoguardado) y guardar el estado.
 // Ley de Hick: un paso a la vez, con lo avanzado plegado.
 const STEP_NAMES = { 1: 'Qué creás', 2: 'Imágenes', 3: 'Textos', 4: 'Estilo y marca' };
+const stepName = n => (isPitch() ? { 1: 'El local', 2: 'Tu app', 3: 'Investigación', 4: 'Estilo' } : STEP_NAMES)[n];
 S.step = store.get('step', 1); S.visited = new Set();
 function visibleSteps(){ return [1, 2, 3, 4].filter(n => $$(`aside [data-step="${n}"]`).some(el => !el.classList.contains('hidden'))); }
 function stepDone(n){
+  if (isPitch()) return n === 1 ? !!$('#l-name').value.trim() : n === 2 ? S.apps.some(a => appFuncs(a).length >= 4) : n === 3 ? S.pitch.stories.length > 0 : S.visited.has(n);
   if (n === 1) return S.mode === 'brand' ? !!$('#m-hook').value.trim() : S.mode === 'local' ? !!$('#l-name').value.trim() : (!!S.raw || !S.isDemo);
   if (n === 2) return activeShots().length > 0 || !!S.logo;
   if (n === 3) return !!currentHook() && (!S.isDemo || S.visited.has(3));
@@ -3780,13 +3831,13 @@ function goStep(n, focus){
 }
 function renderStepper(){
   const vs = visibleSteps(), i = vs.indexOf(S.step), box = $('#stepper'); if (!box) return;
-  box.innerHTML = vs.map((n, k) => { const done = stepDone(n) && n !== S.step; return `<button type="button" class="stp${n === S.step ? ' on' : ''}${done ? ' done' : ''}" data-go="${n}" ${n === S.step ? 'aria-current="step"' : ''} title="Paso ${k + 1}: ${STEP_NAMES[n]}"><b>${done ? '✓' : k + 1}</b><span>${STEP_NAMES[n]}</span></button>`; }).join('');
+  box.innerHTML = vs.map((n, k) => { const done = stepDone(n) && n !== S.step; return `<button type="button" class="stp${n === S.step ? ' on' : ''}${done ? ' done' : ''}" data-go="${n}" ${n === S.step ? 'aria-current="step"' : ''} title="Paso ${k + 1}: ${stepName(n)}"><b>${done ? '✓' : k + 1}</b><span>${stepName(n)}</span></button>`; }).join('');
   box.querySelectorAll('[data-go]').forEach(b => b.onclick = () => goStep(+b.dataset.go, true));
   $('#stepBar').style.width = Math.round(100 * (i + 1) / vs.length) + '%';
   $('#stepCount').textContent = `Paso ${i + 1} de ${vs.length}`;
   $('#wizPrev').disabled = i <= 0;
   const next = vs[i + 1];
-  $('#wizNext').textContent = next ? `Siguiente: ${STEP_NAMES[next]} →` : 'Ver el resultado ↓';
+  $('#wizNext').textContent = next ? `Siguiente: ${stepName(next)} →` : 'Ver el resultado ↓';
 }
 function wizNext(){
   const vs = visibleSteps(), i = vs.indexOf(S.step);
@@ -3913,6 +3964,403 @@ document.addEventListener('keydown', e => {
 new MutationObserver(ms => ms.forEach(m => { if (m.target.classList && m.target.classList.contains('chip')) m.target.setAttribute('aria-pressed', m.target.classList.contains('on') ? 'true' : 'false'); }))
   .observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: true });
 
+/* ============ propuesta para un local: mi app, pensada para ese negocio ============ */
+// Flujo: 1) el local (link) → 2) tus apps (catálogo con capturas reales) → 3) investigación
+// → fase 1: borrador de 4 a 6 historias → fase 2: cambiar o intercambiar funciones → versión final.
+const isPitch = () => S.mode === 'local' && S.purpose === 'propuesta';
+S.apps = []; S.pitch = { research: null, appId: 'auto', stories: [], phase: 'none', sources: [] };
+
+// rubros: cómo se llama a sus clientes, qué les duele y qué funciones les sirven más
+const RUBROS = {
+  gimnasio: { re: /gim|gym|fitness|crossfit|funcional|entren|pilates|yoga|box(?:eo)?\b|spinning|musculaci|\bfit/i, label: 'gimnasio', cli: 'socios', cli1: 'socio', turno: 'clase', publico: 'Personas de la zona que entrenan y quieren reservar su lugar sin vueltas',
+    dolores: ['Preguntas por WhatsApp sobre horarios y cupos todo el día', 'Clases con lugares vacíos por socios que no avisan', 'Cuotas vencidas que se cobran tarde'],
+    prio: { reservas: 9, recordatorios: 8, cuotas: 8, mensajes: 6, historial: 5, contacto: 5, confirmaciones: 6, reportes: 4, caja: 3, inicio: 2 } },
+  salud: { re: /consultorio|cl[ií]nica|odonto|dental|dentist|kinesi|fisio|m[eé]dic|nutri|psic[oó]l|rehabilit|salud|podolog|fonoaud|oftalm/i, label: 'consultorio', cli: 'pacientes', cli1: 'paciente', turno: 'turno', publico: 'Pacientes de la zona que quieren sacar turno sin llamar',
+    dolores: ['Pacientes que faltan sin avisar', 'Llamadas para sacar turno en medio de la atención', 'Historias clínicas en papel o en varias planillas'],
+    prio: { reservas: 9, recordatorios: 9, historial: 8, confirmaciones: 7, mensajes: 6, contacto: 5, caja: 4, reportes: 3, inicio: 2 } },
+  belleza: { re: /peluquer|barber|est[eé]tica|u[ñn]as|\bspa\b|depil|cejas|pesta[ñn]|makeup|maquill|sal[oó]n de belleza|nail/i, label: 'salón', cli: 'clientes', cli1: 'cliente', turno: 'turno', publico: 'Clientes que reservan desde el celular y odian esperar',
+    dolores: ['Turnos pedidos por WhatsApp a cualquier hora', 'Huecos en la agenda por clientes que no vienen', 'Cobrar y anotar todo a mano'],
+    prio: { reservas: 9, recordatorios: 8, confirmaciones: 7, mensajes: 6, historial: 5, caja: 5, contacto: 4, inicio: 2 } },
+  gastronomia: { re: /restaur|resto\b|\bbar\b|caf[eé]|cafeter|pizz|parrilla|cervec|helad|panader|rotiser|comida|sushi|hamburg|empanad|delivery|confiter|bodeg[oó]n|food/i, label: 'local gastronómico', cli: 'clientes', cli1: 'cliente', turno: 'reserva', publico: 'Vecinos y turistas que piden o reservan desde el celular',
+    dolores: ['Pedidos por WhatsApp que se mezclan o se pierden', 'Comandas en papel en las horas pico', 'Cerrar la caja del día a mano'],
+    prio: { pedidos: 9, catalogo: 8, tickets: 8, caja: 7, reservas: 6, mensajes: 6, stock: 5, reportes: 4, inicio: 2 } },
+  taller: { re: /taller|mec[aá]nic|gomer|lubric|chapa|service\b|automotor|repuesto|lavadero/i, label: 'taller', cli: 'clientes', cli1: 'cliente', turno: 'turno', publico: 'Dueños de autos que quieren saber cuándo está listo sin llamar',
+    dolores: ['Órdenes de trabajo en papel que se pierden', 'Clientes que llaman para saber si el auto está listo', 'No tener a mano qué se le hizo a cada auto'],
+    prio: { ordenes: 9, historial: 8, recordatorios: 7, contacto: 7, presupuestos: 7, mensajes: 5, caja: 4, reservas: 4, inicio: 2 } },
+  alojamiento: { re: /hotel|hostel|caba[ñn]a|hoster|apart|alojamiento|camping|posada|lodge|b&b/i, label: 'alojamiento', cli: 'huéspedes', cli1: 'huésped', turno: 'reserva', publico: 'Turistas que buscan dónde quedarse y reservan desde el celular',
+    dolores: ['Reservas por mensaje y miedo a la doble reserva', 'Señas y saldos anotados a mano', 'Las mismas preguntas sobre check-in todos los días'],
+    prio: { reservas: 9, confirmaciones: 8, mensajes: 8, contacto: 6, caja: 5, recordatorios: 5, inicio: 2 } },
+  comercio: { re: /tienda|ropa|indumentaria|kiosco|almac[eé]n|ferreter|librer|jugueter|regaler|[oó]ptica|farmacia|vinoteca|\btcg\b|cartas|mayorista|distribuidora|verduler|carnicer|dietética|bazar|perfumer/i, label: 'comercio', cli: 'clientes', cli1: 'cliente', turno: 'compra', publico: 'Clientes del barrio que preguntan precios y stock por mensaje',
+    dolores: ['No saber cuánto stock queda de cada producto', 'Preguntas de precio por mensaje todo el día', 'Ventas anotadas en un cuaderno'],
+    prio: { stock: 9, caja: 8, catalogo: 8, tickets: 7, pedidos: 6, mensajes: 5, reportes: 5, inicio: 2 } },
+  servicios: { re: /estudio|inmobiliar|abogad|contador|escuela|academia|instituto|veterin|guarder|lavander|fot[oó]graf|agencia/i, label: 'negocio', cli: 'clientes', cli1: 'cliente', turno: 'turno', publico: 'Clientes que consultan por mensaje antes de contratar',
+    dolores: ['Consultas repetidas por WhatsApp', 'Turnos y pagos anotados en distintos lugares', 'Clientes que se olvidan de la cita'],
+    prio: { reservas: 7, recordatorios: 7, mensajes: 7, contacto: 6, historial: 6, caja: 5, presupuestos: 5, inicio: 2 } }
+};
+const RUBRO_DEF = { label: 'negocio', cli: 'clientes', cli1: 'cliente', turno: 'turno', publico: '', dolores: ['Consultas repetidas por WhatsApp', 'Tareas que se hacen a mano todos los días', 'Información desparramada en cuadernos y planillas'], prio: {} };
+function rubroKeyOf(text){ const t = String(text || ''); for (const [k, r] of Object.entries(RUBROS)) if (r.re.test(t)) return k; return ''; }
+
+// funciones que puede tener una app: cómo reconocerlas y qué valor le dan al local
+const FUNCS = {
+  reservas: { name: 'Reserva automática', re: /turno|reserv|agenda|cita|clase|cupo|calendar|horario/i, hook: '{Local}, ¿y si tus {cli} reservan solos?', val: 'Tus {cli} eligen día y horario desde el celular, a cualquier hora, y vos ves la agenda completa.' },
+  recordatorios: { name: 'Recordatorio por WhatsApp', re: /recordator|aviso|notific|alerta/i, hook: '{Local}: menos faltazos, sin escribir uno por uno', val: 'Antes de cada {turno} sale un recordatorio por WhatsApp. Menos faltazos y nada que mandar a mano.' },
+  confirmaciones: { name: 'Confirmación por WhatsApp', re: /confirm/i, hook: '{Local}, cada {turno} confirmado solo', val: 'Cuando alguien reserva, le llega la confirmación por WhatsApp al instante.' },
+  mensajes: { name: 'Mensajes pregrabados', re: /plantilla|mensaje|respuesta|pregrab|difusi|chat/i, hook: '{Local}, ¿cuántas veces por día respondés lo mismo?', val: 'Respuestas listas para lo que te preguntan siempre: horarios, precios y cómo llegar. Un toque y sale.' },
+  contacto: { name: 'Contacto con clientes', re: /contacto|whats|consulta|llamar/i, hook: '{Local}, cada {cli1} a un toque', val: 'Desde la ficha de cada {cli1} le escribís por WhatsApp con un toque.' },
+  historial: { name: 'Historial del {cli1}', re: /historial|ficha|paciente|socio|cliente|alumno|historia cl|perfil/i, hook: '{Local}, todo de cada {cli1} en un lugar', val: 'Visitas, pagos y notas de cada {cli1} en una ficha. Nada de cuadernos.' },
+  tickets: { name: 'Impresión de tickets', re: /ticket|imprim|comprobante|recibo|comanda/i, hook: '{Local}, el ticket sale en el momento', val: 'Imprimís el ticket o la comanda en el momento y la venta queda registrada.' },
+  caja: { name: 'Caja y ventas', re: /caja|venta|cobro|pago|factur|ingreso/i, hook: '{Local}, la caja se cierra en un minuto', val: 'Cada venta suma sola. Al final del día ves cuánto entró sin hacer cuentas.' },
+  stock: { name: 'Control de stock', re: /stock|inventario|producto|mercader|art[ií]culo/i, hook: '{Local}, ¿cuánto te queda de cada producto?', val: 'Sabés cuánto queda de cada producto y qué reponer, sin contar a mano.' },
+  pedidos: { name: 'Pedidos ordenados', re: /pedido|carrito|delivery|orden de compra|encargo/i, hook: '{Local}, pedidos que no se pierden en el chat', val: 'Los pedidos llegan ordenados, con lo que pidió cada uno y su estado.' },
+  catalogo: { name: 'Carta y catálogo online', re: /cat[aá]logo|carta|men[uú]|precio|productos/i, hook: '{Local}, tu carta siempre al día', val: 'Precios y fotos actualizados en un link para compartir. Se acabó el «¿cuánto sale?».' },
+  ordenes: { name: 'Órdenes de trabajo', re: /orden(?:es)? de trabajo|\bot\b|reparaci|servicio|trabajos/i, hook: '{Local}, cada trabajo con su estado', val: 'Cada trabajo con su estado: recibido, en proceso o listo. Sin papeles que se pierden.' },
+  cuotas: { name: 'Cuotas y vencimientos', re: /cuota|membres|abono|vencim|plan(?:es)?\b|suscrip/i, hook: '{Local}, ¿quién está al día y quién debe?', val: 'Ves quién está al día y quién debe, y le avisás con un toque.' },
+  reportes: { name: 'Números del mes', re: /reporte|estad[ií]stic|gr[aá]fic|resumen|dashboard|panel|m[eé]trica/i, hook: '{Local}, el mes de un vistazo', val: 'Lo que entró, lo que más sale y los días flojos, de un vistazo.' },
+  empleados: { name: 'Fichaje de empleados', re: /fichaj|empleado|asistencia|personal|equipo/i, hook: '{Local}, horarios del equipo sin planillas', val: 'Cada empleado ficha desde el celular y ves las horas sin planillas.' },
+  presupuestos: { name: 'Presupuestos', re: /presupuest|cotiz/i, hook: '{Local}, presupuestos en dos minutos', val: 'Armás y mandás presupuestos prolijos desde el celular.' },
+  inicio: { name: 'Todo en una pantalla', re: /^inicio$|^home$|principal|resumen del d[ií]a|hoy/i, hook: '{Local}, tu día en una sola pantalla', val: 'Lo importante del día en una sola pantalla, apenas abrís la app.' }
+};
+function funcKeyOf(label){ const t = String(label || '').trim(); if (!t || isMenuLabel(t)) return ''; for (const k of ['inicio', ...Object.keys(FUNCS).filter(k => k !== 'inicio')]) if (FUNCS[k].re.test(t)) return k; return 'otra'; }
+function fillT(tpl, R, local){ return String(tpl || '').replace(/\{Local\}/g, local || 'Tu negocio').replace(/\{cli\}/g, R.cli).replace(/\{cli1\}/g, R.cli1).replace(/\{turno\}/g, R.turno); }
+function funcName(key, label, R){ return key && key !== 'otra' && FUNCS[key] ? fillT(FUNCS[key].name, R) : cap1(label || 'Función'); }
+
+/* ---- catálogo de apps (se guarda en el navegador) ---- */
+async function loadApps(){
+  try {
+    const d = await IDB.get('apps'); S.apps = [];
+    for (const a of (d || [])) {
+      const shots = [];
+      for (const s of a.shots || []) { const sh = await makeShot(s.blob, s.name); if (sh) { sh.label = s.label || ''; sh.fkey = s.fkey || funcKeyOf(s.label); shots.push(sh); } }
+      S.apps.push({ id: a.id, name: a.name, url: a.url, shots });
+    }
+  } catch {}
+  renderApps();
+}
+function saveApps(){ try { IDB.put('apps', S.apps.map(a => ({ id: a.id, name: a.name, url: a.url, shots: a.shots.map(s => ({ blob: s.blob, name: s.name, label: s.label || '', fkey: s.fkey || '' })) }))); } catch {} }
+function appFuncs(app){
+  const seen = new Map();
+  (app.shots || []).forEach(sh => { const k = sh.fkey || funcKeyOf(sh.label); if (!k) return; const id = k === 'otra' ? 'otra:' + normT(sh.label) : k; if (!seen.has(id)) seen.set(id, { id, key: k, label: sh.label, shots: [] }); seen.get(id).shots.push(sh); });
+  return [...seen.values()];
+}
+function renderApps(){
+  const box = $('#appList'); if (!box) return;
+  if (!S.apps.length) box.innerHTML = '<p class="hint" style="margin:0">Todavía no cargaste apps. Agregá la primera abajo: nombre y link publicado.</p>';
+  else box.innerHTML = S.apps.map(a => `<div class="appcard" data-app="${a.id}">
+    <div class="row" style="align-items:center"><b style="flex:1">${esc(a.name)}</b><span class="hint" style="margin:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.url || 'sin link')}</span></div>
+    <div class="appshots">${a.shots.map((s, i) => `<figure><img src="${s.url}" alt="Pantalla ${i + 1} de ${esc(a.name)}"><input type="text" value="${esc(s.label || '')}" data-lbl="${i}" aria-label="Qué función muestra la pantalla ${i + 1}" placeholder="¿Qué muestra?"><button class="x" type="button" data-rm="${i}" aria-label="Quitar pantalla">✕</button></figure>`).join('') || '<span class="hint" style="margin:0">Sin pantallas todavía.</span>'}</div>
+    <div class="row" style="margin-top:8px"><button class="btn sm" data-tour>🤖 Recorrer la app</button><label class="btn sm">+ Capturas<input type="file" accept="image/*" multiple hidden data-up></label><button class="btn sm" data-del>Quitar app</button></div>
+    <p class="hint" style="margin:4px 0 0">${appFuncs(a).length} funciones con pantalla real: ${appFuncs(a).map(f => esc(funcName(f.key, f.label, RUBRO_DEF))).join(', ') || 'ninguna'}</p></div>`).join('');
+  box.querySelectorAll('.appcard').forEach(card => {
+    const a = S.apps.find(x => x.id === card.dataset.app); if (!a) return;
+    card.querySelectorAll('[data-lbl]').forEach(inp => inp.onchange = () => { const s = a.shots[+inp.dataset.lbl]; s.label = inp.value.trim(); s.fkey = funcKeyOf(s.label); saveApps(); renderApps(); renderPitchSelect(); });
+    card.querySelectorAll('[data-rm]').forEach(bt => bt.onclick = () => { a.shots.splice(+bt.dataset.rm, 1); saveApps(); renderApps(); });
+    card.querySelector('[data-del]').onclick = () => { if (!confirm(`¿Quitar ${a.name} del catálogo?`)) return; S.apps = S.apps.filter(x => x !== a); saveApps(); renderApps(); renderPitchSelect(); };
+    card.querySelector('[data-up]').onchange = async ev => { for (const f of ev.target.files) { const sh = await makeShot(f, f.name); if (sh) { sh.label = f.name.replace(/\.\w+$/, '').replace(/[-_]+/g, ' ').replace(/^\d+\s*/, ''); sh.fkey = funcKeyOf(sh.label); a.shots.push(sh); } } saveApps(); renderApps(); toast('Escribí abajo de cada pantalla qué función muestra'); };
+    card.querySelector('[data-tour]').onclick = () => tourApp(a, card.querySelector('[data-tour]'));
+  });
+  renderPitchSelect();
+}
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+async function tourApp(a, btn){
+  if (!a.url) { toast('Esta app no tiene link: subí capturas a mano'); return; }
+  if (!S.server) { toast('El recorrido automático funciona en tu versión de Vercel. Acá subí capturas a mano.'); return; }
+  btn.disabled = true; btn.textContent = 'Recorriendo… (30 s)';
+  try {
+    const j = await withTimeout(api('api/recorrido', { url: /^https?:/.test(a.url) ? a.url : 'https://' + a.url, device: 'movil', max: 8, menus: false }), 75000);
+    const add = [];
+    for (const [i, f] of (j.frames || []).entries()) {
+      if (f.kind === 'tap' && isMenuLabel(f.label)) continue; // el menú abierto no muestra una función
+      const sh = await makeShot(dataUrlBlob(f.img), `${slugT(a.name)}-${i + 1}.jpg`);
+      if (sh) { sh.label = f.kind === 'start' ? 'Inicio' : (f.label || ''); sh.fkey = funcKeyOf(sh.label); add.push(sh); }
+    }
+    a.shots = [...a.shots.filter(s => s.manual), ...add.map(s => s)];
+    saveApps(); renderApps();
+    toast(`Listo: ${add.length} pantallas de ${a.name}. Revisá qué función muestra cada una.`);
+  } catch (e) { toast('No pude recorrer la app: ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = '🤖 Recorrer la app'; }
+}
+function addApp(){
+  const name = $('#appName').value.trim(), url = $('#appUrl').value.trim();
+  if (!name) { toast('Poné un nombre para la app'); $('#appName').focus(); return; }
+  const a = { id: Math.random().toString(36).slice(2), name, url, shots: [] };
+  S.apps.push(a); $('#appName').value = ''; $('#appUrl').value = ''; saveApps(); renderApps();
+  if (url && S.server) { const card = $(`[data-app="${a.id}"] [data-tour]`); if (card) tourApp(a, card); }
+}
+function renderPitchSelect(){
+  const sel = $('#appPick'); if (!sel) return;
+  const cur = S.pitch.appId;
+  sel.innerHTML = '<option value="auto">Automático: la que mejor encaja con el rubro</option>' + S.apps.map(a => `<option value="${a.id}">${esc(a.name)}</option>`).join('');
+  sel.value = S.apps.some(a => a.id === cur) ? cur : 'auto';
+}
+
+/* ---- investigación del local ---- */
+function pstatus(msg, err){ const z = $('#pStatus'); if (!z) return; z.innerHTML = msg; z.classList.toggle('show', !!msg); z.classList.toggle('err', !!err); }
+function textOfHtml(html){ try { const d = new DOMParser().parseFromString(html, 'text/html'); d.querySelectorAll('script,style,noscript,svg').forEach(n => n.remove()); const meta = (d.querySelector('meta[name=description]') || {}).content || ''; return (d.title + '. ' + meta + '. ' + [...d.querySelectorAll('h1,h2,h3,li,p')].map(n => n.textContent.replace(/\s+/g, ' ').trim()).filter(t => t.length > 3 && t.length < 160).slice(0, 60).join('. ')).slice(0, 4000); } catch { return ''; } }
+async function researchLocal(){
+  const L = readLocal(), b = readBrand(), btn = $('#pResearch');
+  if (!L.name && !L.ig) { pstatus('Primero traé los datos del local (paso 1) o escribí su nombre en "Datos del local".', true); return; }
+  btn.disabled = true; const notes = [], sources = [];
+  const R = { name: L.name || L.ig, rubro: L.rubro || '', productos: [], publico: '', tono: '', dolores: [], resenas: [], diferencial: '', faltantes: [] };
+  let corpus = [L.name, L.rubro, L.bio, L.items].join(' ');
+  try {
+    if (L.ig) sources.push({ title: 'Instagram ' + L.ig, url: 'https://www.instagram.com/' + L.ig.replace(/^@/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/.*/, '') + '/' });
+    // 1) Google Maps: rubro, reseñas, web
+    if (S.server && S.server.google) {
+      pstatus('Buscando el local en Google Maps…');
+      try { const p = await fetchPlace(`${R.name} ${b.city || ''}`); if (p) {
+        corpus += ' ' + [p.type, p.summary, ...(p.reviews || []).map(r => r.text)].join(' ');
+        if (!R.rubro && p.type) R.rubro = p.type;
+        R.resenas = (p.reviews || []).filter(r => r.text && r.rating >= 4).slice(0, 2).map(r => r.text.split(/(?<=[.!?])\s/)[0].slice(0, 120));
+        if (p.website && !$('#l-web').value.trim()) $('#l-web').value = p.website.replace(/^https?:\/\//, '').replace(/\/$/, '');
+        if (p.address && !$('#l-address').value.trim()) $('#l-address').value = p.address;
+        if (p.maps) sources.push({ title: 'Google Maps' + (p.rating ? ` (${p.rating} ★, ${p.ratings} reseñas)` : ''), url: p.maps });
+        notes.push('Google Maps'); } } catch {}
+    }
+    // 2) su web
+    const web = $('#l-web').value.trim();
+    if (web) { pstatus('Leyendo la web del local…'); const h = await netFetch(/^https?:/.test(web) ? web : 'https://' + web, true).catch(() => null); if (h) { corpus += ' ' + textOfHtml(h); sources.push({ title: 'Web del local', url: /^https?:/.test(web) ? web : 'https://' + web }); notes.push('su web'); } }
+    // 3) toda la web con IA (Facebook, prensa, directorios, reseñas)
+    if (S.server && S.server.ttsPremium && S.server.ttsPremium.openai) {
+      pstatus('Buscando en toda la web: reseñas, Facebook, prensa y directorios (unos 20 segundos)…');
+      try {
+        const j = await withTimeout(api('api/investigar', { name: R.name, city: b.city, ig: (L.ig || '').replace(/^@/, ''), web, rubro: L.rubro, address: L.address }), 70000);
+        const d = j.data || {};
+        if (d.encontrado !== false) {
+          R.rubro = R.rubro || d.rubro || ''; R.productos = (d.que_vende || []).slice(0, 5); R.publico = d.publico || ''; R.tono = d.tono || ''; R.diferencial = d.diferencial || '';
+          R.dolores = (d.dolores || []).slice(0, 3); if (!R.resenas.length) R.resenas = (d.resenas || []).slice(0, 2); R.faltantes = d.faltantes || [];
+          const dt = d.datos || {}; const fill = (id, v) => { if (v && !$(id).value.trim()) $(id).value = v; };
+          fill('#l-address', dt.direccion); fill('#l-hours', dt.horarios); fill('#l-wa', phoneDigits(dt.whatsapp || '')); fill('#l-web', (dt.web || '').replace(/^https?:\/\//, '').replace(/\/$/, ''));
+          corpus += ' ' + [d.rubro, ...(d.que_vende || []), d.publico, ...(d.dolores || [])].join(' ');
+          (j.sources || []).forEach(s => sources.push(s)); notes.push('búsqueda web');
+        } else R.faltantes = ['No encontré el local en la web'];
+      } catch (e) { if (e.code !== 'noai') notes.push('(la búsqueda web falló: ' + e.message + ')'); }
+    }
+    // 4) completar con lo que sabemos del rubro
+    const rk = rubroKeyOf([R.rubro, corpus].join(' '));
+    const RB = RUBROS[rk] || RUBRO_DEF;
+    if (!R.rubro && rk) R.rubro = RB.label;
+    if (!R.productos.length) R.productos = (L.itemList || []).map(i => i.title).slice(0, 4);
+    if (!R.publico) R.publico = RB.publico;
+    if (!R.tono) R.tono = /!{2,}|💪|🔥|🙌/.test(L.bio) ? 'Cercano y con energía' : 'Cercano y claro';
+    if (!R.dolores.length) R.dolores = RB.dolores.slice();
+    R.rk = rk; R.corpus = corpus.slice(0, 6000);
+    S.pitch.research = R; S.pitch.sources = sources;
+    writeResearch(R); savePitch();
+    const miss = researchGaps();
+    if (miss.length) pstatus(`Me falta información para seguir. ${miss.join(' ')}`, true);
+    else pstatus(`Listo: investigué ${notes.length ? notes.join(', ') : 'los datos que cargaste'}. Revisá el resumen y tocá <b>Armar propuesta</b>.`);
+  } catch (e) { pstatus(e.message || 'No pude investigar el local.', true); }
+  finally { btn.disabled = false; renderStepper(); }
+}
+function writeResearch(R){
+  $('#p-rubro').value = R.rubro || ''; $('#p-publico').value = R.publico || ''; $('#p-tono').value = R.tono || '';
+  $('#p-vende').value = (R.productos || []).join('\n'); $('#p-dolores').value = (R.dolores || []).join('\n');
+  $('#pSources').innerHTML = S.pitch.sources.length ? 'Fuentes: ' + S.pitch.sources.map(s => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a>`).join(' · ') : '';
+  $('#pResearchBox').classList.remove('hidden');
+}
+function readResearch(){
+  const R = S.pitch.research || { name: $('#l-name').value.trim() };
+  R.name = $('#l-name').value.trim() || R.name; R.rubro = $('#p-rubro').value.trim(); R.publico = $('#p-publico').value.trim(); R.tono = $('#p-tono').value.trim();
+  R.productos = splitLines($('#p-vende').value); R.dolores = splitLines($('#p-dolores').value);
+  R.rk = rubroKeyOf(R.rubro) || rubroKeyOf([R.rubro, R.productos.join(' '), R.corpus || ''].join(' '));
+  return R;
+}
+// si falta algo esencial, se frena y se pregunta (guía de UX: no inventar)
+function researchGaps(){
+  if (!$('#pResearchBox') || $('#pResearchBox').classList.contains('hidden')) return ['Tocá "Investigar el local" primero.'];
+  const R = readResearch(), out = [];
+  if (!R.name) out.push('¿Cómo se llama el local? Completalo en "Datos del local".');
+  if (!R.rubro) out.push(`¿De qué rubro es ${R.name || 'el local'}? Escribilo en "Rubro".`);
+  else if (!R.rk && !R.productos.length) out.push(`No reconozco el rubro "${R.rubro}". Contame qué vende o qué servicios da, uno por línea, en "Qué vende".`);
+  if (!S.apps.some(a => appFuncs(a).length)) out.push('Cargá al menos una app con sus pantallas en el paso "Tu app".');
+  return out;
+}
+
+/* ---- elegir app y funciones ---- */
+function scoreFunc(f, R, rk){ const pr = (RUBROS[rk] || RUBRO_DEF).prio || {}; let s = pr[f.key] || (f.key === 'otra' ? 2 : 3); const txt = (R.dolores || []).join(' ') + ' ' + (R.corpus || ''); if (FUNCS[f.key] && FUNCS[f.key].re.test(txt)) s += 1.5; return s; }
+function pickApp(R){
+  const cands = S.apps.filter(a => appFuncs(a).length);
+  if (S.pitch.appId !== 'auto') { const a = cands.find(x => x.id === S.pitch.appId); if (a) return a; }
+  const rk = R.rk;
+  return cands.map(a => { const fs = appFuncs(a).map(f => scoreFunc(f, R, rk)).sort((x, y) => y - x).slice(0, 6); const name = (a.name + ' ' + a.url).toLowerCase(); const bonus = rk && RUBROS[rk].re.test(name) ? 6 : 0; return { a, s: fs.reduce((x, y) => x + y, 0) + bonus + Math.min(fs.length, 6) }; }).sort((x, y) => y.s - x.s)[0]?.a || null;
+}
+function storyFor(f, i, n, R, app){
+  const RB = RUBROS[R.rk] || RUBRO_DEF, local = R.name || 'Tu negocio', b = readBrand();
+  const F = FUNCS[f.key];
+  const title = i === 0 ? fillT(F ? F.hook : '{Local}, mirá lo que podés tener', RB, local) : funcName(f.key, f.label, RB);
+  let text = F ? fillT(F.val, RB, local) : `${cap1(f.label)}: todo ordenado y a mano desde el celular.`;
+  if (i === 0 && R.dolores[0]) { const d = R.dolores[0].trim().replace(/[.?¿!]+$/, '').replace(/^¿/, ''); text = `¿${cap1(d)}? ${text}`; }
+  const cta = i === n - 1 ? `¿Lo probamos en ${local}? Escribime${b.wa ? ' al ' + fmtWa(b.wa) : ''}` : i === 0 ? 'Mirá cómo funciona →' : pickR(['Seguí mirando →', 'Hay más →', 'Pasá a la siguiente →'], 80 + i);
+  return { fid: f.id, fkey: f.key, flabel: f.label, shotIdx: 0, title: plainTech(title), text: plainTech(text), cta, app: app.id };
+}
+function buildPitch(){
+  const miss = researchGaps();
+  if (miss.length) { pstatus('Antes de armar la propuesta necesito: ' + miss.join(' '), true); goStep(miss.some(m => /app/.test(m)) && miss.length === 1 ? 2 : 3, true); return; }
+  const R = readResearch(), app = pickApp(R);
+  if (!app) { pstatus('No encontré ninguna app con pantallas. Cargala en el paso "Tu app".', true); return; }
+  const funcs = appFuncs(app).map(f => ({ ...f, s: scoreFunc(f, R, R.rk) })).sort((x, y) => y.s - x.s);
+  if (funcs.length < 4) { pstatus(`${esc(app.name)} tiene solo ${funcs.length} función(es) con pantalla real y la propuesta necesita al menos 4. Tocá "Recorrer la app" de nuevo o subí más capturas indicando qué muestra cada una.`, true); goStep(2, true); return; }
+  const n = Math.max(4, Math.min(6, funcs.filter(f => f.s >= 3).length || 5));
+  const chosen = funcs.slice(0, n);
+  S.pitch.appUsed = app.id; S.pitch.research = R;
+  S.pitch.stories = chosen.map((f, i) => storyFor(f, i, n, R, app));
+  S.pitch.phase = 'draft';
+  pstatus(`Borrador listo con ${n} historias de ${esc(app.name)}. Miralo a la derecha.`);
+  $('[data-out=pitch]').click(); renderPitch();
+  if (window.innerWidth <= 980) $('main').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ---- guardar la propuesta (se recupera al volver) ---- */
+function savePitch(){
+  const P = S.pitch; if (restoring) return;
+  try { store.set('pitch', { appId: P.appId, appUsed: P.appUsed, phase: P.phase, stories: P.stories, sources: P.sources, research: P.research ? { ...P.research, corpus: (P.research.corpus || '').slice(0, 3000) } : null, open: !$('#pResearchBox').classList.contains('hidden') }); } catch {}
+}
+function restorePitch(){
+  const d = store.get('pitch', null); if (!d) return;
+  Object.assign(S.pitch, { appId: d.appId || 'auto', appUsed: d.appUsed, phase: d.phase || 'none', stories: d.stories || [], sources: d.sources || [], research: d.research || null });
+  if (d.research && d.open) writeResearch(d.research);
+  renderPitchSelect();
+}
+
+/* ---- dibujo de cada historia ---- */
+function pitchShot(st){ const app = S.apps.find(a => a.id === st.app), f = app && appFuncs(app).find(x => x.id === st.fid); return f ? f.shots[Math.min(st.shotIdx || 0, f.shots.length - 1)] : null; }
+function drawPitchStory(ctx, W, H, st, i, n, R, b, T){
+  const u = W / 1080, P = 80*u, top = SAFE.story.top*u, bottom = SAFE.story.bottom*u, maxW = W - 2*P;
+  drawBg(ctx, W, H, T, i, null);
+  drawHeader(ctx, W, T, u, top, `${i + 1}/${n}`, b);
+  let y = top - 6*u;
+  // a quién va dirigido: logo del local + mención
+  const igH = (readLocal().igH || '').replace(/^@+/, '');
+  const tag = `Idea para ${igH ? '@' + igH : (R.name || 'tu negocio')}`;
+  let lx = P; if (S.logo) { logoCircle(ctx, P, y, 56*u); lx += 72*u; }
+  pill(ctx, tag.toUpperCase(), lx, y + 2*u, u, T, false);
+  y += 84*u;
+  const F = fit(ctx, st.title, { maxW, maxH: 230*u, size: 84*u, min: 50*u, weight: 700, lh: 1.05, maxLines: 3 });
+  drawHook(ctx, F, P, y, T.ink, T, st.title); y += F.h + 30*u;
+  const B = fit(ctx, st.text, { maxW, maxH: 170*u, size: 38*u, min: 28*u, weight: 500, family: FB, lh: 1.3, maxLines: 4 });
+  const ctaH = 104*u, phoneH = H - bottom - y - B.h - ctaH - 90*u;
+  const sh = pitchShot(st);
+  drawShot(ctx, sh, P, y, maxW, Math.max(300*u, phoneH), T, u, b, i);
+  y += Math.max(300*u, phoneH) + 34*u;
+  draw(ctx, B, P, y, T.ink); y += B.h + 30*u;
+  // llamado a la acción: grande en la última, discreto en las demás
+  const last = i === n - 1;
+  ctx.save(); ctx.font = `800 ${(last ? 38 : 32)*u}px ${FB}`;
+  const C = fit(ctx, st.cta, { maxW: maxW - 60*u, maxH: 60*u, size: (last ? 38 : 32)*u, min: 22*u, weight: 800, family: FB, maxLines: 1 });
+  const cw = Math.min(maxW, (C.w || ctx.measureText(C.lines[0]).width) + 64*u);
+  rr(ctx, P, y, last ? maxW : cw, ctaH * (last ? 1 : 0.82), ctaH / 2); ctx.fillStyle = last ? T.acc : T.card; ctx.fill();
+  if (!last) { ctx.strokeStyle = T.line; ctx.lineWidth = 2*u; ctx.stroke(); }
+  ctx.fillStyle = last ? T.accInk : T.ink; ctx.textBaseline = 'middle'; ctx.textAlign = last ? 'center' : 'left'; ctx.font = C.font;
+  ctx.fillText(C.lines[0], last ? P + maxW / 2 : P + 32*u, y + ctaH * (last ? 0.5 : 0.41) + 2*u);
+  ctx.restore();
+}
+
+/* ---- panel de la propuesta (fase 1, fase 2 y final) ---- */
+function renderPitch(){
+  const box = $('#pitchList'); if (!box) return;
+  const P = S.pitch, R = P.research ? readResearch() : null, b = readBrand(), T = themeColors();
+  const ph = $('#pitchPhase');
+  if (!P.stories.length || !R) { box.innerHTML = ''; ph.innerHTML = '<p class="hint" style="margin:0">Todavía no hay propuesta. Seguí los pasos de la izquierda: el local, tu app y la investigación. Después tocá <b>Armar propuesta</b>.</p>'; $('#pitchAsk').classList.add('hidden'); $('#pitchFinal').classList.add('hidden'); return; }
+  const app = S.apps.find(a => a.id === P.appUsed); if (!app) { P.stories = []; return renderPitch(); }
+  const funcs = appFuncs(app), RB = RUBROS[R.rk] || RUBRO_DEF, n = P.stories.length;
+  ph.innerHTML = P.phase === 'final' ? `<b>✅ Versión final</b> · ${n} historias para ${esc(R.name)} con ${esc(app.name)}. Descargalas o publicalas en tu Instagram.`
+    : `<b>${P.phase === 'draft' ? 'Fase 1 · Borrador' : 'Fase 2 · Editando'}</b> · ${n} historias para ${esc(R.name)} (${esc(R.rubro)}) con ${esc(app.name)}. Elegí otra función o cambiá los textos de cualquier historia.`;
+  box.innerHTML = '';
+  P.stories.forEach((st, i) => {
+    const f = funcs.find(x => x.id === st.fid);
+    const item = document.createElement('div'); item.className = 'pitem';
+    const c = document.createElement('canvas'); c.width = 1080; c.height = 1920;
+    drawPitchStory(c.getContext('2d'), 1080, 1920, st, i, n, R, b, T);
+    const alt = `Historia ${i + 1} de ${n} para ${R.name}: ${st.title}. ${st.text} Muestra la pantalla "${f ? funcName(f.key, f.label, RB) : ''}" de ${app.name}.`;
+    c.setAttribute('role', 'img'); c.setAttribute('aria-label', alt); c.dataset.alt = alt;
+    const fr = document.createElement('div'); fr.className = 'frame'; fr.appendChild(c);
+    const opts = funcs.map(x => `<option value="${esc(x.id)}"${x.id === st.fid ? ' selected' : ''}>${esc(funcName(x.key, x.label, RB))}${P.stories.some((y, j) => j !== i && y.fid === x.id) ? ' (ya está)' : ''}</option>`).join('');
+    const side = document.createElement('div'); side.className = 'pside';
+    side.innerHTML = `<h3>Historia ${i + 1}</h3>
+      <label class="f">Función que muestra</label><select data-k="fid">${opts}</select>
+      ${f && f.shots.length > 1 ? `<label class="f">Pantalla</label><select data-k="shotIdx">${f.shots.map((s, k) => `<option value="${k}"${k === (st.shotIdx || 0) ? ' selected' : ''}>Captura ${k + 1}</option>`).join('')}</select>` : ''}
+      <label class="f">Título</label><input type="text" data-k="title" value="${esc(st.title)}">
+      <label class="f">Texto</label><textarea data-k="text" rows="3">${esc(st.text)}</textarea>
+      <label class="f">Llamado a la acción</label><input type="text" data-k="cta" value="${esc(st.cta)}">
+      <div class="row" style="margin-top:8px"><button class="btn sm" data-mv="-1" ${i ? '' : 'disabled'} aria-label="Subir historia">↑</button><button class="btn sm" data-mv="1" ${i < n - 1 ? '' : 'disabled'} aria-label="Bajar historia">↓</button><button class="btn sm" data-rmst ${n > 4 ? '' : 'disabled'}>Quitar</button><button class="btn sm" data-dl1>⬇ PNG</button></div>`;
+    item.append(fr, side); box.appendChild(item);
+    const edited = () => { if (P.phase !== 'edit') { P.phase = 'edit'; } };
+    side.querySelectorAll('[data-k]').forEach(el => el.onchange = el.oninput = ev => {
+      const k = el.dataset.k;
+      if (k === 'fid') { const nf = funcs.find(x => x.id === el.value); const ns = storyFor(nf, i, n, R, app); Object.assign(st, { fid: nf.id, fkey: nf.key, flabel: nf.label, shotIdx: 0, title: ns.title, text: ns.text }); edited(); renderPitch(); return; }
+      st[k] = k === 'shotIdx' ? +el.value : el.value; edited();
+      if (ev.type === 'change' || k === 'shotIdx') renderPitch(); else { drawPitchStory(c.getContext('2d'), 1080, 1920, st, i, n, R, b, T); }
+    });
+    side.querySelectorAll('[data-mv]').forEach(bt => bt.onclick = () => { const j = i + (+bt.dataset.mv); [P.stories[i], P.stories[j]] = [P.stories[j], P.stories[i]]; reflow(); edited(); renderPitch(); });
+    side.querySelector('[data-rmst]').onclick = () => { P.stories.splice(i, 1); reflow(); edited(); renderPitch(); };
+    side.querySelector('[data-dl1]').onclick = async () => saveFile(`${fileBase()}-historia-${i + 1}.png`, await canvasBlob(c));
+  });
+  // fase 2: preguntar explícitamente si quiere cambiar algo, con intercambios sugeridos
+  const used = new Set(P.stories.map(s => s.fid));
+  const free = funcs.filter(f => !used.has(f.id)).map(f => ({ ...f, s: scoreFunc(f, R, R.rk) })).sort((x, y) => y.s - x.s);
+  const weakest = P.stories.map((s, i) => ({ i, f: funcs.find(x => x.id === s.fid) })).filter(z => z.f).map(z => ({ ...z, s: scoreFunc(z.f, R, R.rk) })).sort((x, y) => x.s - y.s);
+  const sugg = [];
+  free.slice(0, 3).forEach((f, k) => { const w = weakest[k]; if (w && (k === 0 || f.s >= w.s - 1)) sugg.push({ i: w.i, to: f }); });
+  savePitch();
+  const ask = $('#pitchAsk');
+  if (P.phase !== 'final') {
+    ask.classList.remove('hidden');
+    ask.innerHTML = `<p style="margin:0 0 8px"><b>¿Querés modificar alguna historia o intercambiar funciones?</b> Podés cambiar cualquier cosa en las historias de arriba, o probar con estos cambios:</p>
+      <div class="row" style="flex-wrap:wrap">${sugg.map((z, k) => `<button class="btn sm" data-sw="${k}">Cambiar «${esc(funcName(funcs.find(x => x.id === P.stories[z.i].fid).key, P.stories[z.i].flabel, RB))}» por «${esc(funcName(z.to.key, z.to.label, RB))}»</button>`).join('')}
+      ${n < 6 && free.length ? `<button class="btn sm" data-addst>+ Sumar «${esc(funcName(free[0].key, free[0].label, RB))}»</button>` : ''}</div>
+      <div class="row" style="margin-top:10px"><button class="btn pri" id="pitchOk">Así está bien: armar la versión final</button></div>`;
+    ask.querySelectorAll('[data-sw]').forEach(bt => bt.onclick = () => { const z = sugg[+bt.dataset.sw]; const st = P.stories[z.i]; const ns = storyFor(z.to, z.i, n, R, app); Object.assign(st, { fid: z.to.id, fkey: z.to.key, flabel: z.to.label, shotIdx: 0, title: ns.title, text: ns.text }); P.phase = 'edit'; renderPitch(); toast('Cambiado. Revisá el texto de esa historia.'); });
+    const ad = ask.querySelector('[data-addst]'); if (ad) ad.onclick = () => { P.stories.splice(n - 1, 0, storyFor(free[0], n - 1, n + 1, R, app)); reflow(); P.phase = 'edit'; renderPitch(); };
+    $('#pitchOk').onclick = () => { const bad = pitchChecks(); if (bad.length) { toast(bad[0]); return; } P.phase = 'final'; renderPitch(); toast('Versión final lista'); };
+    $('#pitchFinal').classList.add('hidden');
+  } else { ask.classList.add('hidden'); $('#pitchFinal').classList.remove('hidden'); }
+}
+// la primera lleva el gancho y la última el contacto, aunque se reordenen
+function reflow(){
+  const P = S.pitch, R = readResearch(), app = S.apps.find(a => a.id === P.appUsed), n = P.stories.length, b = readBrand();
+  P.stories.forEach((st, i) => {
+    const f = appFuncs(app).find(x => x.id === st.fid); const ns = storyFor(f, i, n, R, app);
+    if (i === 0) st.title = ns.title; else if (st.title.includes('¿') || /^\S+[,:]/.test(st.title)) st.title = ns.title;
+    st.cta = ns.cta;
+  });
+}
+function pitchChecks(){
+  const out = [], n = S.pitch.stories.length;
+  if (n < 4 || n > 6) out.push('La propuesta lleva entre 4 y 6 historias.');
+  S.pitch.stories.forEach((st, i) => {
+    if (!pitchShot(st)) out.push(`La historia ${i + 1} no tiene una captura real.`);
+    if (hasTech(st.title + ' ' + st.text)) out.push(`La historia ${i + 1} tiene lenguaje técnico: contá lo que gana el local.`);
+    if ((st.text.match(/\S+/g) || []).length > 40) out.push(`El texto de la historia ${i + 1} es largo: con 25 palabras se lee mejor.`);
+  });
+  return out;
+}
+async function pitchZip(){
+  const zip = new JSZip(), base = fileBase();
+  const cs = $$('#pitchList canvas');
+  for (let i = 0; i < cs.length; i++) zip.file(`historia-${i + 1}.png`, await canvasBlob(cs[i]));
+  const R = readResearch();
+  zip.file('LEEME.txt', `Propuesta para ${R.name} (${R.rubro})\n\nSubí las historias en este orden. Mencioná a ${readLocal().igH ? '@' + readLocal().igH.replace(/^@+/, '') : R.name} con el sticker de mención en la primera.\n\n` + S.pitch.stories.map((s, i) => `${i + 1}. ${s.title}\n   ${s.text}\n   → ${s.cta}`).join('\n\n') + (S.pitch.sources.length ? '\n\nFuentes de la investigación:\n' + S.pitch.sources.map(s => `- ${s.title}: ${s.url}`).join('\n') : ''));
+  await saveFile(`${base}-propuesta-historias.zip`, await zip.generateAsync({ type: 'blob' }));
+}
+let pitchArmed = 0;
+async function pitchPublish(){
+  if (!S.server || !S.server.ig) { toast('Primero conectá Instagram en la pestaña "Subir a IG"'); return; }
+  const btn = $('#pitchPub'), cs = $$('#pitchList canvas');
+  if (Date.now() - pitchArmed > 6000) { pitchArmed = Date.now(); btn.textContent = `Confirmá: publicar ${cs.length} historias en @${(S.igAccount && S.igAccount.username) || 'tu cuenta'}`; setTimeout(() => { if (Date.now() - pitchArmed >= 6000) btn.textContent = '🚀 Publicar en mis historias'; }, 6200); return; }
+  pitchArmed = 0; btn.disabled = true;
+  const uploaded = [];
+  try {
+    for (let i = 0; i < cs.length; i++) {
+      btn.textContent = `Publicando ${i + 1} de ${cs.length}…`;
+      const r = await blobUpload(await jpegBlob(cs[i]), `propuesta-${i + 1}.jpg`, 'image/jpeg'); uploaded.push(r.url);
+      const id = (await api('api/ig', { action: 'container', kind: 'story', url: r.publicUrl || r.url })).id;
+      await waitReady(id, false); await api('api/ig', { action: 'publish', id });
+    }
+    toast(`Listo: ${cs.length} historias publicadas. Sumá el sticker de mención desde la app de Instagram si querés que le llegue al local.`, { ms: 9000 });
+  } catch (e) { toast('No se pudo publicar: ' + e.message, { ms: 8000 }); }
+  finally { btn.disabled = false; btn.textContent = '🚀 Publicar en mis historias'; if (uploaded.length) api('api/ig', { action: 'cleanup', urls: uploaded }).catch(() => {}); }
+}
+
 /* ============ render ============ */
 let fontsReady = false;
 async function ensureFonts(){
@@ -3921,6 +4369,7 @@ async function ensureFonts(){
   fontsReady = true;
 }
 function renderAll(){
+  if (isPitch()) setTimeout(renderPitch, 0);
   store.set('brand', readBrand());
   const b = readBrand(), T = themeColors();
   let slides, drawOne;
@@ -4076,7 +4525,7 @@ $$('#themes .chip').forEach(c => c.onclick = () => { setTheme(c.dataset.t); rend
 $('#fontSel').onchange = async () => { store.set('font', $('#fontSel').value); await applyFontChoice(); renderAll(); };
 /* modos */
 function applyMode(){
-  const vis = k => k === 'dev' ? S.mode === 'dev' : k === 'local' ? S.mode === 'local' : k === 'brand' ? S.mode === 'brand' : k === 'logo' ? (S.mode === 'local' || S.mode === 'brand') : k === 'notlocalown' ? !isLocalOwn() : k === 'caso' ? (S.mode === 'local' && S.purpose === 'caso') : k === 'lp-local' ? isLocalOwn() : k === 'devlike' ? (S.mode === 'dev' || (S.mode === 'local' && S.purpose === 'caso')) : true;
+  const vis = k => k === 'dev' ? S.mode === 'dev' : k === 'local' ? S.mode === 'local' : k === 'brand' ? S.mode === 'brand' : k === 'logo' ? (S.mode === 'local' || S.mode === 'brand') : k === 'notlocalown' ? !isLocalOwn() : k === 'caso' ? (S.mode === 'local' && S.purpose === 'caso') : k === 'lp-local' ? isLocalOwn() : k === 'devlike' ? (S.mode === 'dev' || (S.mode === 'local' && S.purpose === 'caso')) : k === 'pitch' ? isPitch() : k === 'nopitch' ? !isPitch() : true;
   $$('[data-show]').forEach(el => el.classList.toggle('hidden', !vis(el.dataset.show)));
   $$('#modes .mode').forEach(x => x.classList.toggle('on', x.dataset.mode === S.mode));
   $$('#purpose .chip').forEach(x => x.classList.toggle('on', x.dataset.p === S.purpose));
@@ -4090,7 +4539,8 @@ function applyMode(){
   if (S.server) { const w = $('#pubWarn'); if (isLocalOwn()) { w.innerHTML = '<b>Ojo:</b> se publica en <b>tu</b> cuenta, no en la del local. Para la cuenta del local, descargá todo y subilo desde su celu.'; w.classList.remove('hidden'); } else w.classList.add('hidden'); }
   $('[data-out=publish]').textContent = isLocalOwn() ? '📦 Para el cliente' : '🚀 Subir a IG';
   goStep(S.step);
-  if (isLocalOwn() && $('[data-out=publish]').classList.contains('on')) {}
+  { const on = $('#outTabs .tab.on'); if (isPitch() && on && on.dataset.out !== 'pitch' && on.dataset.out !== 'publish') $('[data-out=pitch]').click(); else if (!isPitch() && on && (on.dataset.out === 'pitch' || on.classList.contains('hidden'))) $('[data-out=carousel]').click(); }
+  if (isPitch()) { const g = S.server && S.server.google, ai = S.server && S.server.ttsPremium && S.server.ttsPremium.openai; $('#pSourcesOn').innerHTML = `Busca en: Instagram y datos que cargaste ✓ · su web ✓ · Google Maps y reseñas ${g ? '✓' : '✗ <span style="opacity:.8">(falta GOOGLE_PLACES_KEY en Vercel)</span>'} · toda la web: Facebook, prensa y directorios ${ai ? '✓' : '✗ <span style="opacity:.8">(falta OPENAI_API_KEY en Vercel)</span>'}${S.server ? '' : '<br>Acá adentro de Claude no hay internet: completá el resumen a mano.'}`; }
   $('#brandLabel').textContent = isLocalOwn() ? 'Tu marca (sale como crédito chico: "Diseño: …")' : 'Tu marca';
 }
 function setMode(m){
@@ -4121,6 +4571,12 @@ MFIELDS.forEach(k => $('#m-' + k).addEventListener('input', () => debounce(() =>
 LTF.forEach(k => $('#lf-' + k).addEventListener('input', () => debounce(renderAll)));
 $('#lGenAuto').onclick = buildLocal;
 $('#lLinkGo').onclick = localFromLink;
+/* propuesta */
+$('#appAdd').onclick = addApp; $('#appUrl').onkeydown = e => { if (e.key === 'Enter') addApp(); };
+$('#appPick').onchange = () => { S.pitch.appId = $('#appPick').value; savePitch(); };
+$('#pResearch').onclick = researchLocal; $('#pBuild').onclick = buildPitch;
+$('#pitchZip').onclick = pitchZip; $('#pitchPub').onclick = pitchPublish; $('#pitchEdit').onclick = () => { S.pitch.phase = 'edit'; renderPitch(); };
+['#p-rubro', '#p-tono', '#p-publico', '#p-vende', '#p-dolores'].forEach(id => $(id).addEventListener('change', () => { if (S.pitch.research) S.pitch.research = readResearch(); if (S.pitch.stories.length) renderPitch(); savePitch(); }));
 $('#lLink').onkeydown = e => { if (e.key === 'Enter') localFromLink(); };
 $('#igSetup').onclick = igSetup;
 $('#pubGo').onclick = publishFlow;
@@ -4206,8 +4662,9 @@ $('#copyCap').onclick = async () => {
   try { $('#studioKey').value = localStorage.getItem('igstudio.key') || ''; } catch {}
   syncLookUI(); renderHist();
   await restoreDraft();
+  await loadApps(); restorePitch(); if (isPitch()) renderPitch();
   a11yPass(); goStep(S.step);
-  detectServer();
+  detectServer().then(() => { if (isPitch()) applyMode(); });
 })();
 </script>
 </body>

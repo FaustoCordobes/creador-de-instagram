@@ -88,3 +88,15 @@ Cuando traés un proyecto con link publicado (o un repo de GitHub con su web), l
 ## Nada técnico en el contenido
 
 Lo que se publica es para dueños de locales: el estudio no muestra lenguajes, frameworks ni servicios (React, Supabase, Vercel, etc.). En su lugar hay una diapositiva "Antes y ahora" con lo que gana el negocio (campo "Lo que gana el negocio", una línea por cambio con el formato `antes → ahora`). El control de calidad avisa si se cuela algo técnico y "Arreglar lo automático" lo saca.
+
+## Propuesta: mi app para un local (historias)
+
+En **Un local → "Propuesta: mi app para este local"** el estudio arma de 4 a 6 historias para tu Instagram que le muestran a ese local cómo le sirve una de tus apps, con capturas reales.
+
+1. **El local:** pegá su link (Instagram, Google Maps o web) y tocá "Traer todo".
+2. **Tu app:** cargá una vez cada app que vendés (nombre y link). El estudio la recorre sola, saca una captura por sección y detecta qué función muestra cada una (turnos, recordatorios, historial, caja, stock…). Podés corregir el nombre de cada función o subir capturas a mano.
+3. **Investigación:** busca al local en sus datos, su web, Google Maps y reseñas (`GOOGLE_PLACES_KEY`) y en toda la web: Facebook, prensa y directorios (`OPENAI_API_KEY`, usa `api/investigar.js`). Si falta algo esencial (por ejemplo el rubro), se frena y te lo pregunta.
+4. **Fase 1 · Borrador:** elige la app y las funciones que más valor le dan a ese rubro y arma las historias (texto, llamado a la acción y captura en cada una).
+5. **Fase 2 · Cambios:** te pregunta si querés cambiar algo y sugiere intercambios (por ejemplo, "Historial del cliente" por "Reserva automática"). Después armás la versión final y la descargás o la publicás en tus historias.
+
+Variable opcional: `OPENAI_SEARCH_MODEL` para elegir el modelo de búsqueda (por defecto prueba `gpt-5-mini` y después `gpt-4.1-mini`).

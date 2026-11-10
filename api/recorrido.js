@@ -102,7 +102,8 @@ module.exports = async (req, res) => {
   catch { res.status(404).json({ error: 'No encontré esa página. Revisá el link.' }); return; }
 
   const device = DEVICES[body.device] ? body.device : 'movil';
-  const max = Math.max(2, Math.min(8, +body.max || 6));
+  const max = Math.max(2, Math.min(10, +body.max || 6));
+  const keepMenus = body.menus !== false; // para el catálogo de apps, el menú abierto no suma
   const t0 = Date.now(), left = () => BUDGET_MS - (Date.now() - t0);
   let browser, page = null;
   try {
@@ -134,7 +135,7 @@ module.exports = async (req, res) => {
     let misses = 0, lastToggle = false, toggles = 0;
     while (frames.length < max && left() > 4000 && misses < 6) {
       // un menú (☰) se puede volver a abrir, pero no dos veces seguidas ni como última pantalla
-      const targets = await page.evaluate(findTargets, used, lastToggle || toggles >= 4 || frames.length >= max - 1).catch(() => []);
+      const targets = await page.evaluate(findTargets, used, lastToggle || toggles >= (keepMenus ? 4 : 8) || (keepMenus && frames.length >= max - 1)).catch(() => []);
       if (!targets.length) break;
       const t = targets[0];
       if (t.toggle) toggles++; else used.push(t.text.toLowerCase());
@@ -162,6 +163,7 @@ module.exports = async (req, res) => {
       const s3 = await shot(page);
       if (s3.hash === cur.hash) { misses++; continue; }
       lastToggle = t.toggle;
+      if (t.toggle && !keepMenus) { cur = s3; misses = 0; continue; }
       frames.push({ label: t.label, kind: 'tap', tap: { x: +(box.x / box.w).toFixed(3), y: +(box.y / box.h).toFixed(3) }, img: s3.img });
       cur = s3; misses = 0;
     }
