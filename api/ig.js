@@ -7,6 +7,7 @@
 //   container  → crea un contenedor (imagen, historia, reel, item de carrusel o carrusel)
 //   check      → estado de un contenedor (IN_PROGRESS, FINISHED, ERROR…)
 //   publish    → publica un contenedor y devuelve el link
+//   sign       → link firmado temporal para archivos de un Blob privado
 //   cleanup    → borra los archivos temporales subidos a Vercel Blob
 const { cors, authorized, readBody, graph, studioPass, passInfo } = require('./_lib');
 
@@ -98,6 +99,18 @@ module.exports = async (req, res) => {
       const j = await graph('/' + IGID() + '/media_publish', { creation_id: body.id, access_token: TOKEN() }, 'POST');
       let link = null; try { const m = await graph('/' + j.id, { fields: 'permalink', access_token: TOKEN() }); link = m.permalink; } catch {}
       return res.json({ id: j.id, permalink: link });
+    }
+
+    if (action === 'sign') {
+      // Blob privado: link firmado temporal para que Instagram pueda descargar el archivo
+      const u = new URL(String(body.url || ''));
+      if (!/blob\.vercel-storage\.com$/.test(u.hostname)) throw new Error('URL de almacenamiento inválida.');
+      const pathname = decodeURIComponent(u.pathname.replace(/^\//, ''));
+      const { issueSignedToken, presignUrl } = require('@vercel/blob');
+      const validUntil = Date.now() + 60 * 60 * 1000;
+      const token = await issueSignedToken({ pathname, operations: ['get'], validUntil });
+      const { presignedUrl } = await presignUrl(token, { operation: 'get', pathname, access: 'private', validUntil });
+      return res.json({ url: presignedUrl });
     }
 
     if (action === 'cleanup') {

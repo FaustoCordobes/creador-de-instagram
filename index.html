@@ -1769,8 +1769,14 @@ async function blobUpload(blob, name, type){
   const opts = { access: 'public', handleUploadUrl: 'api/upload', clientPayload: studioKey(), contentType: type };
   let r;
   try { r = S.server && S.server.blobMode === 'presigned' && blobLib.uploadPresigned ? await blobLib.uploadPresigned(path, blob, opts) : await blobLib.upload(path, blob, opts); }
-  catch (e) { const m = String(e && e.message || e); if (/private|access/i.test(m)) throw new Error('El almacenamiento Blob tiene que ser Público (Vercel → Storage → tu Blob → Settings).'); throw new Error('No pude subir el archivo: ' + m.replace(/^Vercel Blob:\s*/, '')); }
-  return r.url;
+  catch (e) {
+    const m = String(e && e.message || e);
+    if (/private|access/i.test(m)) { const o2 = { ...opts, access: 'private' }; r = S.server && S.server.blobMode === 'presigned' && blobLib.uploadPresigned ? await blobLib.uploadPresigned(path, blob, o2) : await blobLib.upload(path, blob, o2); }
+    else throw new Error('No pude subir el archivo: ' + m.replace(/^Vercel Blob:\s*/, ''));
+  }
+  // Blob privado: Instagram necesita un link firmado temporal
+  if (/\.private\.blob\.vercel-storage\.com/.test(r.url)) { r.publicUrl = (await api('api/ig', { action: 'sign', url: r.url })).url; }
+  return r;
 }
 const jpegBlob = c => new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
 function plog(msg, cls){ const li = document.createElement('li'); li.innerHTML = msg; if (cls) li.className = cls; $('#pubLog').appendChild(li); return li; }
@@ -1796,7 +1802,7 @@ async function publishFlow(){
   pubArmed = 0; btn.disabled = true; btn.textContent = 'Publicando…'; $('#pubLog').innerHTML = '';
   const caption = ($('#f-caption').value.trim() + '\n\n' + $('#f-hashtags').value.trim()).trim().slice(0, 2200);
   const uploaded = [];
-  const up = async (blob, name, type) => { const u = await blobUpload(blob, name, type); uploaded.push(u); return u; };
+  const up = async (blob, name, type) => { const r = await blobUpload(blob, name, type); uploaded.push(r.url); return r.publicUrl || r.url; };
   const done = (what, r) => plog(`✅ ${what} ${what === 'Historia' ? 'publicada' : 'publicado'}${r.permalink ? ` — <a href="${r.permalink}" target="_blank" rel="noopener">ver</a>` : ''}`, 'ok');
   try {
     await ensureFonts(); renderAll();
