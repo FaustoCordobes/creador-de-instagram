@@ -33,7 +33,9 @@ Además: diapositiva **Qué incluye**, **oferta de lanzamiento** opcional, cierr
 ## Voz en reels e historias
 
 - La historia sale como **video con voz** (hasta 59 s) o como imagen fija; el reel también lleva voz. Todo pasa más lento que antes para que se llegue a leer.
-- Voz automática con acento argentino (Tomás o Elena) generada por `api/tts.js` con el servicio "Leer en voz alta" de Microsoft Edge (paquete `msedge-tts`). No necesita claves, pero no es una API oficial y podría dejar de andar.
+- Voces gratis (Tomás y Elena de Argentina, Mateo y Valentina rioplatenses, Andrés y Ava más expresivas) generadas por `api/tts.js` con "Leer en voz alta" de Microsoft Edge (paquete `msedge-tts`). No piden claves, pero no es una API oficial.
+- Voces premium opcionales (OpenAI gpt-4o-mini-tts o ElevenLabs) si cargás su clave: ver **GUIA-VOZ.md**.
+- Música de fondo generada en el navegador (sin derechos de autor): Lo-fi, Calma o Con ritmo. Baja sola cuando habla la voz y suma un "whoosh" en cada cambio de pantalla.
 - En el **Guion de voz** (pestañas Reel e Historia) se edita lo que dice cada pantalla, se escucha con ▶ y se graba con tu voz con 🎙. Las grabaciones quedan solo mientras la página está abierta.
 - El audio va dentro del MP4 en AAC (Chrome o Edge en la compu). Si el navegador no puede, lo graba en tiempo real.
 

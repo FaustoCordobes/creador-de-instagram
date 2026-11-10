@@ -306,11 +306,17 @@ aside{counter-reset:st}
     </div>
     <p class="hint" id="lookInfo"></p>
     <label class="f">Voz de reels e historias</label>
-    <select id="voiceSel">
-      <option value="es-AR-TomasNeural">Tomás (hombre, Argentina)</option>
-      <option value="es-AR-ElenaNeural">Elena (mujer, Argentina)</option>
-      <option value="off">Sin voz automática (solo mi voz grabada)</option>
+    <select id="voiceSel"></select>
+    <p class="hint" id="voiceHint"></p>
+    <label class="f">Música de fondo</label>
+    <select id="musicSel">
+      <option value="auto">Automática (cambia en cada publicación)</option>
+      <option value="lofi">Lo-fi tranqui</option>
+      <option value="calma">Calma (ambiente suave)</option>
+      <option value="pulso">Con ritmo</option>
+      <option value="off">Sin música</option>
     </select>
+    <p class="hint" id="musicInfo"></p>
     <div class="row" style="align-items:end">
       <div><label class="f">Color de acento</label><input type="color" id="accent" value="#c6ff3d" style="width:100%;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);padding:3px"></div>
       <div><button class="btn sm" id="useDetected" style="width:100%;height:40px" disabled>Restaurar detectados</button></div>
@@ -421,7 +427,7 @@ aside{counter-reset:st}
         <p class="hint" style="margin-top:0">Lo que dice la voz en cada pantalla. Editalo, escuchalo con ▶ o grabalo con tu voz con 🎙 (tu grabación reemplaza la voz automática).</p>
         <div id="script" class="script"></div>
         <ul>
-          <li>Si querés música de fondo, sumala desde el celu al subirlo, con el volumen bajo para que se escuche la voz.</li>
+          <li>Lleva música de fondo propia (sin derechos de autor) que baja sola cuando habla la voz, y un "whoosh" en cada cambio de pantalla. Se elige en "Estilo y marca".</li>
           <li>Funciona mejor en Chrome o Edge en la compu.</li>
           <li>Los textos quedan lejos de los bordes para que no los tape la interfaz del reel.</li>
         </ul>
@@ -1784,7 +1790,7 @@ async function detectServer(){
     if (r.headers.get('x-igstudio') !== '1') throw 0;
     S.server = await r.json();
   } catch { S.server = null; }
-  updatePublishUI();
+  updatePublishUI(); fillVoices();
 }
 function updatePublishUI(){
   const on = !!S.server;
@@ -2842,22 +2848,22 @@ const endDot = x => { x = (x || '').trim(); return x ? (/[.?!…]$/.test(x) ? x 
 function speechFor(s, m, L, b){
   const kw = (b.keyword || 'WEB').toLowerCase(), t = s.type;
   if (L) {
-    if (t === 'lcover') return [endDot(L.hook), endDot(L.sub)].join(' ');
+    if (t === 'lcover') return [pickR(['', '¡Hola! ', 'Mirá. '], 65) + endDot(L.hook), endDot(L.sub)].join(' ');
     if (t === 'lpromo') return endDot(L.promo);
     if (t === 'litem') return endDot(s.it.title + (s.it.detail ? ', ' + s.it.detail : ''));
     if (t === 'lphoto') return endDot(s.caption || '');
     if (t === 'lreview') return endDot(`${L.reviewAuthor || 'Un cliente'} dice: ${L.reviewText}`);
     if (t === 'linfo') return [L.address && `Estamos en ${L.address}.`, endDot(L.hours)].filter(Boolean).join(' ');
-    if (t === 'lcta') return endDot(L.cta) + ' Te esperamos.';
+    if (t === 'lcta') return endDot(L.cta) + pickR([' Te esperamos.', ' ¡Nos vemos!', ' Te esperamos, eh.'], 66);
     return '';
   }
-  if (t === 'cover') return [endDot(m.hook || m.name), m.hook && m.name && !normT(m.hook).includes(normT(m.name)) ? `Esto es ${m.name}.` : ''].join(' ');
-  if (t === 'problem') return [endDot(m.problem), m.name ? `${m.name} lo resuelve.` : ''].join(' ');
-  if (t === 'feature') return [endDot(s.f.title), endDot(cap1(s.f.desc || ''))].join(' ');
+  if (t === 'cover') { const h = endDot(m.hook || m.name); return [pickR([h, 'Mirá esto. ' + h, 'Te muestro algo. ' + h], 61), m.hook && m.name && !normT(m.hook).includes(normT(m.name)) ? pickR([`Esto es ${m.name}.`, `Se llama ${m.name}.`], 62) : ''].join(' '); }
+  if (t === 'problem') return [endDot(m.problem), m.name ? pickR([`Bueno, para eso está ${m.name}.`, `${m.name} lo resuelve.`, `Para eso armé ${m.name}.`], 63) : ''].join(' ');
+  if (t === 'feature') { const con = m.tips ? '' : (['Primero, ', 'Además, ', 'También, ', 'Y otra cosa: ', 'Y por último, '][Math.min((s.n || 1) - 1, 4)]); return [endDot(con ? con + lc1(s.f.title) : s.f.title), endDot(cap1(s.f.desc || ''))].join(' '); }
   if (t === 'result') return endDot(`${m.resultAuthor || 'El cliente'} dice: ${m.resultText}`);
   if (t === 'includes') return endDot('Incluye ' + lc1(joinY(m.includesList.slice(0, 4).map(lc1))));
   if (t === 'tech') return 'Está hecho con tecnología actual, rápida y segura.';
-  if (t === 'cta') return `${endDot(m.cta || '¿Hablamos?')} Comentá ${kw}, o escribime por WhatsApp.`;
+  if (t === 'cta') return `${endDot(m.cta || '¿Hablamos?')} ` + pickR([`Comentá ${kw} y te cuento.`, `Si te sirve, comentá ${kw} o escribime por WhatsApp, y lo charlamos.`, `Escribime ${kw} por mensaje y lo vemos juntos.`], 64);
   if (t === 'bcover') return [endDot(m.hook), endDot(m.who)].join(' ');
   if (t === 'tcover') return [endDot(m.hook), endDot(m.tagline)].join(' ');
   if (t === 'bservices') return endDot('Hago ' + joinY(m.services.map(x => lc1(x.title))));
@@ -2995,8 +3001,10 @@ async function playVideo(kind){
   const R = await scenesWithVoice({ fmt: kind }, m => btn.textContent = m.replace('Generando la voz… ', 'Voz '));
   const canvas = kind === 'reel' ? $('#cReel') : $('#cStory'), ctx = canvas.getContext('2d'), b = readBrand(), T = themeColors();
   const ac = actx(); try { await ac.resume(); } catch {}
+  btn.textContent = 'Mezclando…';
+  const track = await buildSoundtrack(R);
   const t0 = ac.currentTime + 0.15, srcs = [];
-  R.scenes.forEach(sc => { if (!sc.audio) return; const s = ac.createBufferSource(); s.buffer = sc.audio; s.connect(ac.destination); s.start(t0 + sc.start + sc.lead); srcs.push(s); });
+  if (track) { const s = ac.createBufferSource(); s.buffer = track; s.connect(ac.destination); s.start(t0); srcs.push(s); }
   playing = { kind, srcs, raf: 0 }; btn.textContent = '■ Parar';
   const loop = () => { if (!playing || playing.kind !== kind) return; const t = ac.currentTime - t0; if (t >= R.total) { stopPlay(); return; } drawReelFrame(ctx, R, Math.max(0, t), b, T); playing.raf = requestAnimationFrame(loop); };
   loop();
@@ -3008,22 +3016,11 @@ function stopPlay(){
 }
 
 /* ---- exportar MP4 con voz ---- */
-function mixVoice(R, sr){
-  const len = Math.ceil(R.total * sr); let any = false; const out = new Float32Array(len);
-  R.scenes.forEach(sc => {
-    const ab = sc.audio; if (!ab) return; any = true;
-    const ch = ab.getChannelData(0), off = Math.round((sc.start + sc.lead) * sr), ratio = ab.sampleRate / sr;
-    for (let i = 0; off + i < len; i++) { const j = Math.floor(i * ratio); if (j >= ch.length) break; out[off + i] += ch[j]; }
-  });
-  if (!any) return null;
-  for (let i = 0; i < len; i++) out[i] = Math.max(-1, Math.min(1, out[i]));
-  return out;
-}
 async function encodeVideo(R, onProg){
   const b = readBrand(), T = themeColors();
   const W = 1080, H = 1920, fps = 30, N = Math.ceil(R.total * fps), SR = 48000;
   const c = document.createElement('canvas'); c.width = W; c.height = H; const ctx = c.getContext('2d');
-  const pcm = voiceOn() || Object.keys(S.voice.recs).length ? mixVoice(R, SR) : null;
+  const track = await buildSoundtrack(R), pcm = track ? track.getChannelData(0) : null;
   let note = '';
   if ('VideoEncoder' in window && window.Mp4Muxer) {
     let cfg = null;
@@ -3039,7 +3036,7 @@ async function encodeVideo(R, onProg){
     // sin codificador AAC: se graba en tiempo real con MediaRecorder, que sí mete la voz
     if (cfg && pcm && !acfg && rtAac()) cfg = null;
     if (cfg) {
-      if (pcm && !acfg) note = 'Este navegador no puede meter la voz en el MP4: usá Chrome o Edge actualizados en la compu. El video salió sin voz.';
+      if (pcm && !acfg) note = 'Este navegador no puede meter el audio en el MP4: usá Chrome o Edge actualizados en la compu. El video salió sin sonido.';
       const muxer = new Mp4Muxer.Muxer({ target: new Mp4Muxer.ArrayBufferTarget(), video: { codec: 'avc', width: W, height: H },
         audio: acfg ? { codec: acfg.codec === 'opus' ? 'opus' : 'aac', sampleRate: SR, numberOfChannels: acfg.numberOfChannels } : undefined,
         fastStart: 'in-memory', firstTimestampBehavior: 'offset' });
@@ -3061,7 +3058,7 @@ async function encodeVideo(R, onProg){
         const nch = acfg.numberOfChannels, F = 1024;
         for (let i = 0; i < pcm.length; i += F) {
           const n = Math.min(F, pcm.length - i), data = new Float32Array(n * nch);
-          for (let k = 0; k < nch; k++) data.set(pcm.subarray(i, i + n), k * n);
+          for (let k = 0; k < nch; k++) data.set(track.getChannelData(Math.min(k, track.numberOfChannels - 1)).subarray(i, i + n), k * n);
           const ad = new AudioData({ format: 'f32-planar', sampleRate: SR, numberOfFrames: n, numberOfChannels: nch, timestamp: Math.round(i * 1e6 / SR), data });
           aenc.encode(ad); ad.close();
           if (i % (F * 64) === 0) await sleep(0);
@@ -3081,8 +3078,7 @@ async function encodeVideo(R, onProg){
   let src = null;
   if (withAudio) {
     const ac = actx(); try { await ac.resume(); } catch {}
-    const buf = ac.createBuffer(1, pcm.length, SR); buf.getChannelData(0).set(pcm);
-    const dest = ac.createMediaStreamDestination(); src = ac.createBufferSource(); src.buffer = buf; src.connect(dest);
+    const dest = ac.createMediaStreamDestination(); src = ac.createBufferSource(); src.buffer = track; src.connect(dest);
     dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
   }
   const rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 9_000_000, audioBitsPerSecond: 128000 });
@@ -3092,7 +3088,7 @@ async function encodeVideo(R, onProg){
   await new Promise(res => { const step = () => { const t = (performance.now() - t0) / 1000; if (t >= R.total) { res(); return; } drawReelFrame(ctx, R, t, b, T); onProg(t / R.total); requestAnimationFrame(step); }; step(); });
   rec.stop(); await done; onProg(1);
   const ext = type.includes('mp4') ? 'mp4' : 'webm';
-  return { blob: new Blob(chunks, { type: type || 'video/webm' }), ext, audio: !!withAudio, note: pcm && !withAudio ? 'Este navegador grabó el video sin voz.' : '' };
+  return { blob: new Blob(chunks, { type: type || 'video/webm' }), ext, audio: !!withAudio, note: pcm && !withAudio ? 'Este navegador grabó el video sin sonido.' : '' };
 }
 function rtAac(){ try { return !!(window.MediaRecorder && MediaRecorder.isTypeSupported('video/mp4;codecs=avc1,mp4a.40.2')); } catch { return false; } }
 async function encodeReel(onProg){ return encodeVideo(await scenesWithVoice({ fmt: 'reel' }), onProg); }
@@ -3119,6 +3115,119 @@ function syncStoryFmt(){
   ['#storyPlay', '#storyRender', '#storyLen', '#storyVideoOpts'].forEach(id => $(id) && $(id).classList.toggle('hidden', !vid));
   ['#storyImgOpts'].forEach(id => $(id) && $(id).classList.toggle('hidden', vid || isLocalOwn()));
 }
+
+/* ============ música de fondo (generada acá, sin derechos de autor) ============ */
+const VOICE_LIST = [
+  ['es-AR-TomasNeural', 'Tomás · Argentina'], ['es-AR-ElenaNeural', 'Elena · Argentina'],
+  ['es-UY-MateoNeural', 'Mateo · rioplatense (Uruguay)'], ['es-UY-ValentinaNeural', 'Valentina · rioplatense (Uruguay)'],
+  ['en-US-AndrewMultilingualNeural', 'Andrés · más expresiva, acento neutro'], ['en-US-AvaMultilingualNeural', 'Ava · más expresiva, acento neutro'],
+];
+const VOICE_PREMIUM = { openai: [['oa:marin', 'Marina · premium, muy natural'], ['oa:cedar', 'Cedro · premium, muy natural'], ['oa:coral', 'Coral · premium, cálida'], ['oa:ash', 'Ash · premium, grave']], eleven: [['el:default', 'ElevenLabs · tu voz elegida']] };
+function fillVoices(){
+  const sel = $('#voiceSel'); if (!sel) return;
+  const prem = (S.server && S.server.ttsPremium) || {};
+  const opt = ([v, t]) => `<option value="${v}">${t}</option>`;
+  let h = '';
+  if (prem.openai || prem.eleven) h += `<optgroup label="Premium (las más humanas)">${[...(prem.openai ? VOICE_PREMIUM.openai : []), ...(prem.eleven ? VOICE_PREMIUM.eleven : [])].map(opt).join('')}</optgroup>`;
+  h += `<optgroup label="Gratis">${VOICE_LIST.map(opt).join('')}</optgroup><option value="off">Sin voz automática (solo mi voz grabada)</option>`;
+  sel.innerHTML = h;
+  if (![...sel.options].some(o => o.value === S.voice.name)) { S.voice.name = (prem.openai ? 'oa:marin' : 'es-AR-TomasNeural'); store.set('voice', S.voice.name); }
+  sel.value = S.voice.name;
+  const hint = $('#voiceHint'); if (hint) hint.textContent = prem.openai || prem.eleven ? '' : 'Para una voz todavía más humana, cargá OPENAI_API_KEY en Vercel (ver GUIA-VOZ.md).';
+}
+
+S.music = store.get('music', 'auto');
+const MUSIC_NAMES = { lofi: 'Lo-fi tranqui', calma: 'Calma', pulso: 'Con ritmo', off: 'Sin música' };
+function musicStyle(){ return S.music === 'auto' ? pickR(['lofi', 'calma', 'pulso'], 51) : S.music; }
+const mtof = n => 440 * Math.pow(2, (n - 69) / 12);
+const PROGS = [
+  [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]],
+  [[2, 5, 9, 12], [7, 11, 14, 17], [0, 4, 7, 11], [0, 4, 7, 11]],
+  [[9, 12, 16, 19], [5, 9, 12, 16], [0, 4, 7, 11], [7, 11, 14, 17]],
+  [[0, 4, 7, 11], [4, 7, 11, 14], [9, 12, 16, 19], [5, 9, 12, 16]],
+];
+// arma toda la banda de sonido (música + whoosh + voz con la música bajando cuando habla)
+async function buildSoundtrack(R){
+  const style = musicStyle(), hasVoice = R.scenes.some(sc => sc.audio);
+  if (style === 'off' && !hasVoice) return null;
+  const SR = 48000, total = R.total, oc = new OfflineAudioContext(2, Math.ceil(total * SR), SR);
+  const comp = oc.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4; comp.attack.value = 0.005; comp.release.value = 0.2;
+  const master = oc.createGain(); master.gain.value = 0.95; comp.connect(master); master.connect(oc.destination);
+  const noise = oc.createBuffer(1, SR, SR); { const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const voiceSegs = R.scenes.filter(sc => sc.audio).map(sc => [sc.start + sc.lead, sc.start + sc.lead + sc.audio.duration]);
+  if (style !== 'off') {
+    const bus = oc.createGain(); bus.connect(comp);
+    // volumen: entra suave, baja cuando habla la voz y se va al final
+    const base = (hasVoice ? 0.62 : 0.9) * (style === 'calma' ? 1.5 : 1), duck = 0.3 * (style === 'calma' ? 1.5 : 1), pts = [[0, 0], [0.7, voiceSegs.length && voiceSegs[0][0] < 0.8 ? duck : base]];
+    voiceSegs.forEach(([a, z], i) => {
+      const a2 = Math.max(0.75, a - 0.15), next = voiceSegs[i + 1], cur = pts[pts.length - 1][1];
+      pts.push([a2, cur], [a2 + 0.12, duck]);
+      if (!next || next[0] - z > 0.9) pts.push([z + 0.15, duck], [z + 0.6, base]);
+    });
+    pts.push([Math.max(0.8, total - 1.8), pts[pts.length - 1][1]], [total, 0]);
+    let last = -1; const g = bus.gain;
+    pts.forEach(([t, v], i) => { if (t <= last) return; if (i === 0) g.setValueAtTime(v, t); else g.linearRampToValueAtTime(v, t); last = t; });
+    const warm = oc.createBiquadFilter(); warm.type = 'lowpass'; warm.frequency.value = style === 'pulso' ? 5200 : 3200; warm.connect(bus);
+    const root = 48 + Math.floor(rv(53) * 7), prog = pickR(PROGS, 55);
+    const bpm = style === 'lofi' ? 80 + Math.floor(rv(57) * 10) : style === 'calma' ? 68 : 110 + Math.floor(rv(57) * 8);
+    const beat = 60 / bpm, barLen = beat * 4, chordLen = style === 'calma' ? barLen * 2 : barLen;
+    const tone = (type, f, t0, dur, vol, att, rel, dest, det) => {
+      const o = oc.createOscillator(), e = oc.createGain(); o.type = type; o.frequency.value = f; if (det) o.detune.value = det;
+      e.gain.setValueAtTime(0, t0); e.gain.linearRampToValueAtTime(vol, t0 + att); e.gain.setValueAtTime(vol, Math.max(t0 + att, t0 + dur - rel)); e.gain.linearRampToValueAtTime(0, t0 + dur);
+      o.connect(e); e.connect(dest || warm); o.start(t0); o.stop(t0 + dur + 0.05);
+    };
+    const hit = (t0, f, dur, vol, type, q, dest) => {
+      const s = oc.createBufferSource(), fl = oc.createBiquadFilter(), e = oc.createGain(); s.buffer = noise; fl.type = type; fl.frequency.value = f; if (q) fl.Q.value = q;
+      e.gain.setValueAtTime(vol, t0); e.gain.exponentialRampToValueAtTime(0.0008, t0 + dur); s.connect(fl); fl.connect(e); e.connect(dest || bus); s.start(t0, Math.random() * 0.5); s.stop(t0 + dur + 0.02);
+    };
+    const kick = (t0, vol) => { const o = oc.createOscillator(), e = oc.createGain(); o.frequency.setValueAtTime(115, t0); o.frequency.exponentialRampToValueAtTime(44, t0 + 0.13); e.gain.setValueAtTime(vol, t0); e.gain.exponentialRampToValueAtTime(0.001, t0 + 0.38); o.connect(e); e.connect(bus); o.start(t0); o.stop(t0 + 0.4); };
+    const padF = oc.createBiquadFilter(); padF.type = 'lowpass'; padF.frequency.value = style === 'lofi' ? 950 : 1500; padF.connect(warm);
+    for (let t = 0, ci = 0; t < total; t += chordLen, ci++) {
+      const ch = prog[ci % prog.length], dur = Math.min(chordLen, total - t) + 0.25;
+      if (style === 'pulso') {
+        for (let k = 0; k < chordLen / beat; k++) { const tt = t + k * beat + beat / 2; if (tt < total) ch.slice(0, 3).forEach(n => tone('sawtooth', mtof(root + 12 + n), tt, beat * 0.35, 0.018, 0.01, 0.12, padF)); }
+        ch.forEach(n => tone('triangle', mtof(root + n), t, dur, 0.012, 0.3, 0.4, padF));
+      } else ch.forEach(n => { tone('triangle', mtof(root + n), t, dur, 0.032, 0.7, 0.9, padF, -6); tone('sine', mtof(root + 12 + n), t, dur, 0.012, 0.9, 0.9, padF, 7); });
+      const bass = mtof(root - 12 + ch[0]);
+      if (style === 'calma') tone('sine', bass, t, dur, 0.07, 0.6, 1.0);
+      else for (let k = 0; k < chordLen / beat; k += style === 'pulso' ? 1 : 2) { const tt = t + k * beat; if (tt < total) tone(style === 'pulso' ? 'triangle' : 'sine', bass, tt, beat * (style === 'pulso' ? 0.8 : 1.7), 0.11, 0.02, 0.2); }
+      if (style === 'calma') for (let k = 0; k < 8 * (chordLen / barLen); k++) { const tt = t + k * beat / 2; if (tt < total && (k % 3 !== 2)) tone('sine', mtof(root + 24 + ch[k % ch.length]), tt, beat * 0.9, 0.022, 0.01, 0.6); }
+    }
+    if (style !== 'calma') {
+      const sw = style === 'lofi' ? beat * 0.12 : 0;
+      for (let t = 0, k = 0; t < total - 0.2; t += beat / 2, k++) {
+        const onBeat = k % 2 === 0, b4 = (k / 2) % 4;
+        if (style === 'lofi') {
+          if (onBeat && (b4 === 0 || b4 === 2)) kick(t, 0.32);
+          if (!onBeat && b4 === 2.5 && rv(60 + k) < 0.5) kick(t + sw, 0.2);
+          if (onBeat && (b4 === 1 || b4 === 3)) hit(t, 1800, 0.18, 0.11, 'bandpass', 0.8);
+          hit(t + (onBeat ? 0 : sw), 7500, 0.045, onBeat ? 0.035 : 0.022, 'highpass');
+        } else {
+          if (onBeat) kick(t, 0.4);
+          if (onBeat && (b4 === 1 || b4 === 3)) hit(t, 1500, 0.16, 0.13, 'bandpass', 0.7);
+          if (!onBeat) hit(t, 8000, 0.11, 0.04, 'highpass');
+        }
+      }
+    }
+    if (style === 'lofi') { for (let t = 0.1; t < total; t += 0.08 + Math.random() * 0.5) hit(t, 3000, 0.004, 0.06 * Math.random(), 'highpass'); hit(0, 1200, total, 0.006, 'lowpass'); }
+    // whoosh en cada cambio de pantalla
+    R.scenes.forEach(sc => {
+      if (!sc.index) return;
+      const t0 = Math.max(0, sc.start - 0.32), s = oc.createBufferSource(), f = oc.createBiquadFilter(), e = oc.createGain();
+      s.buffer = noise; s.loop = true; f.type = 'bandpass'; f.Q.value = 1.4; f.frequency.setValueAtTime(350, t0); f.frequency.exponentialRampToValueAtTime(3800, t0 + 0.42);
+      e.gain.setValueAtTime(0, t0); e.gain.linearRampToValueAtTime(0.085, t0 + 0.3); e.gain.linearRampToValueAtTime(0, t0 + 0.5);
+      s.connect(f); f.connect(e); e.connect(comp); s.start(t0); s.stop(t0 + 0.55);
+    });
+  }
+  // voz: un poco de cuerpo y presencia
+  const hp = oc.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 85;
+  const pres = oc.createBiquadFilter(); pres.type = 'peaking'; pres.frequency.value = 3200; pres.gain.value = 2.5;
+  const vg = oc.createGain(); vg.gain.value = 1.05; hp.connect(pres); pres.connect(vg); vg.connect(comp);
+  R.scenes.forEach(sc => { if (!sc.audio) return; const s = oc.createBufferSource(); s.buffer = sc.audio; s.connect(hp); s.start(sc.start + sc.lead); });
+  return oc.startRendering();
+}
+
+function syncMusicInfo(){ const i = $('#musicInfo'); if (i) i.textContent = S.music === 'auto' ? `Esta vez: ${MUSIC_NAMES[musicStyle()]}. Baja sola cuando habla la voz.` : ''; }
 
 /* ============ render ============ */
 let fontsReady = false;
@@ -3151,7 +3260,7 @@ function renderAll(){
   renderChecks();
   if (!playing || playing.kind !== 'reel') { const R = reelScenes({ fmt: 'reel' }); $('#reelLen').textContent = `1080×1920 · ${R.scenes.some(z => z.audio) ? '' : '≈ '}${Math.round(R.total)} s`; drawReelFrame($('#cReel').getContext('2d'), R, 2.6, b, T); }
   if (S.storyFmt === 'video' && (!playing || playing.kind !== 'story')) { const R = reelScenes({ fmt: 'story' }); $('#storyLen').textContent = `${R.scenes.some(z => z.audio) ? '' : '≈ '}${Math.round(R.total)} s`; drawReelFrame($('#cStory').getContext('2d'), R, 2.6, b, T); }
-  renderScripts(); syncStoryFmt();
+  renderScripts(); syncStoryFmt(); syncMusicInfo();
 }
 function fileBase(){ if (S.mode === 'brand') return 'mi-marca'; return ((isLocal() ? $('#l-name').value.trim() : '') || readModel().name || 'proyecto').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase() || 'proyecto'; }
 
@@ -3332,7 +3441,9 @@ $('#reelRender').onclick = () => renderVideoFile('reel');
 $('#storyPlay').onclick = () => playVideo('story');
 $('#storyRender').onclick = () => renderVideoFile('story');
 $$('#storyFmt .chip').forEach(c => c.onclick = () => { S.storyFmt = c.dataset.f; store.set('storyFmt', S.storyFmt); if (playing) stopPlay(); renderAll(); });
-$('#voiceSel').value = S.voice.name;
+fillVoices();
+$('#musicSel').value = S.music;
+$('#musicSel').onchange = () => { S.music = $('#musicSel').value; store.set('music', S.music); syncMusicInfo(); };
 $('#voiceSel').onchange = () => { S.voice.name = $('#voiceSel').value; store.set('voice', S.voice.name); renderScripts(true); renderAll(); };
 $('#dlAll').onclick = downloadAll;
 $('#regenCap').onclick = () => { S.capV = (capVersion() + 1) % 3; if (isLocalOwn()) makeLocalCaption(); else makeCaption(); renderChecks(); toast('Otra versión del texto'); };
