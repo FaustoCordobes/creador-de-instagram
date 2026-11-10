@@ -31,6 +31,12 @@ async function igPublic(user){
       }
     }
   } catch {}
+  // 1b) el mismo JSON desde www (otra ruta, a veces responde distinto)
+  try {
+    const r = await fetch(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${user}`, { signal: ctl(), headers: {
+      'x-ig-app-id': '936619743392459', 'X-Requested-With': 'XMLHttpRequest', Referer: `https://www.instagram.com/${user}/`, 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'Accept-Language': 'es-AR,es;q=0.9' } });
+    if (r.ok) { const u = ((await r.json()).data || {}).user; if (u) return { source: 'public', username: u.username, name: u.full_name, biography: u.biography, website: u.external_url, profile_picture_url: u.profile_pic_url_hd || u.profile_pic_url, category: u.category_name || '', phone: u.business_phone_number || '', address: '', private: !!u.is_private, media: { data: ((u.edge_owner_to_timeline_media || {}).edges || []).slice(0, 12).map(e => ({ media_type: e.node.is_video ? 'VIDEO' : 'IMAGE', media_url: e.node.display_url, caption: (((e.node.edge_media_to_caption || {}).edges || [])[0] || { node: { text: '' } }).node.text })) } }; }
+  } catch {}
   // 2) las etiquetas de la página (nombre y foto de perfil)
   const r = await fetch(`https://www.instagram.com/${user}/`, { signal: ctl(), headers: { 'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)', 'Accept-Language': 'es-AR,es;q=0.9' } });
   const html = await r.text();

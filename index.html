@@ -117,6 +117,8 @@ aside{counter-reset:st}
 .vbar span{display:flex;gap:4px}
 .pcol{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);flex:1}
 .pcol input{width:42px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);padding:2px}
+.bmbox{display:flex;gap:10px;align-items:center;margin-top:8px;padding:10px;border:1px dashed #3a4153;border-radius:10px}
+.bmbox .btn{flex:0 0 auto;cursor:grab}
 .hidden{display:none!important}
 </style>
 </head>
@@ -173,6 +175,10 @@ aside{counter-reset:st}
       <button class="btn pri" id="lLinkGo" style="flex:0 0 auto">Traer todo</button>
     </div>
     <p class="hint">Con un solo link completa datos, logo y fotos. Después revisá todo.</p>
+    <div class="bmbox">
+      <a class="btn sm" id="bmLink" href="#" title="Arrastralo a la barra de favoritos">📥 Traer de Instagram</a>
+      <span class="hint" style="margin:0">Para Instagram, lo más seguro: <b>arrastrá este botón a tu barra de favoritos</b> (una sola vez). Después abrí el perfil del local en Instagram y tocalo: los datos y las fotos llegan solos acá.</span>
+    </div>
     <div class="status" id="lStatus"></div>
     <label class="f">¿Para quién es el contenido?</label>
     <div class="chips" id="purpose">
@@ -2018,7 +2024,7 @@ function fromBio(bio){
   out.bio = lines.filter(l => l !== addr && !/wa\.me|whats/i.test(l)).map(l => (l === hrs ? l.replace(HR, '').replace(/🕒|⏰|horarios?:?/gi, '') : l).trim()).filter(Boolean).reduce((acc, l) => !acc ? l : acc + (/[.!?…]$/.test(acc) ? ' ' : '. ') + l, '').replace(/\s+/g, ' ').replace(/\s+([.,])/g, '$1').trim();
   return out;
 }
-async function imgFromUrl(url, name){ const b = await netFetch(url); if (!b || !b.size) return null; return makeShot(b, name); }
+async function imgFromUrl(url, name){ if (/^data:image\//.test(url || '')) return makeShot(dataUrlBlob(url), name); const b = await netFetch(url); if (!b || !b.size) return null; return makeShot(b, name); }
 async function fetchPlace(q){
   const j = await api('api/place', { q }, 'GET');
   return (j.places || [])[0] || null;
@@ -2030,7 +2036,7 @@ async function localFromLink(){
   const btn = $('#lLinkGo'); btn.disabled = true;
   const notes = [];
   try {
-    if (!S.server && L.kind !== 'web' && L.kind !== 'tiktok') { lstatus('Traer datos de Google o Instagram funciona en tu versión de Vercel (con las claves configuradas). Acá completá los datos a mano.', true); return; }
+    if (!S.server && L.kind !== 'web' && L.kind !== 'tiktok' && !(L.kind === 'ig' && S.pendingIg)) { lstatus('Traer datos de Google o Instagram funciona en tu versión de Vercel (con las claves configuradas). Acá completá los datos a mano.', true); return; }
     // validar antes de borrar nada
     if (L.kind === 'ig' && !L.user) throw new Error('No encontré el usuario en ese link de Instagram.');
     if (false) {
@@ -2058,18 +2064,19 @@ async function localFromLink(){
       lstatus(`Leyendo @${L.user} en Instagram…`);
       let d = null, dErr = null;
       // solo lo que el local publica: perfil público, sin pedir permisos de Meta
-      try { d = await api('api/ig', { action: 'public', username: L.user }); if (d && d.private) warn = '@' + L.user + ' es una cuenta privada: solo pude traer el nombre y el logo.'; }
+      if (S.pendingIg && (S.pendingIg.username || '').toLowerCase() === (L.user || '').toLowerCase()) { d = S.pendingIg; S.pendingIg = null; }
+      else try { d = await api('api/ig', { action: 'public', username: L.user }); if (d && d.private) warn = '@' + L.user + ' es una cuenta privada: solo pude traer el nombre y el logo.'; }
       catch (e) { if (e.status === 401) throw e; dErr = e; }
-      if (!d && S.server.ig) { try { d = await api('api/ig', { action: 'discover', username: L.user }); } catch {} }
+      if (!d && (S.server && S.server.ig)) { try { d = await api('api/ig', { action: 'discover', username: L.user }); } catch {} }
       if (!d) {
-        const e = { code: 'none', message: 'Instagram no dejó ver el perfil público desde el servidor' };
+        const e = { code: 'none', message: 'Instagram bloquea las lecturas desde servidores. Usá el botón "📥 Traer de Instagram" (instrucciones abajo del link)' };
         // no se pudo leer: igual armamos el contenido con lo que hay
         warn = e.code === 'perm' ? 'Instagram no me dejó leer @' + L.user + ': a tu conexión le falta el permiso instagram_manage_insights. Se arregla en 2 minutos (GUIA-INSTAGRAM.md, paso 7). Mientras tanto cargué el nombre: pegá la bio y subí 3 o 4 fotos del local.'
           : e.code === 'personal' ? '@' + L.user + ' es una cuenta personal: Instagram solo deja leer cuentas de empresa o creador. Cargué el nombre: pegá la bio y subí 3 o 4 fotos del local.'
           : 'No pude leer @' + L.user + ' (' + e.message + '). Cargué el nombre: pegá la bio y subí fotos del local.';
         set('ig', '@' + L.user);
         set('name', L.user.replace(/[._]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).trim());
-        if (S.server.google) { try { place = await fetchPlace(`${$('#l-name').value} ${readBrand().city || ''}`); } catch {} }
+        if (S.server && S.server.google) { try { place = await fetchPlace(`${$('#l-name').value} ${readBrand().city || ''}`); } catch {} }
       }
       if (d) {
       if (d.category) set('rubro', d.category); if (d.phone) set('wa', phoneDigits(d.phone)); if (d.address) set('address', d.address);
@@ -2081,8 +2088,8 @@ async function localFromLink(){
       lstatus(`Bajando ${media.length} fotos de Instagram…`);
       const shots = await Promise.all(media.map(async (m, i) => { const sh = await imgFromUrl(m.u, `ig-${i + 1}.jpg`).catch(() => null); if (sh) sh.caption = shortCap(m.c); return sh; }));
       shots.filter(Boolean).forEach(sh => { sh.manual = true; S.shots.push(sh); });
-      notes.push(d.source === 'og' ? 'Instagram: nombre y logo (no dejó ver las fotos: subí 3 o 4 del local)' : `Instagram: ${S.shots.length} fotos y el logo`);
-      if (S.server.google) { try { place = await fetchPlace(`${$('#l-name').value} ${readBrand().city || ''}`); } catch {} }
+      notes.push(d.source === 'navegador' ? `Instagram (desde tu navegador): ${S.shots.length} fotos, logo y datos` : d.source === 'og' ? 'Instagram: nombre y logo (no dejó ver las fotos: subí 3 o 4 del local)' : `Instagram: ${S.shots.length} fotos y el logo`);
+      if (S.server && S.server.google) { try { place = await fetchPlace(`${$('#l-name').value} ${readBrand().city || ''}`); } catch {} }
       }
     } else if (L.kind === 'query') {
       if (!S.server.google) throw new Error('Para links de Google falta configurar GOOGLE_PLACES_KEY en Vercel (ver GUIA-GOOGLE.md).');
@@ -3460,6 +3467,7 @@ async function clientPackage(){
   finally { btn.disabled = false; btn.textContent = '📦 Armar paquete para el cliente'; }
 }
 
+const BM_CODE = "(async()=>{const APP='__APP__';if(!/(^|\\.)instagram\\.com$/.test(location.hostname)){alert('Abrí primero el Instagram del local (instagram.com/usuario) y tocá este botón ahí.');return}const user=location.pathname.split('/').filter(Boolean)[0];if(!user||/^(p|reel|reels|explore|stories|direct|accounts)$/.test(user)){alert('Entrá al perfil del local (instagram.com/usuario) y tocá el botón de nuevo.');return}const w=window.open(APP,'igstudio');let ok=false;window.addEventListener('message',e=>{if(e.data&&e.data.type==='igstudio-ok')ok=true});try{const r=await fetch('/api/v1/users/web_profile_info/?username='+encodeURIComponent(user),{headers:{'X-IG-App-ID':'936619743392459'},credentials:'include'});const u=((await r.json()).data||{}).user;if(!u)throw new Error('Instagram no devolvió el perfil');let addr='';try{const a=JSON.parse(u.business_address_json||'{}');addr=[a.street_address,a.city_name].filter(Boolean).join(', ')}catch(e){}const toData=async url=>{try{const b=await(await fetch(url)).blob();return await new Promise(res=>{const f=new FileReader();f.onload=()=>res(f.result);f.readAsDataURL(b)})}catch(e){return url}};const nodes=((u.edge_owner_to_timeline_media||{}).edges||[]).map(e=>e.node).slice(0,10);const media=[];for(const n of nodes){media.push({media_type:n.is_video?'VIDEO':'IMAGE',media_url:await toData(n.display_url),caption:(((n.edge_media_to_caption||{}).edges||[])[0]||{node:{text:''}}).node.text})}const d={source:'navegador',username:u.username,name:u.full_name,biography:u.biography,website:u.external_url,profile_picture_url:await toData(u.profile_pic_url_hd||u.profile_pic_url),category:u.category_name||'',phone:u.business_phone_number||u.public_phone_number||'',address:addr,private:!!u.is_private,media:{data:media}};for(let i=0;i<90&&!ok;i++){try{w.postMessage({type:'igstudio-import',data:d},new URL(APP).origin)}catch(e){}await new Promise(r=>setTimeout(r,500))}if(!ok)alert('No pude pasar los datos al Estudio. Fijate que se haya abierto la pestaña y probá de nuevo.')}catch(e){alert('No pude leer el perfil ('+e.message+'). ¿Iniciaste sesión en Instagram en este navegador?')}})();";
 /* ============ render ============ */
 let fontsReady = false;
 async function ensureFonts(){
@@ -3694,6 +3702,20 @@ $('#pFill').onclick = () => { posterFill(); renderPoster(); };
 $('#posterPng').onclick = async () => saveFile(`${fileBase()}-cartel-${S.poster.fmt}.png`, await canvasBlob(posterHiRes()));
 $('#posterPdf').onclick = async () => saveFile(`${fileBase()}-cartel-A4.pdf`, await posterPdfBlob());
 $('#pkgGo').onclick = clientPackage;
+// botón de favoritos: lee el perfil desde el navegador del usuario (con su sesión) y lo manda acá
+{ const app = location.origin + location.pathname; $('#bmLink').href = 'javascript:' + encodeURIComponent(BM_CODE.replace('__APP__', app)); }
+$('#bmLink').onclick = e => { e.preventDefault(); toast('Arrastralo a la barra de favoritos y tocalo estando en el Instagram del local'); };
+window.addEventListener('message', async e => {
+  if (!/^https:\/\/([a-z0-9-]+\.)*instagram\.com$/.test(e.origin)) return;
+  const m = e.data; if (!m || m.type !== 'igstudio-import' || !m.data || !m.data.username) return;
+  try { e.source.postMessage({ type: 'igstudio-ok' }, e.origin); } catch {}
+  if (S.igImporting) return; S.igImporting = true;
+  try {
+    if (S.mode !== 'local') setMode('local');
+    S.pendingIg = m.data; $('#lLink').value = 'https://www.instagram.com/' + m.data.username + '/';
+    window.focus(); await localFromLink();
+  } finally { S.igImporting = false; }
+});
 $('#m-points').addEventListener('input', () => debounce(() => { makeBrandCaption(); renderAll(); }));
 ['#f-caption', '#f-hashtags'].forEach(id => $(id).addEventListener('input', () => debounce(renderChecks, 300)));
 $('#copyCap').onclick = async () => {
