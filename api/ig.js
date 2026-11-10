@@ -28,6 +28,7 @@ module.exports = async (req, res) => {
       version: (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || null,
       vars: Object.keys(process.env).filter(k => /^(IG_|META_|STUDIO_|GOOGLE_|BLOB_)/.test(k)).sort(),
       metaApp: !!(process.env.META_APP_ID && process.env.META_APP_SECRET),
+      metaInfo: { idLen: String(process.env.META_APP_ID || '').trim().length, secretLen: String(process.env.META_APP_SECRET || '').trim().length },
       google: !!process.env.GOOGLE_PLACES_KEY,
       blob: !!(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID),
       blobMode: process.env.BLOB_READ_WRITE_TOKEN ? 'token' : (process.env.BLOB_STORE_ID ? 'presigned' : null),
@@ -39,10 +40,12 @@ module.exports = async (req, res) => {
 
   try {
     if (action === 'setup') {
-      const { META_APP_ID: id, META_APP_SECRET: secret } = process.env;
+      const id = String(process.env.META_APP_ID || '').replace(/["'\s]/g, ''), secret = String(process.env.META_APP_SECRET || '').replace(/["'\s]/g, '');
       if (!id || !secret) throw new Error('Faltan META_APP_ID y META_APP_SECRET en Vercel.');
       if (!body.token) throw new Error('Pegá el token de Graph API Explorer.');
-      const long = await graph('/oauth/access_token', { grant_type: 'fb_exchange_token', client_id: id, client_secret: secret, fb_exchange_token: body.token.trim() });
+      let long;
+      try { long = await graph('/oauth/access_token', { grant_type: 'fb_exchange_token', client_id: id, client_secret: secret, fb_exchange_token: body.token.trim() }); }
+      catch (e) { if (/client secret/i.test(e.message)) throw new Error('La clave secreta de Meta (META_APP_SECRET) no coincide con la app ' + id + '. Copiala de nuevo desde Configuración de la app → Básica (tocá Mostrar), cargala en Vercel y hacé Redeploy.'); throw e; }
       const pages = await graph('/me/accounts', { fields: 'name,access_token,instagram_business_account{id,username}', access_token: long.access_token });
       const out = (pages.data || []).map(p => ({ page: p.name, pageToken: p.access_token, igId: p.instagram_business_account && p.instagram_business_account.id, igUser: p.instagram_business_account && p.instagram_business_account.username }));
       if (!out.length) throw new Error('El token no ve ninguna Página. Revisá que hayas dado el permiso pages_show_list y elegido tu Página.');
