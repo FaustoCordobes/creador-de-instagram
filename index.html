@@ -1781,7 +1781,7 @@ async function api(path, body, method){
   const url = method === 'GET' && body ? path + '?' + new URLSearchParams(body) : path;
   const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'x-studio-key': studioKey() }, body: method === 'POST' ? JSON.stringify(body || {}) : undefined });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok || j.error) { const e = new Error(j.error || ('Error ' + r.status)); e.status = r.status; throw e; }
+  if (!r.ok || j.error) { const e = new Error(j.error || ('Error ' + r.status)); e.status = r.status; e.code = j.code; throw e; }
   return j;
 }
 async function detectServer(){
@@ -1811,7 +1811,8 @@ async function refreshAccount(){
     const a = await api('api/ig', { action: 'status' });
     S.igAccount = a;
     const used = a.limit ? ` · usaste ${a.limit.quota_usage} de ${(a.limit.config && a.limit.config.quota_total) || 50} publicaciones hoy` : '';
-    box.innerHTML = `Conectado como <b style="color:var(--ink)">@${a.username}</b>${a.followers_count != null ? ` · ${a.followers_count} seguidores` : ''}${used}`;
+    box.innerHTML = `Conectado como <b style="color:var(--ink)">@${a.username}</b>${a.followers_count != null ? ` · ${a.followers_count} seguidores` : ''}${used}`
+      + (a.missing && a.missing.length ? `<br><span style="color:#ffd36b">⚠️ A tu conexión le falta: ${a.missing.join(', ')}. ${a.missing.includes('instagram_manage_insights') ? 'Sin ese permiso "Un local" no puede leer otros Instagram. ' : ''}Ver GUIA-INSTAGRAM.md, paso 7.</span>` : '');
   } catch (e) { box.textContent = e.status === 401 ? 'Clave del estudio incorrecta. ' + await keyDiagnosis() : 'No pude leer la cuenta: ' + e.message; }
 }
 
@@ -1997,13 +1998,25 @@ async function localFromLink(){
     // empezar de cero
     LFIELDS.forEach(k => $('#l-' + k).value = ''); LTF.forEach(k => $('#lf-' + k).value = '');
     S.shots = []; S.logo = null; $('#logoSlot').textContent = 'sin logo'; $('#delLogo').classList.add('hidden'); $('#lDemoBadge').classList.add('hidden');
-    let design = null, place = null;
+    let design = null, place = null, warn = '';
     const set = (k, v) => { if (v && !$('#l-' + k).value.trim()) $('#l-' + k).value = v; };
     if (L.kind === 'gshort') { lstatus('Abriendo el link de Google…'); try { const r = await api('api/place', { resolve: L.url }, 'GET'); L = linkKind(r.url); } catch { L = { kind: 'query', q: '' }; } if (!L.q && L.kind === 'query') throw new Error('No pude leer ese link corto de Google. Probá con el link largo o escribí el nombre del local.'); }
 
     if (L.kind === 'ig') {
       lstatus(`Leyendo @${L.user} en Instagram…`);
-      const d = await api('api/ig', { action: 'discover', username: L.user });
+      let d = null;
+      try { d = await api('api/ig', { action: 'discover', username: L.user }); }
+      catch (e) {
+        if (e.status === 401) throw e;
+        // no se pudo leer: igual armamos el contenido con lo que hay
+        warn = e.code === 'perm' ? 'Instagram no me dejó leer @' + L.user + ': a tu conexión le falta el permiso instagram_manage_insights. Se arregla en 2 minutos (GUIA-INSTAGRAM.md, paso 7). Mientras tanto cargué el nombre: pegá la bio y subí 3 o 4 fotos del local.'
+          : e.code === 'personal' ? '@' + L.user + ' es una cuenta personal: Instagram solo deja leer cuentas de empresa o creador. Cargué el nombre: pegá la bio y subí 3 o 4 fotos del local.'
+          : 'No pude leer @' + L.user + ' (' + e.message + '). Cargué el nombre: pegá la bio y subí fotos del local.';
+        set('ig', '@' + L.user);
+        set('name', L.user.replace(/[._]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).trim());
+        if (S.server.google) { try { place = await fetchPlace(`${$('#l-name').value} ${readBrand().city || ''}`); } catch {} }
+      }
+      if (d) {
       set('name', d.name || d.username); set('ig', '@' + (d.username || L.user)); set('web', d.website && !/instagram\.com|linktr\.ee/i.test(d.website) ? d.website.replace(/^https?:\/\//, '').replace(/\/$/, '') : '');
       const fb = fromBio(d.biography || ''); set('bio', fb.bio); set('wa', fb.wa); set('address', fb.address); set('hours', fb.hours);
       if (d.profile_picture_url) { const lg = await imgFromUrl(d.profile_picture_url, 'perfil.jpg'); if (lg) { S.logo = lg; const pp = imagePalette(lg.img); S.logoBg = pp.dominant || '#fff'; $('#logoSlot').innerHTML = `<img src="${lg.url}" alt="">`; $('#delLogo').classList.remove('hidden'); design = designFromImage(lg.img, true); } }
@@ -2014,6 +2027,7 @@ async function localFromLink(){
       shots.filter(Boolean).forEach(sh => { sh.manual = true; S.shots.push(sh); });
       notes.push(`Instagram: ${S.shots.length} fotos y el logo`);
       if (S.server.google) { try { place = await fetchPlace(`${$('#l-name').value} ${readBrand().city || ''}`); } catch {} }
+      }
     } else if (L.kind === 'query') {
       if (!S.server.google) throw new Error('Para links de Google falta configurar GOOGLE_PLACES_KEY en Vercel (ver GUIA-GOOGLE.md).');
       lstatus(`Buscando "${L.q}" en Google Maps…`);
@@ -2060,7 +2074,8 @@ async function localFromLink(){
     renderShotList();
     if (S.purpose === 'caso') { caseFromLocal(); makeCaption(); } else { localAutoTexts(true); makeLocalCaption(); }
     if (design) await applyAuto(design); else renderAll();
-    lstatus(`Listo: ${notes.join(' · ') || 'datos cargados'}. Revisá todo${$('#l-wa').value ? ' (fijate que el teléfono sea el WhatsApp)' : ''}.`);
+    if (warn) lstatus('⚠️ ' + warn + (notes.length ? ' (También: ' + notes.join(' · ') + '.)' : ''), true);
+    else lstatus(`Listo: ${notes.join(' · ') || 'datos cargados'}. Revisá todo${$('#l-wa').value ? ' (fijate que el teléfono sea el WhatsApp)' : ''}.`);
   } catch (e) {
     lstatus(e.status === 401 ? 'Clave del estudio incorrecta (ponela en la pestaña "🚀 Subir a IG").' : (e.message || 'No pude leer ese link.'), true);
     renderAll();

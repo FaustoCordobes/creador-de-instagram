@@ -60,7 +60,13 @@ module.exports = async (req, res) => {
     if (action === 'status') {
       const me = await graph('/' + IGID(), { fields: 'username,name,profile_picture_url,followers_count,media_count', access_token: TOKEN() });
       let limit = null; try { limit = await graph('/' + IGID() + '/content_publishing_limit', { fields: 'quota_usage,config', access_token: TOKEN() }); } catch {}
-      return res.json({ ...me, limit: limit && limit.data && limit.data[0] });
+      let scopes = null;
+      try {
+        const id = String(process.env.META_APP_ID || '').replace(/["'\s]/g, ''), secret = String(process.env.META_APP_SECRET || '').replace(/["'\s]/g, '');
+        if (id && secret) { const d = await graph('/debug_token', { input_token: TOKEN(), access_token: id + '|' + secret }); scopes = (d.data && d.data.scopes) || null; }
+      } catch {}
+      const need = ['instagram_basic', 'instagram_content_publish', 'instagram_manage_insights', 'pages_read_engagement', 'pages_show_list'];
+      return res.json({ ...me, limit: limit && limit.data && limit.data[0], scopes, missing: scopes ? need.filter(x => !scopes.includes(x)) : null });
     }
 
     if (action === 'discover') {
@@ -70,10 +76,13 @@ module.exports = async (req, res) => {
       const full = `business_discovery.username(${user}){username,name,biography,website,profile_picture_url,followers_count,media_count,media.limit(18){${mediaFields}}}`;
       const lite = `business_discovery.username(${user}){username,biography,website,followers_count,media_count,media.limit(18){caption,media_type,media_url,permalink}}`;
       let j;
+      const perm = e => e && ((e.meta && (e.meta.code === 10 || e.meta.code === 200)) || /permission/i.test(e.message));
+      const permErr = () => { const x = new Error('PERMISO: tu token de Instagram no tiene el permiso instagram_manage_insights, que Meta pide para leer otras cuentas. Generá el token de nuevo con ese permiso (GUIA-INSTAGRAM.md, paso 5), convertilo y reemplazá IG_PAGE_TOKEN en Vercel.'); x.code = 'perm'; return x; };
       try { j = await graph('/' + IGID(), { fields: full, access_token: TOKEN() }); }
       catch (e) {
-        if (/not.*(business|creator)|cannot be found|does not exist|No.*user/i.test(e.message)) throw new Error(`@${user} no es una cuenta de empresa o creador (o no existe). Instagram solo deja leer cuentas profesionales.`);
-        j = await graph('/' + IGID(), { fields: lite, access_token: TOKEN() });
+        if (perm(e)) throw permErr();
+        if (/not.*(business|creator)|cannot be found|does not exist|No.*user|110/i.test(e.message)) { const x = new Error(`@${user} no es una cuenta de empresa o creador (o no existe). Instagram solo deja leer cuentas profesionales.`); x.code = 'personal'; throw x; }
+        try { j = await graph('/' + IGID(), { fields: lite, access_token: TOKEN() }); } catch (e2) { if (perm(e2)) throw permErr(); throw e2; }
       }
       return res.json(j.business_discovery || {});
     }
@@ -123,6 +132,6 @@ module.exports = async (req, res) => {
 
     return res.status(400).json({ error: 'Acción desconocida' });
   } catch (e) {
-    return res.status(400).json({ error: e.message, meta: e.meta || undefined });
+    return res.status(400).json({ error: e.message, code: e.code || undefined, meta: e.meta || undefined });
   }
 };

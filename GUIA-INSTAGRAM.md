@@ -53,12 +53,14 @@ Iniciá sesión con tu Instagram cuando lo pida y aceptá todo.
 1. Abrí **Graph API Explorer**: <https://developers.facebook.com/tools/explorer>.
 2. Arriba a la derecha, en *Meta App*, elegí **Estudio IG**.
 3. En *User or Page* elegí **Get User Access Token**.
-4. En *Permissions* agregá estos 5:
+4. En *Permissions* agregá estos 6:
    - `pages_show_list`
    - `pages_read_engagement`
    - `instagram_basic`
    - `instagram_content_publish`
+   - `instagram_manage_insights` ← necesario para que "Un local" lea el Instagram de otros negocios
    - `business_management`
+   - Si tu Página está dentro de un Business Manager, sumá también `ads_read`.
 5. **Generate Access Token** → aceptá, y cuando pregunte elegí **tu Página** y **tu Instagram**.
 6. Copiá el token largo que aparece (empieza con `EAA…`).
 
@@ -72,6 +74,17 @@ Iniciá sesión con tu Instagram cuando lo pida y aceptá todo.
 El token de Página que se genera **no vence**. Si algún día deja de andar (por ejemplo, si cambiás la contraseña de Facebook), repetí los pasos 5 y 6.
 
 ---
+
+## 7. Si "Un local" muestra "(#10) Application does not have permission for this action"
+
+Tu conexión se hizo sin el permiso `instagram_manage_insights`, que Meta pide para leer cuentas de otros negocios (business discovery). Publicar en tu cuenta sigue andando; solo hay que regenerar el token:
+
+1. Si en Graph API Explorer no aparece `instagram_manage_insights`: en developers.facebook.com → tu app → **Casos de uso** → el de Instagram → **Personalizar** → **Agregar** `instagram_manage_insights` (y `ads_read` si está).
+2. Repetí el **paso 5** con todos los permisos de la lista (incluido `instagram_manage_insights`).
+3. Repetí el **paso 6**: Convertir → copiá el nuevo `IG_PAGE_TOKEN` y reemplazá el viejo en Vercel (`IG_USER_ID` queda igual).
+4. **Redeploy**. En la pestaña 🚀 Subir a IG ya no tiene que aparecer el aviso de permiso faltante.
+
+Ojo: solo se pueden leer cuentas **de empresa o creador**. Si el local tiene Instagram personal, cargá la bio y las fotos a mano.
 
 ## Cómo publicar
 
