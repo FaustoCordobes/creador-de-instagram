@@ -32,11 +32,11 @@ function privateHost(h) {
 }
 
 async function launch() {
-  const puppeteer = require('puppeteer-core');
+  const pm = await import('puppeteer-core'); const puppeteer = pm.default || pm;
   if (process.env.CHROME_PATH) {
     return puppeteer.launch({ executablePath: process.env.CHROME_PATH, headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage', '--hide-scrollbars', '--mute-audio'] });
   }
-  const chromium = require('@sparticuz/chromium');
+  const cm = await import('@sparticuz/chromium'); const chromium = cm.default || cm;
   return puppeteer.launch({ executablePath: await chromium.executablePath(), headless: true, args: [...chromium.args, '--hide-scrollbars', '--mute-audio'] });
 }
 
