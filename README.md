@@ -115,3 +115,7 @@ Pestaña **Cartas y comida**: subís la foto de un producto y elegís uno de 3 e
 3. **Oferta héroe minimal:** fondo claro, palabra gigante detrás del producto y cuatro íconos con ventajas.
 
 "Copiar el pedido" sirve para pegarlo en ChatGPT junto con la foto. Con `OPENAI_API_KEY` en Vercel aparece "Generar acá con IA" (`api/imagen.js`; modelo opcional en `OPENAI_IMAGE_MODEL`).
+
+## Tipo de solución (Para mi Instagram)
+
+Cuando mostrás una app tuya, el estudio detecta QUÉ TIPO de solución es (carta virtual, tienda online, app de turnos, sistema de gestión, app de pedidos, página web o app a medida) y arma el contenido sobre ese tipo, no sobre el local. El local queda como "ejemplo real". En el paso 3 (modo dev) podés corregir el tipo y el nombre del local del ejemplo. Para los tipos que muestran el contenido del local (carta, tienda, web), las funciones y las ganancias describen la solución, no los productos del local. Las capturas verticales se muestran dentro de un celular y las anchas en un navegador, para que se vea que funciona en distintos dispositivos; el texto del posteo lo aclara.

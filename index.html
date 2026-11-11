@@ -380,7 +380,13 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
   <!-- Textos: mi proyecto / caso -->
   <div class="card" data-show="devlike" data-step="3">
     <h2><span class="step"></span> Textos <span class="demo-badge" id="demoBadge">ejemplo</span></h2>
-    <label class="f">Nombre del proyecto</label><input type="text" id="f-name">
+    <div data-show="dev">
+      <label class="f" style="margin-top:0">¿Qué tipo de solución mostrás?</label>
+      <select id="f-kind"><option value="carta">Carta virtual (menú digital)</option><option value="tienda">Tienda online</option><option value="turnos">App de turnos / reservas</option><option value="gestion">Sistema de gestión del local</option><option value="pedidos">App de pedidos</option><option value="web">Página web</option><option value="app">App a medida</option></select>
+      <p class="hint" style="margin:4px 0 0">El contenido va a hablar de este tipo de solución (ej: "una carta virtual"), no del local como si fuera tu producto. El local es solo el ejemplo que mostrás.</p>
+      <label class="f">Ejemplo que estás mostrando (el local)</label><input type="text" id="f-demo" placeholder="Crepería Lo de Luis">
+    </div>
+    <label class="f" id="nameLbl">Nombre del proyecto</label><input type="text" id="f-name">
     <label class="f">Gancho (frase grande de portada)</label><input type="text" id="f-hook">
     <label class="f">Qué es, en una línea</label><input type="text" id="f-tagline">
     <label class="f">Problema que resuelve</label><input type="text" id="f-problem">
@@ -792,7 +798,7 @@ const DEMO = {
 };
 
 /* ============ formulario <-> modelo ============ */
-const FIELDS = ['name','kicker','hook','tagline','problem','audience','features','gains','cta','result','includes'];
+const FIELDS = ['name','kind','demo','kicker','hook','tagline','problem','audience','features','gains','cta','result','includes'];
 const BFIELDS = ['brand','wa','ig','web','city','keyword','offer'];
 function readModel(){
   const m = {}; FIELDS.forEach(k => m[k] = $('#f-'+k).value.trim());
@@ -805,6 +811,7 @@ function readModel(){
   m.gainsList = parseGains(m.gains);
   { const q = splitQuote(m.result); m.resultText = q.text; m.resultAuthor = q.author; }
   m.includesList = m.includes.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,7);
+  if (S.mode === 'dev') { m.kindObj = kindOf(m.kind || 'app'); }
   return m;
 }
 function readBrand(){ const b={}; BFIELDS.forEach(k=>b[k]=$('#b-'+k).value.trim()); return b; }
@@ -1165,16 +1172,90 @@ function heuristic(raw){
   const words = tagline.split(' ').length;
   const appish = /turno|agenda|stock|caja|panel|sistema|gesti|inventario|orden|factur|fichaje|pedidos|app/i.test([tagline, htmlTitle, htmlH1, feats.map(f => f.title).join(' ')].join(' '));
   const goal = $('#goal').value;
+  const kindId = detectKind([name, tagline, htmlTitle, htmlH1, metaDesc, raw.readme.slice(0, 3000), feats.map(f => f.title + ' ' + f.desc).join(' '), (raw.site && raw.site.host) || '', raw.root || ''].join(' '), fromSite);
+  const K = kindOf(kindId);
+  const siteContentKind = fromSite && ['carta', 'tienda', 'web'].includes(kindId);
   return {
-    name, kicker: goal.startsWith('Lanzar') ? 'YA DISPONIBLE' : (goal.startsWith('Mostrar') ? 'PROYECTO' : (fromSite ? 'NUEVA WEB' : 'NUEVO PROYECTO')),
-    hook: tagline && words <= 9 ? tagline : (htmlH1 && htmlH1.split(' ').length <= 9 && htmlH1 !== name ? htmlH1 : `Conocé ${name}`),
-    tagline: tagline || 'Una herramienta hecha a medida',
-    problem: '¿Seguís haciendo todo a mano, con papel y planillas?',
+    name: K.label, demo: name, kind: kindId, kicker: K.label.toUpperCase(),
+    hook: K.hook,
+    tagline: tagline && words <= 14 ? tagline : K.what,
+    problem: K.problem,
     audience: 'Negocios y emprendimientos que quieren ordenarse',
-    features: feats.length ? feats : [{title:'Hecho a medida', desc:'Se adapta a cómo trabaja tu negocio'},{title:'Desde el celular', desc:'Funciona en cualquier dispositivo'},{title:'Fácil de usar', desc:'Sin capacitaciones largas'}],
-    gains: gainsFor([tagline, metaDesc, htmlH1, raw.readme.slice(0, 3000), feats.map(f => f.title + ' ' + f.desc).join(' ')].join(' '), fromSite && !appish), cta: goal.startsWith('Mostrar') ? '¿Tenés un proyecto en mente? Hablemos' : (fromSite && !appish ? '¿Querés una web así para tu negocio?' : '¿Querés una app así para tu negocio?')
+    features: siteContentKind ? K.feats : (feats.length ? feats : K.feats),
+    gains: (siteContentKind ? K.gains : (gainsFor([tagline, metaDesc, htmlH1, raw.readme.slice(0, 3000), feats.map(f => f.title + ' ' + f.desc).join(' ')].join(' '), fromSite && !appish) || K.gains.join('\n'))), cta: K.cta
   };
 }
+
+/* ============ tipo de solución (para mi Instagram) ============ */
+const APPKINDS = {
+  carta:   { label:'Carta virtual',     prod:'una carta virtual',     who:'para un local de comida',
+             what:'Los clientes ven el menú con fotos y precios desde el celular, sin apps ni papel.',
+             hook:'Mirá la carta virtual que le hice a un local',
+             cta:'¿Tenés un local? Te armo tu carta virtual. Escribime',
+             problem:'¿Seguís con la carta en papel o mandando fotos del menú por WhatsApp?',
+             feats:[{title:'Menú con fotos', desc:'cada plato con su foto y su precio'},{title:'Siempre actualizada', desc:'cambiás un precio y aparece al toque, sin reimprimir'},{title:'Pide por WhatsApp', desc:'del menú al pedido en un toque'}],
+             gains:['Reimprimir la carta cada vez que cambia un precio → Lo cambiás en el momento','Clientes que no saben qué hay → Ven todo con fotos desde el celular'],
+             re:/\bcarta\b|men[uú]|crep|resto|restaur|caf[eé]|cafeter|\bbar\b|pizz|comida|plato|helader|panader|gastro|sushi|hamburg|parrilla|bodeg/i },
+  tienda:  { label:'Tienda online',     prod:'una tienda online',     who:'para vender por internet',
+             what:'Catálogo con fotos y precios, con pedido directo por WhatsApp o carrito.',
+             hook:'Así queda una tienda online para un negocio',
+             cta:'¿Querés vender online? Te armo tu tienda. Escribime',
+             problem:'¿Vendés solo en el local y por mensajes sueltos?',
+             feats:[{title:'Catálogo con fotos', desc:'cada producto con su foto y su precio'},{title:'Pedido directo', desc:'por WhatsApp o carrito, sin vueltas'},{title:'Siempre al día', desc:'actualizás precios y stock cuando quieras'}],
+             gains:['Vender solo en el local → Recibís pedidos de todo el día','Mandar fotos una por una → Un link con todo el catálogo'],
+             re:/tienda|shop\b|catalog|carrito|comprar|checkout|e-?commerce|venta online/i },
+  turnos:  { label:'App de turnos',     prod:'una app de turnos',     who:'para que reserven solos',
+             what:'Los clientes sacan turno desde el celular y el negocio ve la agenda completa.',
+             hook:'Una app para que tus clientes saquen turno solos',
+             cta:'¿Trabajás con turnos? Te armo la app. Escribime',
+             problem:'¿Coordinás cada turno a mano por WhatsApp o teléfono?',
+             feats:[{title:'Reserva sola', desc:'el cliente elige día y hora desde el celular'},{title:'Agenda completa', desc:'ves todos los turnos en un lugar'},{title:'Recordatorio', desc:'le llega un aviso por WhatsApp antes del turno'}],
+             gains:['Coordinar turnos por mensaje → Reservan solos, sin que estés','Faltazos sin aviso → Recordatorio automático antes de cada turno'],
+             re:/turno|reserva|agenda|cita\b|booking/i },
+  gestion: { label:'Sistema de gestión', prod:'un sistema de gestión', who:'para ordenar el negocio',
+             what:'Stock, caja, tareas y clientes en un solo lugar, desde el celular.',
+             hook:'Un sistema para ordenar todo el negocio',
+             cta:'¿Querés ordenar tu negocio? Te armo el sistema. Escribime',
+             problem:'¿Llevás el negocio con cuadernos y planillas sueltas?',
+             feats:[{title:'Todo en un lugar', desc:'stock, caja, tareas y clientes'},{title:'Desde el celular', desc:'lo manejás estés donde estés'},{title:'Con responsable', desc:'cada tarea con su estado y quién la hace'}],
+             gains:['Planillas y cuadernos sueltos → Todo en una pantalla','No saber cómo viene el día → Lo ves de un vistazo'],
+             re:/gesti[oó]n|administr|\bpanel\b|dashboard|stock|inventario|\bcaja\b|orden(es)? de trabajo|fichaje|comanda|insumo|tareas del/i },
+  pedidos: { label:'App de pedidos',    prod:'una app de pedidos',    who:'para no perder pedidos',
+             what:'Los pedidos llegan ordenados, con lo que pidió cada uno y su estado.',
+             hook:'Una app para que los pedidos no se pierdan en el chat',
+             cta:'¿Tomás pedidos? Te armo la app. Escribime',
+             problem:'¿Los pedidos se te mezclan en el chat?',
+             feats:[{title:'Pedidos ordenados', desc:'con lo que pidió cada uno y su estado'},{title:'Nada se pierde', desc:'cada pedido queda registrado'},{title:'El equipo lo ve', desc:'saben qué falta preparar'}],
+             gains:['Pedidos mezclados en WhatsApp → Llegan ordenados','Perder un pedido → Cada uno con su estado'],
+             re:/pedido|delivery|encargo/i },
+  web:     { label:'Página web',        prod:'una página web',        who:'para que te encuentren',
+             what:'Una web que muestra el negocio con horarios, fotos y contacto directo.',
+             hook:'Mirá la página web que le hice a un negocio',
+             cta:'¿No tenés web? Te armo la tuya. Escribime',
+             problem:'¿No aparecés cuando te buscan en Google?',
+             feats:[{title:'Muestra tu negocio', desc:'con fotos, horarios y dónde estás'},{title:'Contacto directo', desc:'botón de WhatsApp a la vista'},{title:'Te encuentran', desc:'aparece cuando te buscan en Google'}],
+             gains:['Que no te encuentren → Te encuentran en Google','Responder lo mismo todo el día → La info siempre a mano'],
+             re:/landing|institucional|sitio web|p[aá]gina web|portfolio|presentaci/i },
+  app:     { label:'App a medida',      prod:'una app a medida',      who:'para tu negocio',
+             what:'Una herramienta hecha a medida de cómo trabaja el negocio.',
+             hook:'Una app hecha a medida para un negocio',
+             cta:'¿Querés una app a medida? Escribime',
+             problem:'¿Seguís haciendo todo a mano, con papel y planillas?',
+             feats:[{title:'Hecha a medida', desc:'se adapta a cómo trabaja el negocio'},{title:'Desde el celular', desc:'funciona en cualquier dispositivo'},{title:'Fácil de usar', desc:'sin capacitaciones largas'}],
+             gains:['Hacer todo a mano → Tareas que se resuelven solas','Perder tiempo en lo repetitivo → El sistema lo hace por vos'],
+             re:/./ }
+};
+function detectKind(text, fromSite){
+  const t = String(text || '').toLowerCase(), has = re => re.test(t);
+  if (has(/gesti[oó]n|\bpanel\b|dashboard|stock|inventario|\bcaja\b|orden(es)? de trabajo|fichaje|comanda|insumo|administr|tareas del/)) return 'gestion';
+  if (has(/turno|reserva|agenda|cita\b|booking/)) return 'turnos';
+  if (has(/pedido|delivery|encargo/)) return 'pedidos';
+  if (has(/carrito|checkout|comprar|e-?commerce|\btienda\b|\bshop\b|venta online/)) return 'tienda';
+  if (has(/\bcarta\b|men[uú]|crep|resto|restaur|caf[eé]|cafeter|\bbar\b|pizz|comida|plato|helader|panader|gastro|sushi|hamburg|parrilla/)) return 'carta';
+  if (fromSite) return 'web';
+  return 'app';
+}
+const kindOf = id => APPKINDS[id] || APPKINDS.app;
 
 /* ============ IA ============ */
 async function generateAI(){
@@ -1188,7 +1269,7 @@ Escribí en español rioplatense (voseo), claro y sin tecnicismos. El público s
 Que NO parezca escrito por una IA: frases cortas y concretas, como las diría el desarrollador en persona; detalles reales del proyecto (rubro, ciudad, qué resuelve); nada de "llevá tu negocio al siguiente nivel", "potenciá", "descubrí", "solución integral", "innovador", "en la era digital", "experiencia única"; sin rayas largas (—); sin signos de exclamación de más.
 Redacción web: lo más importante primero (pirámide invertida), voz activa, oraciones cortas (máximo 20 palabras), párrafos de hasta 3 oraciones, nada de lenguaje promocional (increíble, el mejor, imperdible: mejor un dato concreto), palabras simples y cercanas (usar, esperar, enseguida), sin renglones en mayúsculas.
 Tono: ${$('#tone').value}. Objetivo: ${$('#goal').value}.
-Contexto que dio el autor: ${$('#ctx').value.trim() || '(ninguno)'}${S.mode === 'local' ? `\nIMPORTANTE: es un CASO DE CLIENTE para el Instagram del desarrollador. Cliente: ${$('#l-name').value} (${$('#l-rubro').value}). Lo que se le hizo: ${$('#l-work').value || 'una web'}. Datos del cliente: ${$('#l-bio').value}. El 'name' es el nombre del cliente, 'kicker' debe ser tipo TRABAJO PARA CLIENTE y el hook debe contar qué se le hizo.` : ''}
+${S.mode === 'dev' ? `IMPORTANTE: esto es para el Instagram del desarrollador, mostrando una solución que hace para vender a otros locales. Identificá QUÉ TIPO de solución es (carta virtual/menú digital, tienda online, app de turnos, sistema de gestión, app de pedidos, página web o app a medida) y hablá de ESE TIPO como el producto que ofrece el desarrollador. El local que se ve (por ejemplo una crepería) es solo el EJEMPLO que muestra, NO el producto: no lo trates como si vendieras sus crepes. 'name' = el tipo de solución en 2-3 palabras (ej: "Carta virtual"). 'demo' = el nombre del local del ejemplo. 'hook' debe invitar a mirar ese tipo de solución (ej: "Mirá la carta virtual que le hice a un local"). 'cta' debe ofrecer ESE tipo de solución a otros negocios. Agregá la clave "kind" con uno de: carta, tienda, turnos, gestion, pedidos, web, app.` : ''}${S.mode === 'local' ? `\nIMPORTANTE: es un CASO DE CLIENTE para el Instagram del desarrollador. Cliente: ${$('#l-name').value} (${$('#l-rubro').value}). Lo que se le hizo: ${$('#l-work').value || 'una web'}. Datos del cliente: ${$('#l-bio').value}. El 'name' es el nombre del cliente, 'kicker' debe ser tipo TRABAJO PARA CLIENTE y el hook debe contar qué se le hizo.` : ''}
 
 DATOS DEL PROYECTO
 Nombre de carpeta/repo/dominio: ${raw.root || '-'}
@@ -1207,7 +1288,9 @@ Texto visible del index.html:
 ${htmlText}
 
 Respondé SOLO con un objeto JSON con estas claves:
-{"name": "nombre comercial corto",
+{"name": "nombre comercial corto (en modo dev: el TIPO de solución, ej: Carta virtual)",
+ "kind": "carta|tienda|turnos|gestion|pedidos|web|app (solo modo dev)",
+ "demo": "nombre del local del ejemplo (solo modo dev)",
  "kicker": "etiqueta de 1-3 palabras en MAYÚSCULAS",
  "hook": "gancho de portada, máximo 8 palabras, que nombre un beneficio",
  "hooks": ["5 ganchos alternativos de máximo 8 palabras, cada uno con una fórmula distinta: un dolor del cliente, curiosidad, el resultado concreto, una lista con número, y uno que nombre el rubro o la ciudad"],
@@ -1228,6 +1311,7 @@ Respondé SOLO con un objeto JSON con estas claves:
     if (typeof AI.json === 'function') { try { val = await AI.json(prompt, { modelTier: 'default' }); } catch (e) { if (e && (e.code === 'not_granted' || e.code === 'rate_limited')) throw e; } }
     if (!val) { const r = await AI(prompt, { modelTier: 'default' }); const m = (r.text || '').match(/\{[\s\S]*\}/); val = m ? JSON.parse(m[0]) : null; }
     if (!val || !val.name) throw new Error('Respuesta vacía');
+    if (S.mode === 'dev') { if (val.kind && APPKINDS[val.kind]) $('#f-kind').value = val.kind; if (val.demo) $('#f-demo').value = String(val.demo).trim(); }
     cleanTechModel(val);
     writeModel(val);
     S.hookPool = Array.isArray(val.hooks) ? val.hooks.filter(h => typeof h === 'string' && h.trim() && !hasTech(h)).map(h => ({ h: noDash(h.trim()) })) : [];
@@ -1464,7 +1548,8 @@ function drawSlide(ctx, W, H, slide, fmt, m, b, T, opts){
     const F = fit(ctx, m.hook || m.name, { maxW, maxH: avail * (fmt==='post'?0.3:0.27), size: 112*u, min: 54*u, weight: 700, lh: 1.04 });
     anim(ctx, A(0.15), 50*u, () => drawHook(ctx, F, P, y, T.ink, T, m.hook || m.name)); y += F.h + 26*u;
     ctx.font = `800 ${44*u}px ${FB}`;
-    const N = fit(ctx, m.name, { maxW, maxH: 60*u, size: 44*u, min: 30*u, weight: 800, family: FB, maxLines: 1 });
+    const nLine = (S.mode === 'dev' && m.demo) ? 'Ejemplo real: ' + m.demo : m.name;
+    const N = fit(ctx, nLine, { maxW, maxH: 60*u, size: 44*u, min: 30*u, weight: 800, family: FB, maxLines: 1 });
     anim(ctx, A(0.3), 30*u, () => draw(ctx, N, P, y, T.accTxt)); y += N.h + 8*u;
     const TG = fit(ctx, m.tagline, { maxW, maxH: 100*u, size: 36*u, min: 26*u, weight: 400, family: FB, lh: 1.3, maxLines: 2 });
     anim(ctx, A(0.38), 30*u, () => draw(ctx, TG, P, y, T.muted)); y += TG.h + 50*u;
@@ -3134,7 +3219,8 @@ function makeCaption(){
   const m = readModel(), b = readBrand(), caso = S.mode === 'local', c = phCtx(), v = capVersion();
   const feats = m.featureList.slice(0, 4), hook = noDash(m.hook || m.name);
   const place = caso ? c.ciudad : '';
-  const intro = caso ? `${c.Trabajo || 'Un trabajo nuevo'} para ${m.name}${c.rubro ? ` (${c.rubro}${place ? ' en ' + place : ''})` : ''}.` : `${m.name}${m.tagline ? ': ' + lc1(noDash(m.tagline)) : ''}.`;
+  const K = m.kindObj || kindOf(m.kind || 'app');
+  const intro = caso ? `${c.Trabajo || 'Un trabajo nuevo'} para ${m.name}${c.rubro ? ` (${c.rubro}${place ? ' en ' + place : ''})` : ''}.` : `Esto es ${K.prod}${m.demo ? ', la que le hice a ' + m.demo : ''}. ${cap1(lc1(noDash(m.tagline || K.what)))}`;
   const res = m.resultText ? `Lo que me dijo ${m.resultAuthor || 'el cliente'}: "${m.resultText}"` : '';
   const inc = m.includesList.length ? `Incluye: ${m.includesList.slice(0, 3).map(lc1).join(', ')}.` : '';
   const gains = m.gainsList.slice(0, 3).map(g => g.before ? `• Antes: ${lc1(noDash(g.before)).replace(/\.$/, '')}. Ahora: ${lc1(noDash(g.after)).replace(/\.$/, '')}.` : `• ${noDash(g.after)}`);
@@ -3146,7 +3232,7 @@ function makeCaption(){
     if (gains.length) out.push('', 'Lo que cambia en el día a día:', ...gains);
     if (res) out.push('', res); if (inc) out.push('', inc);
   } else if (v === 1) {
-    out.push(noDash(m.problem) || hook, '', `${caso ? `Por eso le armé a ${m.name} ${c.trabajo ? (/^(app|web|página|tienda|landing|plataforma)/i.test(c.trabajo) ? 'una ' : 'un ') + c.trabajo : 'esto'}` : `Por eso armé ${m.name}`}. En ${feats.length} cosas:`, '');
+    out.push(noDash(m.problem) || hook, '', `${caso ? `Por eso le armé a ${m.name} ${c.trabajo ? (/^(app|web|página|tienda|landing|plataforma)/i.test(c.trabajo) ? 'una ' : 'un ') + c.trabajo : 'esto'}` : `Por eso armé ${K.prod}${m.demo ? ', la de ' + m.demo : ''}`}. En ${feats.length} cosas:`, '');
     feats.forEach((f, i) => out.push(`${i + 1}. ${f.title}${f.desc ? ': ' + lc1(noDash(f.desc)) : ''}`));
     if (gains.length) out.push('', ...gains);
     if (res) out.push('', res);
@@ -3154,11 +3240,13 @@ function makeCaption(){
     out.push(...(normT(intro).startsWith(normT(hook)) ? [intro] : [hook, '', intro]), '', feats.map(f => f.title).join(' · ') + '.');
     if (res) out.push('', res); if (inc) out.push(inc);
   }
+  if (!caso) out.push('', 'Se usa desde el celular y desde la computadora.');
   if (b.offer) out.push('', noDash(b.offer));
   out.push('', noDash(m.cta || '¿Hablamos?'), captionCloser(b), '', shareLine(c.unRubro));
   $('#f-caption').value = plainTech(out.join('\n')).replace(/\n{3,}/g, '\n\n').trim();
   const site = S.raw && S.raw.site && !S.raw.gh;
-  $('#f-hashtags').value = tags5([c.rubro && (c.rubro + (place || b.city || '')), place || b.city, isAppWork() && !site ? 'appsparanegocios' : 'paginasweb', 'diseñoweb', b.brand]);
+  const kt = !caso && m.kind ? ({carta:'cartavirtual', tienda:'tiendaonline', turnos:'appdeturnos', gestion:'sistemadegestion', pedidos:'appdepedidos', web:'paginasweb', app:'appsparanegocios'})[m.kind] : '';
+  $('#f-hashtags').value = tags5([kt, c.rubro && (c.rubro + (place || b.city || '')), place || b.city, isAppWork() && !site ? 'appsparanegocios' : 'paginasweb', 'diseñoweb', b.brand]);
 }
 function makeBrandCaption(){
   const m = readBrandModel(), b = readBrand(), out = [noDash(m.hook)];
@@ -3313,7 +3401,9 @@ function speechFor(s, m, L, b){
     if (t === 'lcta') return endDot(L.cta) + pickR([' Te esperamos.', ' ¡Nos vemos!', ' Te esperamos, eh.'], 66);
     return '';
   }
-  if (t === 'cover') { const h = endDot(m.hook || m.name); return [pickR([h, 'Mirá esto. ' + h, 'Te muestro algo. ' + h], 61), m.hook && m.name && !normT(m.hook).includes(normT(m.name)) ? pickR([`Esto es ${m.name}.`, `Se llama ${m.name}.`], 62) : ''].join(' '); }
+  if (t === 'cover') {
+    if (S.mode === 'dev' && m.kindObj) { const K = m.kindObj; return `${pickR(['Te muestro algo.', 'Mirá esto.', 'Esto te puede servir.'], 61)} ${endDot(m.hook || K.hook)} ${K.what}${m.demo ? ' Esta es la de ' + m.demo + '.' : ''}`.replace(/\s+/g, ' ').trim(); }
+    const h = endDot(m.hook || m.name); return [pickR([h, 'Mirá esto. ' + h, 'Te muestro algo. ' + h], 61), m.hook && m.name && !normT(m.hook).includes(normT(m.name)) ? pickR([`Esto es ${m.name}.`, `Se llama ${m.name}.`], 62) : ''].join(' '); }
   if (t === 'problem') return [endDot(m.problem), m.name ? pickR([`Bueno, para eso está ${m.name}.`, `${m.name} lo resuelve.`, `Para eso armé ${m.name}.`], 63) : ''].join(' ');
   if (t === 'feature') { const con = m.tips ? '' : (['Primero, ', 'Además, ', 'También, ', 'Y otra cosa: ', 'Y por último, '][Math.min((s.n || 1) - 1, 4)]); return [endDot(con ? con + lc1(s.f.title) : s.f.title), endDot(cap1(s.f.desc || ''))].join(' '); }
   if (t === 'result') return endDot(`${m.resultAuthor || 'El cliente'} dice: ${m.resultText}`);
@@ -4764,6 +4854,7 @@ $('#genAuto').onclick = () => {
 };
 $('#genAI').onclick = generateAI;
 FIELDS.forEach(k => $('#f-'+k).addEventListener('input', () => debounce(renderAll)));
+$('#f-kind').addEventListener('change', () => { const K = kindOf($('#f-kind').value); $('#f-name').value = K.label; $('#f-kicker').value = K.label.toUpperCase(); const hooks = Object.values(APPKINDS).map(x => x.hook); if (!$('#f-hook').value.trim() || hooks.includes($('#f-hook').value.trim())) $('#f-hook').value = K.hook; const ctas = Object.values(APPKINDS).map(x => x.cta); if (!$('#f-cta').value.trim() || ctas.includes($('#f-cta').value.trim())) $('#f-cta').value = K.cta; renderAll(); });
 BFIELDS.forEach(k => $('#b-'+k).addEventListener('input', () => debounce(renderAll)));
 $('#accent').addEventListener('input', () => { store.set('accent', $('#accent').value); debounce(renderAll, 80); });
 $('#useDetected').onclick = () => { if (S.autoOrig) applyAuto({ ...S.autoOrig }); };
@@ -4776,6 +4867,7 @@ function applyMode(){
   $$('#modes .mode').forEach(x => x.classList.toggle('on', x.dataset.mode === S.mode && (S.mode !== 'local' || !!x.dataset.monthly === !!S.monthly)));
   $$('#purpose .chip').forEach(x => x.classList.toggle('on', x.dataset.p === S.purpose));
   $('#projTitle').textContent = S.mode === 'local' ? 'La web o app que le hiciste (opcional)' : 'Tu proyecto';
+  if ($('#nameLbl')) $('#nameLbl').textContent = S.mode === 'dev' ? 'Título del tipo de solución' : 'Nombre del proyecto';
   $('#imgTitle').textContent = S.mode === 'local' ? 'Logo y fotos' : S.mode === 'brand' ? 'Tu logo y tus trabajos' : 'Capturas de pantalla';
   $('#logoLabel').textContent = S.mode === 'brand' ? 'Tu logo o una foto tuya' : 'Logo del local';
   $('#photosLabel').textContent = S.mode === 'brand' ? 'Capturas de tus trabajos (hasta 4)' : (S.purpose === 'caso' ? 'Capturas de lo que le hiciste y fotos del local' : 'Fotos (productos, el local, la gente)');
