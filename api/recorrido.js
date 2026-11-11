@@ -15,7 +15,7 @@ const UA = {
   movil: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
   compu: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140 Safari/537.36'
 };
-const BUDGET_MS = 40000;
+const BUDGET_MS = 46000;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function isPrivateIp(ip) {
@@ -42,7 +42,7 @@ async function launch() {
 
 // se corre adentro de la página: busca lo que se puede tocar sin romper nada
 function findTargets(usedTexts, noToggle) {
-  const DANGER = /(borr|elimin|quit|salir|cerrar sesi|log ?out|sign ?out|pag(ar|á)|compr(ar|á)|finaliz|confirm|enviar|envi(á|a) |mand(ar|á)|delete|remove|vaciar|reset|restablec|cancel|descarg|download|imprim|print|whats|llam(ar|á)|tel[eé]fono|instagram|facebook|tiktok|twitter|youtube|linkedin|mail|correo|compart|registr|crear cuenta|suscrib|donar|desinstal|cookies?|privacidad|t[eé]rminos|aviso legal)/i;
+  const DANGER = /(borr|elimin|quit|salir|cerrar sesi|log ?out|sign ?out|pag(ar|á)|compr(ar|á)|finaliz|confirm|enviar|envi(á|a) |mand(ar|á)|delete|remove|vaciar|reset|restablec|cancel|descarg|download|imprim|print|whats|llam(ar|á)|tel[eé]fono|instagram|facebook|tiktok|twitter|youtube|linkedin|mail|correo|compart|registr|crear cuenta|suscrib|donar|desinstal|cookies?|privacidad|t[eé]rminos|aviso legal|^cuenta\b|mi cuenta|mi perfil|idioma|language)/i;
   const vw = innerWidth, vh = innerHeight;
   const groups = [
     ['[role=tab]', 12], ['nav a, nav button, [role=navigation] a, [role=navigation] button', 10], ['.tabs button, .tabs a, .tab, .tab-btn, .nav-link, .nav-item, .bottom-nav button, .bottom-nav a, .tabbar button', 10],
@@ -61,11 +61,12 @@ function findTargets(usedTexts, noToggle) {
       if (el.disabled || el.getAttribute('aria-disabled') === 'true') return;
       if (el.closest('input, select, textarea, [contenteditable=true]')) return;
       const text = (el.innerText || el.getAttribute('aria-label') || el.getAttribute('title') || '').replace(/\s+/g, ' ').trim();
-      if (!text || text.length > 32 || DANGER.test(text)) return;
+      if (!text || text.length > 32 || DANGER.test(text) || /^\d{1,2}[:.]\d{2}/.test(text) || !/\p{L}|[☰≡⋮]/u.test(text)) return;
       const toggle = /^(☰|≡|⋮|…|menu|men[uú]|abrir men[uú]|navegaci[oó]n)$/i.test(text) || /burger|ham|menu-toggle|nav-toggle|toggler/i.test(el.className || '') || (el.hasAttribute('aria-expanded') && el.getAttribute('aria-expanded') === 'false' && el.closest('header, nav'));
+      if (!/\p{L}{2,}/u.test(text) && DANGER.test(el.getAttribute('aria-label') || el.getAttribute('title') || '')) return;
       if (toggle && noToggle) return;
       if (!toggle && usedTexts.includes(text.toLowerCase())) return;
-      const label = /\p{L}{2,}/u.test(text) ? text : (el.getAttribute('aria-label') || el.getAttribute('title') || 'Menú');
+      const label = /\p{L}{2,}/u.test(text) ? text.replace(/\s+\d{1,3}\+?$/, '') : (el.getAttribute('aria-label') || el.getAttribute('title') || 'Menú');
       if (el.tagName === 'A') {
         const href = el.getAttribute('href') || '';
         if (/^(mailto|tel|sms|javascript):/i.test(href) || el.target === '_blank' || el.hasAttribute('download')) return;
@@ -83,6 +84,28 @@ function findTargets(usedTexts, noToggle) {
   out.forEach(o => { const k = o.text.toLowerCase(); if (!texts.has(k)) { texts.add(k); uniq.push(o); } });
   document.querySelectorAll('[data-ig-tour]').forEach(n => n.removeAttribute('data-ig-tour'));
   return uniq.slice(0, 10).map((o, i) => { o.el.setAttribute('data-ig-tour', String(i)); return { i, text: o.text, label: o.label, toggle: o.toggle }; });
+}
+
+// pantalla de entrada de una demo: elegir un usuario o tocar "Entrar" (nunca con contraseña)
+function findGates() {
+  const vis = el => { const r = el.getBoundingClientRect(), st = getComputedStyle(el); return r.width > 20 && r.height > 20 && st.visibility !== 'hidden' && st.display !== 'none'; };
+  if ([...document.querySelectorAll('input[type=password], input[type=email]')].some(vis)) return [];
+  const BAD = /(borr|elimin|pag(ar|á)|compr|registr|crear cuenta|suscrib|google|facebook|apple|whats|descarg)/i;
+  const btns = [...document.querySelectorAll('button, a, [role=button]')].filter(el => vis(el) && !el.disabled && !BAD.test(el.innerText || '') && (el.tagName !== 'A' || !/^(https?:|mailto:|tel:)/i.test(el.getAttribute('href') || '') || el.origin === location.origin));
+  // varios botones iguales en fila = selector de usuario o de rol
+  const byClass = {}; btns.forEach(b => { const k = b.tagName + '|' + (b.className || ''); (byClass[k] = byClass[k] || []).push(b); });
+  let pick = Object.values(byClass).filter(g => g.length >= 2 && g.length <= 12 && g.every(b => (b.innerText || '').trim().length > 3)).sort((a, b) => b.length - a.length)[0] || [];
+  if (!pick.length) pick = btns.filter(b => /^(entrar|ingresar|probar|ver (la )?demo|demo|comenzar|empezar|continuar|acceder|abrir (la )?app|modo demo|invitado|iniciar)\b/i.test((b.innerText || '').trim())).slice(0, 1);
+  document.querySelectorAll('[data-ig-gate]').forEach(n => n.removeAttribute('data-ig-gate'));
+  return pick.slice(0, 4).map((b, i) => { b.setAttribute('data-ig-gate', String(i)); return { i, text: (b.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 60) }; });
+}
+// dónde estoy: pestaña activa y título de la pantalla
+function whereAmI() {
+  const vis = el => { const r = el.getBoundingClientRect(); return r.width > 4 && r.height > 4 && r.bottom > 0 && r.top < innerHeight; };
+  const t = el => (el.innerText || '').replace(/\s+/g, ' ').trim();
+  const act = [...document.querySelectorAll('nav [aria-current], nav [aria-selected=true], nav .active, nav .on, nav .is-active, nav .selected, [role=tab][aria-selected=true], [role=tablist] .active')].filter(vis).map(t).find(x => x && x.length < 33) || '';
+  const hs = [...document.querySelectorAll('main h1, main h2, h1, h2')].filter(vis).filter(h => !h.closest('header, nav')).map(t).filter(x => x && x.length < 50);
+  return { active: act, heading: [...new Set(hs)].slice(0, 2).join(' · ') };
 }
 
 async function shot(page) {
@@ -130,10 +153,34 @@ module.exports = async (req, res) => {
     // lo que ya está abierto al entrar (pestaña activa) no hace falta tocarlo
     const used = await page.evaluate(() => [...document.querySelectorAll('[aria-selected=true], [aria-current], .active, .selected, .is-active')].map(e => (e.innerText || '').replace(/\s+/g, ' ').trim().toLowerCase()).filter(t => t && t.length < 33)).catch(() => []);
     let cur = await shot(page);
-    frames.push({ label: 'Inicio', kind: 'start', tap: null, img: cur.img });
+    const settle = async () => { await Promise.race([page.waitForNavigation({ timeout: 3000, waitUntil: 'domcontentloaded' }).catch(() => {}), sleep(1100)]); await page.waitForNetworkIdle({ idleTime: 400, timeout: 2500 }).catch(() => {}); await sleep(450); };
+    const here = async () => page.evaluate(whereAmI).catch(() => ({ active: '', heading: '' }));
+    // ¿hay que elegir un usuario o tocar "Entrar" para ver la app?
+    const first = await page.evaluate(findTargets, used, false).catch(() => []);
+    const gates = first.length < 2 ? await page.evaluate(findGates).catch(() => []) : [];
+    frames.push({ label: gates.length ? 'Ingreso' : 'Inicio', kind: gates.length ? 'gate' : 'start', tap: null, img: cur.img });
+    const enter = async gi => {
+      const box = await page.evaluate(i => { const e = document.querySelector(`[data-ig-gate="${i}"]`); if (!e) return null; e.scrollIntoView({ block: 'center', behavior: 'instant' }); const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: innerWidth, h: innerHeight }; }, gi).catch(() => null);
+      if (!box) return false;
+      try { if (DEVICES[device].hasTouch) await page.touchscreen.tap(box.x, box.y); else await page.mouse.click(box.x, box.y); } catch { return false; }
+      await settle();
+      const s = await shot(page); if (s.hash === cur.hash) return false;
+      const w = await here();
+      // el cartel de ayuda de la demo no tiene que tapar las capturas
+      await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find(x => /^(entendido|ok|listo|cerrar|saltar|omitir)$/i.test((x.innerText || '').trim())); if (b) b.click(); }).catch(() => {});
+      await sleep(350);
+      const s2 = await shot(page);
+      if (w.active) used.push(w.active.toLowerCase());
+      frames.push({ label: (w.active || w.heading || 'Inicio').replace(/\s+\d{1,3}\+?$/, ''), heading: w.heading, role: gi, kind: 'tap', tap: { x: +(box.x / box.w).toFixed(3), y: +(box.y / box.h).toFixed(3) }, img: s2.img });
+      cur = s2; return true;
+    };
+    let role = 0;
+    if (gates.length) await enter(0);
 
     let misses = 0, lastToggle = false, toggles = 0;
-    while (frames.length < max && left() > 4000 && misses < 6) {
+    const explore = async limit => {
+    misses = 0;
+    while (frames.length < limit && left() > 4000 && misses < 6) {
       // un menú (☰) se puede volver a abrir, pero no dos veces seguidas ni como última pantalla
       const targets = await page.evaluate(findTargets, used, lastToggle || toggles >= (keepMenus ? 4 : 8) || (keepMenus && frames.length >= max - 1)).catch(() => []);
       if (!targets.length) break;
@@ -158,14 +205,24 @@ module.exports = async (req, res) => {
       await Promise.race([page.waitForNavigation({ timeout: 3000, waitUntil: 'domcontentloaded' }).catch(() => {}), sleep(1100)]);
       await page.waitForNetworkIdle({ idleTime: 400, timeout: 2500 }).catch(() => {});
       await sleep(450);
-      let here; try { here = new URL(page.url()).origin; } catch { here = ''; }
-      if (here !== origin) { await page.goBack({ timeout: 6000 }).catch(() => page.goto(urlBefore, { timeout: 10000 }).catch(() => {})); await sleep(600); cur = await shot(page); misses++; continue; }
+      let hereO; try { hereO = new URL(page.url()).origin; } catch { hereO = ''; }
+      if (hereO !== origin) { await page.goBack({ timeout: 6000 }).catch(() => page.goto(urlBefore, { timeout: 10000 }).catch(() => {})); await sleep(600); cur = await shot(page); misses++; continue; }
       const s3 = await shot(page);
       if (s3.hash === cur.hash) { misses++; continue; }
       lastToggle = t.toggle;
       if (t.toggle && !keepMenus) { cur = s3; misses = 0; continue; }
-      frames.push({ label: t.label, kind: 'tap', tap: { x: +(box.x / box.w).toFixed(3), y: +(box.y / box.h).toFixed(3) }, img: s3.img });
+      frames.push({ label: t.label, heading: (await here()).heading, role, kind: 'tap', tap: { x: +(box.x / box.w).toFixed(3), y: +(box.y / box.h).toFixed(3) }, img: s3.img });
       cur = s3; misses = 0;
+    }
+    };
+    await explore(gates.length > 1 ? Math.max(3, Math.ceil(max * 0.7)) : max);
+    // otro usuario de la demo (por ejemplo, el empleado): se ven pantallas distintas
+    if (gates.length > 1 && frames.length < max && left() > 9000) {
+      await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch {} }).catch(() => {});
+      await page.goto(target.href, { waitUntil: 'domcontentloaded', timeout: 12000 }).catch(() => {});
+      await sleep(900);
+      const g2 = await page.evaluate(findGates).catch(() => []);
+      if (g2.length > 1) { cur = await shot(page); role = 1; if (await enter(1)) await explore(max); }
     }
     // si quedó lugar, bajar por la página para mostrar más
     while (frames.length < Math.min(max, 4) && left() > 3000) {
@@ -179,7 +236,7 @@ module.exports = async (req, res) => {
     const v = DEVICES[device];
     res.setHeader('Cache-Control', 'no-store');
     res.status(200).json({ ok: true, url: page.url(), device, w: v.width * v.deviceScaleFactor, h: v.height * v.deviceScaleFactor,
-      frames: frames.map(f => ({ label: f.label, kind: f.kind, tap: f.tap, img: 'data:image/jpeg;base64,' + f.img })) });
+      frames: frames.map(f => ({ label: f.label, heading: f.heading || '', role: f.role || 0, kind: f.kind, tap: f.tap, img: 'data:image/jpeg;base64,' + f.img })) });
   } catch (e) {
     const m = String(e && e.message || e);
     res.status(502).json({ error: /timeout|Timeout/.test(m) ? 'La página tardó demasiado en abrir. Probá de nuevo o subí capturas a mano.' : 'No pude recorrer la página: ' + m.slice(0, 160) });

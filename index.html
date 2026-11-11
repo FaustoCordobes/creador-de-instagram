@@ -279,6 +279,11 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
     <div id="funcList" class="flist"></div>
     <p class="hint" id="fCount" role="status" aria-live="polite"></p>
     <div class="row" style="flex-wrap:wrap"><button class="btn pri" id="fBuild">📲 Armar historias</button><button class="btn" id="fTour">🤖 Recorrer la app</button><label class="btn">+ Capturas a mano<input type="file" id="fUp" accept="image/*" multiple hidden></label></div>
+    <div id="fKeyRow" class="hidden" style="margin-top:10px;padding:12px;border:2px solid var(--acc);border-radius:12px">
+      <label class="f" for="fKey" style="margin-top:0">Para recorrer la app falta la clave del estudio</label>
+      <p class="hint" style="margin:0 0 6px">Es la que pusiste en Vercel como STUDIO_PASSWORD. Se guarda en este navegador y no te la vuelvo a pedir.</p>
+      <div class="row"><input type="password" id="fKey" autocomplete="current-password" placeholder="Clave del estudio"><button class="btn pri" id="fKeyGo" style="flex:0 0 auto">Guardar y recorrer</button></div>
+    </div>
     <details class="more" style="margin-top:10px"><summary>Corregir qué función muestra cada pantalla</summary><div id="fShotEdit" class="appshots"></div></details>
   </div>
 
@@ -3975,9 +3980,9 @@ const RUBROS = {
   belleza: { re: /peluquer|barber|est[eé]tica|u[ñn]as|\bspa\b|depil|cejas|pesta[ñn]|makeup|maquill|sal[oó]n de belleza|nail/i, label: 'salón', plural: 'peluquerías y estéticas', cli: 'clientes', cli1: 'cliente', turno: 'turno',
     dolores: ['Turnos pedidos por WhatsApp a cualquier hora', 'Huecos en la agenda por clientes que no vienen', 'Cobrar y anotar todo a mano'],
     prio: { reservas: 9, recordatorios: 8, confirmaciones: 7, mensajes: 6, historial: 5, caja: 5, contacto: 4, inicio: 2 } },
-  gastronomia: { re: /restaur|resto\b|\bbar\b|caf[eé]|cafeter|pizz|parrilla|cervec|helad|panader|rotiser|comida|sushi|hamburg|empanad|delivery|confiter|bodeg[oó]n|comanda/i, label: 'local gastronómico', plural: 'restaurantes y cafés', cli: 'clientes', cli1: 'cliente', turno: 'reserva',
-    dolores: ['Pedidos por WhatsApp que se mezclan o se pierden', 'Comandas en papel en las horas pico', 'Cerrar la caja del día a mano'],
-    prio: { pedidos: 9, tickets: 8, catalogo: 8, caja: 7, mensajes: 6, reservas: 6, stock: 5, reportes: 4, inicio: 2 } },
+  gastronomia: { re: /restaur|resto\b|\bbar\b|caf[eé]|cafeter|pizz|parrilla|cervec|helad|panader|rotiser|comida|sushi|hamburg|empanad|delivery|confiter|bodeg[oó]n|comanda|cocina|receta|comensal|catering|evento/i, label: 'restaurante o bar', plural: 'restaurantes y bares', cli: 'clientes', cli1: 'cliente', turno: 'reserva',
+    dolores: ['Pedidos por WhatsApp que se mezclan o se pierden', 'Tareas del turno que nadie sabe quién tiene que hacer', 'Insumos que se vencen sin que nadie avise'],
+    prio: { pedidos: 9, tareas: 9, stock: 8, tickets: 8, catalogo: 8, recetas: 8, plano: 7, caja: 7, actividad: 7, mensajes: 6, reservas: 6, alta: 4, reportes: 4, inicio: 2 } },
   taller: { re: /taller|mec[aá]nic|gomer|lubric|chapa|service\b|automotor|repuesto|lavadero|veh[ií]culo|patente/i, label: 'taller', plural: 'talleres', cli: 'clientes', cli1: 'cliente', turno: 'turno',
     dolores: ['Órdenes de trabajo en papel que se pierden', 'Clientes que llaman para saber si el auto está listo', 'No tener a mano qué se le hizo a cada auto'],
     prio: { ordenes: 9, historial: 8, contacto: 7, recordatorios: 7, presupuestos: 7, mensajes: 5, tickets: 5, caja: 4, reservas: 4, inicio: 2 } },
@@ -3991,7 +3996,7 @@ const RUBROS = {
     dolores: ['Planillas de horarios en papel', 'Órdenes de trabajo que no se sabe en qué estado están', 'Llamadas para coordinar cada tarea'],
     prio: { empleados: 9, ordenes: 9, reportes: 6, contacto: 5, mensajes: 5, historial: 4, inicio: 2 } }
 };
-const RUBRO_DEF = { label: 'negocio', plural: 'negocios', cli: 'clientes', cli1: 'cliente', turno: 'turno', dolores: ['Consultas repetidas por WhatsApp', 'Tareas que se hacen a mano todos los días', 'Información desparramada en cuadernos y planillas'], prio: {} };
+const RUBRO_DEF = { label: 'negocio', plural: 'negocios', cli: 'clientes', cli1: 'cliente', turno: 'turno', dolores: ['Consultas repetidas por WhatsApp', 'Tareas que se hacen a mano todos los días', 'Información desparramada en cuadernos y planillas'], prio: { tareas: 6, actividad: 5, stock: 5, plano: 4, recetas: 4 } };
 function rubroKeyOf(text){ const t = String(text || ''); let best = '', n = 0; for (const [k, r] of Object.entries(RUBROS)) { const c = (t.match(new RegExp(r.re.source, 'gi')) || []).length; if (c > n) { n = c; best = k; } } return best; }
 
 // funciones que puede tener una app: cómo reconocerlas y qué le aportan al negocio
@@ -4004,17 +4009,22 @@ const FUNCS = {
   historial: { name: 'Historial del {cli1}', re: /historial|ficha|paciente|socio|cliente|alumno|historia cl|perfil|veh[ií]culo/i, hook: 'Todo de cada {cli1} en un lugar', val: 'Visitas, pagos y notas de cada {cli1} en una ficha. Nada de cuadernos.' },
   tickets: { name: 'Impresión de tickets', re: /ticket|imprim|comprobante|recibo|comanda/i, hook: 'El ticket sale en el momento', val: 'Imprimís el ticket o la comanda en el momento y la venta queda registrada.' },
   caja: { name: 'Caja y ventas', re: /caja|venta|cobro|pago|factur|ingreso/i, hook: 'La caja se cierra en un minuto', val: 'Cada venta suma sola. Al final del día ves cuánto entró sin hacer cuentas.' },
-  stock: { name: 'Control de stock', re: /stock|inventario|producto|mercader|art[ií]culo/i, hook: '¿Cuánto te queda de cada producto?', val: 'Sabés cuánto queda de cada producto y qué reponer, sin contar a mano.' },
+  stock: { name: 'Control de stock', re: /stock|inventario|insumo|producto|mercader|art[ií]culo|caduc/i, hook: '¿Cuánto te queda de cada producto?', val: 'Sabés cuánto queda de cada producto, qué reponer y qué está por vencer, sin contar a mano.' },
   pedidos: { name: 'Pedidos ordenados', re: /pedido|carrito|delivery|orden de compra|encargo/i, hook: 'Pedidos que no se pierden en el chat', val: 'Los pedidos llegan ordenados, con lo que pidió cada uno y su estado.' },
   catalogo: { name: 'Carta y catálogo online', re: /cat[aá]logo|carta|men[uú]|precio|productos/i, hook: 'Tu carta siempre al día', val: 'Precios y fotos actualizados en un link para compartir. Se acabó el «¿cuánto sale?».' },
-  ordenes: { name: 'Órdenes de trabajo', re: /orden(?:es)? de trabajo|\bot\b|reparaci|servicio|trabajos|tarea/i, hook: 'Cada trabajo con su estado', val: 'Cada trabajo con su estado: recibido, en proceso o listo. Sin papeles que se pierden.' },
+  tareas: { name: 'Tareas del equipo', re: /tarea|pendiente|pool|checklist|por hacer/i, hook: '¿Tu equipo sabe qué hacer sin que lo persigas?', val: 'Cada tarea con su prioridad y su vencimiento. El equipo toma la suya y vos ves cómo avanza todo.' },
+  plano: { name: 'Plano del local', re: /plano|mapa del|mesas|sal[oó]n|sectores|layout/i, hook: 'Tu local, dibujado en el celular', val: 'Armás el plano con mesas y sectores, y cada tarea aparece en el lugar donde hay que hacerla.' },
+  recetas: { name: 'Recetas paso a paso', re: /receta|preparaci|temporizador|ficha t[eé]cnica/i, hook: 'Que el plato salga igual, lo haga quien lo haga', val: 'Cada receta con sus pasos y temporizadores. Sale igual sin importar quién esté en la cocina.' },
+  actividad: { name: 'Actividad del equipo', re: /actividad|registro|bit[aá]cora|qui[eé]n hizo/i, hook: '¿Quién hizo qué, y cuándo?', val: 'Ves quién está en turno y qué hizo cada uno. Todo queda registrado, sin preguntar.' },
+  alta: { name: 'Carga rápida', re: /^nuev[ao]\b|^crear\b|^agregar\b|^a[ñn]adir\b|^cargar\b/i, hook: 'Cargar algo nuevo lleva segundos', val: 'Cargás lo nuevo en segundos desde el celular, con responsable y fecha.' },
+  ordenes: { name: 'Órdenes de trabajo', re: /orden(?:es)? de trabajo|\bot\b|reparaci|servicio|trabajos/i, hook: 'Cada trabajo con su estado', val: 'Cada trabajo con su estado: recibido, en proceso o listo. Sin papeles que se pierden.' },
   cuotas: { name: 'Cuotas y vencimientos', re: /cuota|membres|abono|vencim|plan(?:es)?\b|suscrip/i, hook: '¿Quién está al día y quién debe?', val: 'Ves quién está al día y quién debe, y le avisás con un toque.' },
   reportes: { name: 'Números del mes', re: /reporte|estad[ií]stic|gr[aá]fic|resumen|dashboard|panel|m[eé]trica/i, hook: 'El mes de un vistazo', val: 'Lo que entró, lo que más sale y los días flojos, de un vistazo.' },
   empleados: { name: 'Fichaje de empleados', re: /fichaj|empleado|asistencia|personal|equipo|operari/i, hook: 'Horarios del equipo sin planillas', val: 'Cada empleado ficha desde el celular y ves las horas sin planillas.' },
   presupuestos: { name: 'Presupuestos', re: /presupuest|cotiz/i, hook: 'Presupuestos en dos minutos', val: 'Armás y mandás presupuestos prolijos desde el celular.' },
   inicio: { name: 'Todo en una pantalla', re: /^inicio$|^home$|principal|resumen del d[ií]a|^hoy$/i, hook: 'Tu día en una sola pantalla', val: 'Lo importante del día en una sola pantalla, apenas abrís la app.' }
 };
-function funcKeyOf(label){ const t = String(label || '').trim(); if (!t || isMenuLabel(t)) return ''; for (const k of ['inicio', ...Object.keys(FUNCS).filter(k => k !== 'inicio')]) if (FUNCS[k].re.test(t)) return k; return 'otra'; }
+function funcKeyOf(label, heading){ const t = String(label || '').trim(); if (!t || isMenuLabel(t)) return ''; const ks = ['inicio', 'tareas', 'alta', ...Object.keys(FUNCS).filter(k => !['inicio', 'tareas', 'alta'].includes(k))]; for (const k of ks) if (FUNCS[k].re.test(t)) return k; if (heading) for (const k of ks) if (FUNCS[k].re.test(heading)) return k; return 'otra'; }
 const capQ = t => String(t || '').replace(/^([¿¡«"]*)(\p{L})/u, (m, a, b) => a + b.toUpperCase());
 function fillT(tpl, R){ return capQ(String(tpl || '').replace(/\{cli\}/g, R.cli).replace(/\{cli1\}/g, R.cli1).replace(/\{turno\}/g, R.turno)); }
 function funcName(f, R){ return f.key && f.key !== 'otra' && FUNCS[f.key] ? fillT(FUNCS[f.key].name, R) : cap1(f.label || 'Función'); }
@@ -4022,30 +4032,32 @@ function funcName(f, R){ return f.key && f.key !== 'otra' && FUNCS[f.key] ? fill
 /* ---- pantallas por función (salen del recorrido o se suben a mano) ---- */
 function funcList(){
   const seen = new Map();
-  S.fshots.forEach(sh => { const k = sh.fkey || funcKeyOf(sh.label); if (!k) return; const id = k === 'otra' ? 'otra:' + normT(sh.label) : k; if (!seen.has(id)) seen.set(id, { id, key: k, label: sh.label, shots: [] }); seen.get(id).shots.push(sh); });
+  S.fshots.forEach(sh => { const k = sh.fkey || funcKeyOf(sh.label, sh.heading); if (!k) return; const id = k === 'otra' ? 'otra:' + normT(sh.label) : k; if (!seen.has(id)) seen.set(id, { id, key: k, label: sh.label, shots: [] }); seen.get(id).shots.push(sh); });
   return [...seen.values()];
 }
-function saveFshots(){ try { IDB.put('fshots', S.fshots.map(s => ({ blob: s.blob, name: s.name, label: s.label || '', fkey: s.fkey || '', manual: !!s.manual }))); } catch {} }
-async function loadFshots(){ try { const d = await IDB.get('fshots'); S.fshots = []; for (const s of d || []) { const sh = await makeShot(s.blob, s.name); if (sh) { Object.assign(sh, { label: s.label, fkey: s.fkey || funcKeyOf(s.label), manual: s.manual }); S.fshots.push(sh); } } } catch {} }
+function saveFshots(){ try { IDB.put('fshots', S.fshots.map(s => ({ blob: s.blob, name: s.name, label: s.label || '', heading: s.heading || '', fkey: s.fkey || '', manual: !!s.manual }))); } catch {} }
+async function loadFshots(){ try { const d = await IDB.get('fshots'); S.fshots = []; for (const s of d || []) { const sh = await makeShot(s.blob, s.name); if (sh) { Object.assign(sh, { label: s.label, heading: s.heading || '', fkey: s.fkey || funcKeyOf(s.label, s.heading), manual: s.manual }); S.fshots.push(sh); } } } catch {} }
 // recorre la app pantalla por pantalla, sin contar el menú abierto
 async function funcTour(url){
-  const j = await withTimeout(api('api/recorrido', { url, device: 'movil', max: 10, menus: false }), 75000);
+  const j = await withTimeout(api('api/recorrido', { url, device: 'movil', max: 12, menus: false }), 80000);
   const out = [];
   for (const [i, f] of (j.frames || []).entries()) {
-    if (f.kind === 'tap' && isMenuLabel(f.label)) continue;
+    if (f.kind === 'gate' || (f.kind === 'tap' && isMenuLabel(f.label))) continue; // ni la pantalla de ingreso ni el menú abierto son funciones
     const sh = await makeShot(dataUrlBlob(f.img), `funcion-${i + 1}${f.label ? '-' + slugT(f.label).slice(0, 18) : ''}.jpg`);
-    if (sh) { sh.label = f.kind === 'start' ? 'Inicio' : (f.label || ''); sh.fkey = funcKeyOf(sh.label); out.push(sh); }
+    if (sh) { sh.label = f.kind === 'start' ? 'Inicio' : (f.label || f.heading || ''); sh.heading = f.heading || ''; sh.fkey = funcKeyOf(sh.label, sh.heading); out.push(sh); }
   }
   return out;
 }
+// la clave del estudio se pide en el momento, sin mandar a buscarla a otra pestaña
+function needKey(e){ if (!e || e.status !== 401) return false; $('#fKeyRow').classList.remove('hidden'); $('#fKeyRow').scrollIntoView({ block: 'center' }); $('#fKey').focus(); return true; }
 async function refreshFuncs(btn){
   const url = S.raw && S.raw.site && S.raw.site.url;
   if (!url) { toast('Para recorrer la app necesito el link publicado. Pegalo en el paso 1 o subí capturas a mano.'); return; }
   if (!S.server) { toast('El recorrido automático funciona en tu versión de Vercel. Acá subí capturas a mano.'); return; }
   if (btn) { btn.disabled = true; btn.textContent = 'Recorriendo la app… (30 s)'; }
-  try { const fs = await funcTour(url); S.fshots = [...S.fshots.filter(s => s.manual), ...fs]; S.pitch.sel = null; saveFshots(); renderFuncs(); toast(`Listo: ${funcList().length} funciones con pantalla real.`); }
-  catch (e) { toast('No pude recorrer la app: ' + e.message); }
-  finally { if (btn) { btn.disabled = false; btn.textContent = '🤖 Recorrer la app de nuevo'; } }
+  try { const fs = await funcTour(url); if (!fs.length) throw new Error('no encontré secciones para tocar. Subí capturas a mano.'); $('#fKeyRow').classList.add('hidden'); S.fshots = [...S.fshots.filter(s => s.manual), ...fs]; S.pitch.sel = null; saveFshots(); renderFuncs(); toast(`Listo: ${funcList().length} funciones con pantalla real.`); }
+  catch (e) { if (!needKey(e)) toast('No pude recorrer la app: ' + e.message, { ms: 8000 }); }
+  finally { if (btn) btn.disabled = false; renderFuncs(); }
 }
 
 /* ---- para quién es y qué funciones van ---- */
@@ -4309,12 +4321,13 @@ async function ingest(srcPromise, label){
     let shots = an.shots;
     S.raw = raw;
     const tourUrl = (raw.site && raw.site.url) || siteFromText(raw.readme);
+    S.fErr = null;
     if (tourUrl && S.server) {
       status('Entrando a la app y tocando sus secciones, como un cliente (tarda unos 30 segundos)…');
       S.tourErr = '';
-      const fp = funcTour(tourUrl).catch(() => []);
+      let fErr = null; const fp = funcTour(tourUrl).catch(e => { fErr = e; return []; });
       let tr = await tourShots(tourUrl);
-      const fsh = await fp; if (fsh.length) { S.fshots = fsh; S.pitch.sel = null; S.pitch.stories = []; S.pitch.phase = 'none'; saveFshots(); savePitch(); renderFuncs(); renderPitch(); }
+      const fsh = await fp; S.fErr = fErr; if (fsh.length) { S.fshots = fsh; S.pitch.sel = null; S.pitch.stories = []; S.pitch.phase = 'none'; saveFshots(); savePitch(); renderFuncs(); renderPitch(); }
       if (!tr.length) tr = await microShots(tourUrl);
       shots = [...tr, ...shots.filter(z => !/^screenshot-/.test(z.name))];
       if (!raw.site) raw.site = { url: tourUrl, host: new URL(tourUrl).hostname };
@@ -4330,6 +4343,8 @@ async function ingest(srcPromise, label){
     const found = [raw.site && !raw.gh && raw.site.host, raw.readme && !(raw.site && !raw.gh) && 'README', raw.pkg && 'package.json', raw.html && 'index.html', shots.length && `${shots.length} imagen(es)`].filter(Boolean).join(', ');
     status(`Listo: leí ${found || 'los archivos'}.${AI ? ' Tocá "Escribir con IA" para mejores textos.' : ''}${shots.length ? '' : ' No había capturas: agregá algunas para que luzca más.'}`);
     renderAll();
+    if (S.fErr && S.fErr.status === 401) { status('Leí el proyecto, pero no pude entrar a la app para sacar capturas de sus funciones: falta la clave del estudio. Ponela en el paso 2 y tocá "Guardar y recorrer".', true); $('#fKeyRow').classList.remove('hidden'); }
+    else if (S.fErr) status(`Leí el proyecto, pero no pude recorrer la app (${S.fErr.message}). En el paso 2 podés reintentar o subir capturas a mano.`, true);
   } catch (e) {
     if (e.blocked) {
       status('', false);
@@ -4452,6 +4467,8 @@ $('#lGenAuto').onclick = buildLocal;
 $('#lLinkGo').onclick = localFromLink;
 /* historias de funciones */
 $('#fTarget').onchange = () => { S.pitch.target = $('#fTarget').value; S.pitch.sel = null; $('#fTargetAuto').classList.remove('warn'); renderFuncs(); savePitch(); if (S.pitch.stories.length) { reflow(); renderPitch(); } };
+$('#fKeyGo').onclick = () => { const k = $('#fKey').value.trim(); if (!k) { $('#fKey').focus(); return; } $('#studioKey').value = k; try { localStorage.setItem('igstudio.key', k); } catch {} refreshFuncs($('#fTour')); };
+$('#fKey').onkeydown = e => { if (e.key === 'Enter') $('#fKeyGo').click(); };
 $('#fBuild').onclick = buildPitch; $('#fTour').onclick = () => refreshFuncs($('#fTour'));
 $('#fUp').onchange = async ev => { for (const f of ev.target.files) { const sh = await makeShot(f, f.name); if (sh) { sh.label = f.name.replace(/\.\w+$/, '').replace(/[-_]+/g, ' ').replace(/^\d+\s*/, ''); sh.fkey = funcKeyOf(sh.label); sh.manual = true; S.fshots.push(sh); } } ev.target.value = ''; S.pitch.sel = null; saveFshots(); renderFuncs(); $('#fShotEdit').closest('details').open = true; toast('Escribí debajo de cada pantalla qué función muestra'); };
 $('#pitchZip').onclick = pitchZip; $('#pitchPub').onclick = pitchPublish; $('#pitchEdit').onclick = () => { S.pitch.phase = 'edit'; renderPitch(); };
