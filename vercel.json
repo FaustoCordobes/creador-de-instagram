@@ -2,6 +2,7 @@
   "functions": {
     "api/recorrido.js": {
       "maxDuration": 60,
+      "memory": 2048,
       "includeFiles": "node_modules/@sparticuz/chromium/bin/**"
     },
     "api/ig.js": {

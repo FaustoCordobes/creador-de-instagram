@@ -37,7 +37,10 @@ async function launch() {
     return puppeteer.launch({ executablePath: process.env.CHROME_PATH, headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage', '--hide-scrollbars', '--mute-audio'] });
   }
   const cm = await import('@sparticuz/chromium'); const chromium = cm.default || cm;
-  return puppeteer.launch({ executablePath: await chromium.executablePath(), headless: true, args: [...chromium.args, '--hide-scrollbars', '--mute-audio'] });
+  chromium.setGraphicsMode = false; // menos memoria: no necesitamos GPU
+  const exe = await chromium.executablePath();
+  if (!exe) throw new Error('el navegador del servidor no está disponible.');
+  return puppeteer.launch({ executablePath: exe, headless: chromium.headless, args: [...chromium.args, '--hide-scrollbars', '--mute-audio'] });
 }
 
 // se corre adentro de la página: busca lo que se puede tocar sin romper nada
