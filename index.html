@@ -4851,17 +4851,31 @@ function wavFromFloat(d, sr){
   let o = 44; for (let i = 0; i < d.length; i++) { const x = Math.max(-1, Math.min(1, d[i])); v.setInt16(o, x < 0 ? x * 0x8000 : x * 0x7FFF, true); o += 2; }
   return new Blob([buf], { type: 'audio/wav' });
 }
-async function combineParts(parts, maxSec = 120){
-  const sr = 16000, ac = new (window.AudioContext || window.webkitAudioContext)(), bufs = [];
+function cleanVoicePcm(ch, sr, maxSec){
+  const th = 0.015; let a = 0, z = ch.length - 1;
+  while (a < z && Math.abs(ch[a]) < th) a++;      // recorta silencio del principio
+  while (z > a && Math.abs(ch[z]) < th) z--;       // y del final
+  a = Math.max(0, a - Math.round(sr * 0.05)); z = Math.min(ch.length - 1, z + Math.round(sr * 0.05));
+  let peak = 0; for (let i = a; i <= z; i++) peak = Math.max(peak, Math.abs(ch[i]));
+  const g = peak > 0 ? Math.min(6, 0.97 / peak) : 1; // normaliza volumen
+  let n = z - a + 1; if (maxSec) n = Math.min(n, Math.floor(maxSec * sr));
+  const out = new Float32Array(Math.max(1, n));
+  for (let i = 0; i < out.length; i++) out[i] = Math.max(-1, Math.min(1, ch[a + i] * g));
+  return out;
+}
+async function combineParts(parts, opts = {}){
+  const sr = opts.sr || 24000, maxSec = opts.maxSec || 120;
+  const ac = new (window.AudioContext || window.webkitAudioContext)(), bufs = [];
   let total = 0;
   for (const p of parts) { try { const ab = await ac.decodeAudioData(await p.blob.slice(0).arrayBuffer()); bufs.push(ab); total += ab.duration; } catch {} }
   ac.close && ac.close();
   if (!bufs.length) throw new Error('no pude leer los audios. Probá con MP3/M4A o grabá acá.');
-  const dur = Math.min(total, maxSec), len = Math.max(1, Math.floor(dur * sr));
+  const dur = Math.min(total, maxSec + 10), len = Math.max(1, Math.floor(dur * sr));
   const off = new OfflineAudioContext(1, len, sr);
   let t = 0; for (const ab of bufs) { if (t >= dur) break; const src = off.createBufferSource(); src.buffer = ab; src.connect(off.destination); src.start(t); t += ab.duration; }
-  const out = await off.startRendering();
-  return { blob: wavFromFloat(out.getChannelData(0), sr), dur };
+  let out = (await off.startRendering()).getChannelData(0);
+  if (opts.clean !== false) out = cleanVoicePcm(out, sr, maxSec);
+  return { blob: wavFromFloat(out, sr), dur: out.length / sr, sr };
 }
 async function vozRecordToggle(){
   const btn = $('#vozRecBtn');
@@ -4893,7 +4907,7 @@ async function vozSave(){
   if (!S.vozParts.length) { toast('Grabá o subí al menos un audio primero'); return; }
   const btn = $('#vozSave'); btn.disabled = true; btn.textContent = 'Uniendo y guardando…';
   try {
-    const combo = await combineParts(S.vozParts);
+    const combo = await combineParts(S.vozParts, prov === 'pocket' ? { sr: 24000, maxSec: 12 } : { sr: 24000, maxSec: 120 });
     if (prov === 'pocket') {
       const id = 'pk' + Date.now().toString(36);
       await IDB.put('pkvoice:' + id, { blob: combo.blob, name, at: Date.now() });
