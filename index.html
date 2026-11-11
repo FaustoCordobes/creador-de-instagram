@@ -4782,7 +4782,7 @@ async function wavMono16k(ab, maxSec){
 const blobToDataURL = blob => new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = ko; r.readAsDataURL(blob); });
 
 /* ---- Pocket TTS: clonar y hablar 100% en el navegador (sin servidor, sin claves) ---- */
-const POCKET_CDN = 'https://esm.sh/pocket-tts-js';
+const POCKET_CDN = '/vendor/pocket-tts/index.js'; // alojado en tu propio dominio: el Worker tiene que ser del mismo origen
 async function pocketLib(){
   if (S.pocket.lib) return S.pocket.lib;
   const mod = await import(POCKET_CDN);
