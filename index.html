@@ -635,7 +635,7 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
   </div>
 
   <div class="pane" data-pane="voices">
-    <div id="vozNoKey" class="pphase hidden" style="border-color:var(--acc)"><b>Podés grabar o subir tu audio acá abajo.</b> Para <b>guardarlo como tu voz</b> y usarlo en los reels hace falta una cuenta de ElevenLabs y cargar <code>ELEVENLABS_API_KEY</code> en Vercel (después, Redeploy). Mientras tanto, dejá lista la muestra o descargala con el botón ⬇.</div>
+    <div id="vozNoKey" class="pphase hidden" style="border-color:var(--acc)"><b>Podés grabar o subir tu audio acá abajo.</b> Para <b>guardarlo como tu voz</b> y usarlo en los reels hace falta una clave: <code>FISH_API_KEY</code> (Fish Audio, tiene plan gratis) o <code>ELEVENLABS_API_KEY</code>. Se cargan en Vercel y después Redeploy. Mientras tanto, dejá lista la muestra o descargala con el botón ⬇.</div>
     <div id="vozForm">
       <div class="pphase"><b>Añadí tu voz.</b> Grabá o subí un audio tuyo, ponele un nombre y lo guardás para usar en cualquier reel. Con 1 o 2 minutos alcanza.</div>
       <h3 class="sub">Cómo grabar para que salga bien</h3>
@@ -646,6 +646,8 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
         <li>Cerca del micrófono, sin eco. El celular sirve.</li>
         <li>Leé algo natural (contá qué hacés, presentá tu negocio). Evitá silencios largos.</li>
       </ul>
+      <div id="vozProvRow" class="hidden"><label class="f" for="vozProv">Servicio para guardar la voz</label><select id="vozProv"><option value="fish">Fish Audio (gratis)</option><option value="eleven">ElevenLabs (mejor calidad)</option></select></div>
+      <p class="hint" id="vozProvInfo" style="margin:2px 0 0"></p>
       <label class="f" for="vozName">Nombre de la voz</label>
       <input type="text" id="vozName" placeholder="Mi voz, Fausto, Voz locales…">
       <div class="row" style="align-items:center;margin-top:10px">
@@ -3718,7 +3720,7 @@ function fillVoices(){
   const prem = (S.server && S.server.ttsPremium) || {};
   const opt = ([v, t]) => `<option value="${v}">${t}</option>`;
   let h = '';
-  if (S.myVoices && S.myVoices.length) h += `<optgroup label="Mis voces (tu voz)">${S.myVoices.map(v => opt(['el:' + v.id, v.name + ' · tu voz'])).join('')}</optgroup>`;
+  if (S.myVoices && S.myVoices.length) h += `<optgroup label="Mis voces (tu voz)">${S.myVoices.map(v => opt([voiceVal(v), v.name + ' · tu voz'])).join('')}</optgroup>`;
   if (prem.openai || prem.eleven) h += `<optgroup label="Premium (las más humanas)">${[...(prem.openai ? VOICE_PREMIUM.openai : []), ...(prem.eleven ? VOICE_PREMIUM.eleven : [])].map(opt).join('')}</optgroup>`;
   h += `<optgroup label="Gratis">${VOICE_LIST.map(opt).join('')}</optgroup><option value="off">Sin voz automática (solo mi voz grabada)</option>`;
   { const probe = document.createElement('select'); probe.innerHTML = h; if (![...probe.querySelectorAll('option')].some(o => o.value === S.voice.name)) { S.voice.name = (prem.openai ? 'oa:marin' : 'es-AR-TomasNeural'); store.set('voice', S.voice.name); } }
@@ -4743,11 +4745,17 @@ async function foodGenerate(){
 }
 
 /* ============ Añadir voz: guardar tu voz (clon) y reusarla en los reels ============ */
-S.myVoices = store.get('myVoices', []); // [{id, name}]
+S.myVoices = store.get('myVoices', []).map(v => ({ prov: 'eleven', ...v })); // [{id, name, prov}]
+S.vozProv = store.get('vozProv', 'fish');
 S.vozRec = null; // { chunks, media, t0, timer, blob, url }
 
-const elevenOn = () => !!(S.server && S.server.ttsPremium && S.server.ttsPremium.eleven);
-function myVoiceName(v){ const id = v.replace(/^el:/, ''); const f = S.myVoices.find(x => x.id === id); return f ? f.name : ''; }
+const prem = () => (S.server && S.server.ttsPremium) || {};
+const elevenOn = () => !!prem().eleven;
+const fishOn = () => !!prem().fish;
+const cloneOn = () => elevenOn() || fishOn();
+function myVoiceName(v){ const id = v.replace(/^(el|fi):/, ''); const f = S.myVoices.find(x => x.id === id); return f ? f.name : ''; }
+function voiceVal(x){ return (x.prov === 'fish' ? 'fi:' : 'el:') + x.id; }
+function curProv(){ const e = elevenOn(), f = fishOn(); if (e && f) return S.vozProv || 'fish'; return f ? 'fish' : 'eleven'; }
 
 async function sampleBlob(file){
   // audio liviano: tal cual; video o audio pesado: lo paso a audio mono liviano
@@ -4799,16 +4807,17 @@ async function vozRecordToggle(){
   media.start(); btn.classList.add('rec'); btn.textContent = '⏹ Detener'; $('#vozTimer').textContent = '00:00';
 }
 async function vozSave(){
-  if (!elevenOn()) { toast('Para guardar tu voz, cargá ELEVENLABS_API_KEY en Vercel'); return; }
+  if (!cloneOn()) { toast('Para guardar tu voz, cargá FISH_API_KEY (gratis) o ELEVENLABS_API_KEY en Vercel'); return; }
   const name = $('#vozName').value.trim();
   if (!name) { toast('Ponele un nombre a la voz'); $('#vozName').focus(); return; }
   if (!S.vozSample) { toast('Grabá o subí una muestra de audio primero'); return; }
   const btn = $('#vozSave'); btn.disabled = true; btn.textContent = 'Guardando tu voz…';
   try {
     const blob = await sampleBlob(new File([S.vozSample.blob], 'm', { type: S.vozSample.blob.type }));
-    const j = await withTimeout(api('api/voz', { action: 'add', name, audio: await blobToDataURL(blob), filename: 'muestra' }), 90000);
-    S.myVoices.push({ id: j.voice_id, name }); store.set('myVoices', S.myVoices);
-    S.voice.name = 'el:' + j.voice_id; store.set('voice', S.voice.name);
+    const j = await withTimeout(api('api/voz', { action: 'add', provider: curProv(), name, audio: await blobToDataURL(blob), filename: 'muestra' }), 90000);
+    const entry = { id: j.voice_id, name, prov: j.provider || curProv() };
+    S.myVoices.push(entry); store.set('myVoices', S.myVoices);
+    S.voice.name = voiceVal(entry); store.set('voice', S.voice.name);
     fillVoices(); if (S.vozSample && S.vozSample.url) URL.revokeObjectURL(S.vozSample.url); S.vozSample = null; $('#vozName').value = '';
     renderVoces(); renderScripts(true);
     toast(`Guardé "${name}". Ya la podés elegir en los reels.`, { ms: 8000 });
@@ -4816,34 +4825,34 @@ async function vozSave(){
   finally { btn.disabled = false; btn.textContent = '💾 Guardar mi voz'; }
 }
 async function vozDelete(id){
-  const v = S.myVoices.find(x => x.id === id); if (!v || !confirm(`¿Borrar la voz "${v.name}"? Se quita de acá y de tu cuenta de ElevenLabs.`)) return;
-  try { await api('api/voz', { action: 'delete', voiceId: id }); } catch (e) { toast('Aviso: ' + e.message); }
+  const v = S.myVoices.find(x => x.id === id); if (!v || !confirm(`¿Borrar la voz "${v.name}"? Se quita de acá y de tu cuenta.`)) return;
+  try { await api('api/voz', { action: 'delete', provider: v.prov || 'eleven', voiceId: id }); } catch (e) { toast('Aviso: ' + e.message); }
   S.myVoices = S.myVoices.filter(x => x.id !== id); store.set('myVoices', S.myVoices);
-  if (S.voice.name === 'el:' + id) { S.voice.name = elevenOn() ? 'oa:marin' : 'es-AR-TomasNeural'; store.set('voice', S.voice.name); }
+  if (S.voice.name === voiceVal(v)) { S.voice.name = elevenOn() ? 'oa:marin' : 'es-AR-TomasNeural'; store.set('voice', S.voice.name); }
   fillVoices(); renderVoces(); toast('Voz borrada');
 }
-async function vozTry(id){
+async function vozTry(entry){
   if (!S.server) { toast('La voz funciona en tu versión de Vercel'); return; }
-  const prev = S.voice.name; S.voice.name = 'el:' + id;
-  const b = readBrand();
-  try { playBuf(await ttsBuffer(`Hola, soy ${myVoiceName('el:' + id) || 'tu voz'}. Así van a sonar tus reels.`)); } catch (e) { toast('No se pudo probar: ' + e.message); }
+  const prev = S.voice.name; S.voice.name = voiceVal(entry);
+  try { playBuf(await ttsBuffer(`Hola, soy ${entry.name || 'tu voz'}. Así van a sonar tus reels.`)); } catch (e) { toast('No se pudo probar: ' + e.message); }
   S.voice.name = prev;
 }
 function renderVoces(){
   const box = $('#vozList'); if (!box) return;
-  const avail = elevenOn();
+  const avail = cloneOn(), both = elevenOn() && fishOn();
   $('#vozNoKey').classList.toggle('hidden', avail);
   $('#vozSave').textContent = avail ? '💾 Guardar mi voz' : '💾 Guardar mi voz (falta la clave)';
+  $('#vozProvRow').classList.toggle('hidden', !both);
+  if (both) { $('#vozProv').value = curProv(); }
+  else $('#vozProvInfo').textContent = fishOn() ? 'Se guarda con Fish Audio (gratis).' : (elevenOn() ? 'Se guarda con ElevenLabs.' : '');
   // muestra actual
   const prev = $('#vozPreview');
   if (S.vozSample) { prev.classList.remove('hidden'); prev.querySelector('audio').src = S.vozSample.url; $('#vozSampleLabel').textContent = 'Muestra lista: ' + S.vozSample.label; }
   else prev.classList.add('hidden');
   // lista de voces guardadas
   if (!S.myVoices.length) box.innerHTML = '<p class="hint" style="margin:0">Todavía no guardaste ninguna voz.</p>';
-  else box.innerHTML = S.myVoices.map(v => `<div class="vozitem"><b>${esc(v.name)}</b><span class="row" style="flex:0 0 auto"><button class="btn sm" data-try="${esc(v.id)}">▶ Probar</button><button class="btn sm" data-use="${esc(v.id)}">Usar en reels</button><button class="btn sm" data-del="${esc(v.id)}">Borrar</button></span></div>`).join('');
-  box.querySelectorAll('[data-try]').forEach(b => b.onclick = () => vozTry(b.dataset.try));
-  box.querySelectorAll('[data-use]').forEach(b => b.onclick = () => { setVoice('el:' + b.dataset.use); toast('Lista: elegida para los reels'); });
-  box.querySelectorAll('[data-del]').forEach(b => b.onclick = () => vozDelete(b.dataset.del));
+  else box.innerHTML = S.myVoices.map(v => `<div class="vozitem"><b>${esc(v.name)}</b> <small style="opacity:.6">${v.prov === 'fish' ? 'Fish' : 'ElevenLabs'}</small><span class="row" style="flex:0 0 auto"><button class="btn sm" data-id="${esc(v.id)}" data-a="try">▶ Probar</button><button class="btn sm" data-id="${esc(v.id)}" data-a="use">Usar en reels</button><button class="btn sm" data-id="${esc(v.id)}" data-a="del">Borrar</button></span></div>`).join('');
+  box.querySelectorAll('[data-a]').forEach(btn => btn.onclick = () => { const v = S.myVoices.find(x => x.id === btn.dataset.id); if (!v) return; if (btn.dataset.a === 'try') vozTry(v); else if (btn.dataset.a === 'use') { setVoice(voiceVal(v)); toast('Lista: elegida para los reels'); } else vozDelete(v.id); });
 }
 
 /* ============ render ============ */
@@ -5114,6 +5123,7 @@ document.addEventListener('click', e => { if (e.target.matches && e.target.match
 $('#vozRecBtn').onclick = vozRecordToggle;
 $('#vozSave').onclick = vozSave;
 $('#vozFile').onchange = ev => { const f = ev.target.files[0]; if (f) setSample(f, f.name.length > 28 ? f.name.slice(0, 26) + '…' : f.name); ev.target.value = ''; };
+$('#vozProv').onchange = () => { S.vozProv = $('#vozProv').value; store.set('vozProv', S.vozProv); };
 $('#vozDl').onclick = () => { if (S.vozSample) saveFile('mi-voz-muestra.' + ((S.vozSample.blob.type.split('/')[1] || 'webm').split(';')[0]), S.vozSample.blob); };
 $('#dlAll').onclick = downloadAll;
 $('#regenCap').onclick = () => { S.capV = (capVersion() + 1) % 3; if (isLocalOwn()) makeLocalCaption(); else makeCaption(); renderChecks(); toast('Otra versión del texto'); };

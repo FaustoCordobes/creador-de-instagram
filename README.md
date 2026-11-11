@@ -122,7 +122,7 @@ Cuando mostrás una app tuya, el estudio detecta QUÉ TIPO de solución es (cart
 
 ## Añadir voz (clonar tu voz)
 
-Pestaña "🎤 Añadir voz": grabás (1 a 2 minutos) o subís un audio/video tuyo, le ponés un nombre y se guarda como voz propia. Usa ElevenLabs Instant Voice Cloning (`api/voz.js`, `/v1/voices/add`), así que necesita `ELEVENLABS_API_KEY` en Vercel; sin la clave, la pestaña explica cómo activarlo.
+Pestaña "🎤 Añadir voz": grabás (1 a 2 minutos) o subís un audio/video tuyo, le ponés un nombre y se guarda como voz propia. Clona con dos proveedores (`api/voz.js`): **Fish Audio** (tiene plan gratis; `FISH_API_KEY`, modelo opcional `FISH_MODEL`, por defecto `s2`) o **ElevenLabs** (`ELEVENLABS_API_KEY`). Alcanza con cargar una de las dos claves; si están las dos, un selector deja elegir. Sin ninguna, se puede grabar/subir/descargar la muestra pero no guardar el clon. Las voces quedan como `fi:<id>` (Fish) o `el:<id>` (ElevenLabs) y se reusan por el flujo de TTS existente.
 
 - Grabación: en el navegador (MediaRecorder, opus/webm), con temporizador y tope de 2 min 30 s.
 - Subida: audio tal cual si es liviano; video o audio pesado se pasa en el navegador a audio mono 16 kHz (hasta 90 s) antes de enviarlo, para no exceder el límite de la función.

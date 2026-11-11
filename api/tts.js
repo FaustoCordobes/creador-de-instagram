@@ -33,6 +33,14 @@ async function openaiTTS(text, voice){
   if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error('OpenAI: ' + ((j.error && j.error.message) || r.status)); }
   return Buffer.from(await r.arrayBuffer());
 }
+async function fishTTS(text, refId){
+  const r = await fetch('https://api.fish.audio/v1/tts', {
+    method: 'POST', headers: { Authorization: 'Bearer ' + process.env.FISH_API_KEY.trim(), 'Content-Type': 'application/json', model: process.env.FISH_MODEL || 's2' },
+    body: JSON.stringify({ text, reference_id: refId, format: 'mp3', mp3_bitrate: 128, latency: 'normal' })
+  });
+  if (!r.ok) { const t = await r.text().catch(() => ''); throw new Error('Fish: ' + (t.slice(0, 140) || r.status)); }
+  return Buffer.from(await r.arrayBuffer());
+}
 async function elevenTTS(text, voiceId){
   const id = voiceId && voiceId !== 'default' ? voiceId : (process.env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb');
   const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(id)}?output_format=mp3_44100_128`, {
@@ -59,6 +67,9 @@ module.exports = async (req, res) => {
     } else if (voice.startsWith('el:')) {
       if (!process.env.ELEVENLABS_API_KEY) throw new Error('falta ELEVENLABS_API_KEY en Vercel');
       buf = await elevenTTS(text, voice.slice(3));
+    } else if (voice.startsWith('fi:')) {
+      if (!process.env.FISH_API_KEY) throw new Error('falta FISH_API_KEY en Vercel');
+      buf = await fishTTS(text, voice.slice(3));
     } else {
       const v = EDGE.includes(voice) ? voice : EDGE[0];
       const rate = Math.max(-30, Math.min(20, body.rate == null ? -4 : (parseInt(body.rate, 10) || 0)));
