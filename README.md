@@ -119,3 +119,13 @@ Pestaña **Cartas y comida**: subís la foto de un producto y elegís uno de 3 e
 ## Tipo de solución (Para mi Instagram)
 
 Cuando mostrás una app tuya, el estudio detecta QUÉ TIPO de solución es (carta virtual, tienda online, app de turnos, sistema de gestión, app de pedidos, página web o app a medida) y arma el contenido sobre ese tipo, no sobre el local. El local queda como "ejemplo real". En el paso 3 (modo dev) podés corregir el tipo y el nombre del local del ejemplo. Para los tipos que muestran el contenido del local (carta, tienda, web), las funciones y las ganancias describen la solución, no los productos del local. Las capturas verticales se muestran dentro de un celular y las anchas en un navegador, para que se vea que funciona en distintos dispositivos; el texto del posteo lo aclara.
+
+## Añadir voz (clonar tu voz)
+
+Pestaña "🎤 Añadir voz": grabás (1 a 2 minutos) o subís un audio/video tuyo, le ponés un nombre y se guarda como voz propia. Usa ElevenLabs Instant Voice Cloning (`api/voz.js`, `/v1/voices/add`), así que necesita `ELEVENLABS_API_KEY` en Vercel; sin la clave, la pestaña explica cómo activarlo.
+
+- Grabación: en el navegador (MediaRecorder, opus/webm), con temporizador y tope de 2 min 30 s.
+- Subida: audio tal cual si es liviano; video o audio pesado se pasa en el navegador a audio mono 16 kHz (hasta 90 s) antes de enviarlo, para no exceder el límite de la función.
+- La voz guardada queda en "Mis voces" del selector (como `el:<voice_id>`) y se reusa en cualquier reel por el flujo de TTS que ya existía.
+- Reglas de grabación visibles en el apartado (silencio, 1-2 min, cerca del micrófono, tono de los reels).
+- Cada voz se puede probar, usar en los reels o borrar (también la borra de la cuenta de ElevenLabs).

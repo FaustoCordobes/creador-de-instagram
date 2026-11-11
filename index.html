@@ -181,6 +181,9 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
 .fdslot{width:64px;height:64px;border-radius:10px;border:1px dashed var(--line);display:grid;place-items:center;font-size:11px;overflow:hidden;flex:0 0 auto}.fdslot img{width:100%;height:100%;object-fit:cover}
 .fdout img{max-width:min(100%,420px);border-radius:14px;display:block;margin-top:12px}
 @media (max-width:640px){.plitem{flex-wrap:wrap}.plact{flex-direction:row;width:100%}}
+.vozrules{margin:6px 0 14px;padding-left:20px}.vozrules li{margin:4px 0;line-height:1.4}
+.vozitem{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+#vozRecBtn.rec{background:#e5484d;border-color:#e5484d;color:#fff}
 .pphase{padding:10px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin-bottom:12px}
 .pitem{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;margin-bottom:22px}
 .pitem .frame{flex:0 0 260px}.pitem canvas{width:260px;height:auto;display:block;border-radius:14px}
@@ -492,6 +495,7 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
       <button class="tab" data-out="text">Texto del posteo</button>
       <button class="tab" data-out="poster" data-show="lp-local">🪧 Cartel / promo</button>
       <button class="tab" data-out="hl">Destacadas</button>
+      <button class="tab" data-out="voices">🎤 Añadir voz</button>
       <button class="tab" data-out="plan" data-show="local">📅 Plan mensual</button>
       <button class="tab" data-out="food" data-show="local">🍔 Cartas y comida</button>
       <button class="tab" data-out="pitch" data-show="pitch">📲 Historias de funciones</button>
@@ -628,6 +632,37 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
     <div id="pitchAsk" class="pask hidden" role="region" aria-label="Cambios a las historias"></div>
     <div id="pitchFinal" class="pask hidden"><p style="margin:0 0 8px"><b>Listo para usar.</b> Subilas en este orden para que la primera enganche y la última lleve tu contacto.</p>
       <div class="row" style="flex-wrap:wrap"><button class="btn pri" id="pitchZip">⬇ Descargar las historias (.zip)</button><button class="btn" id="pitchPub">🚀 Publicar en mis historias</button><button class="btn" id="pitchEdit">✏️ Seguir editando</button></div></div>
+  </div>
+
+  <div class="pane" data-pane="voices">
+    <div id="vozNoKey" class="pphase hidden"><b>Para guardar tu propia voz</b> hace falta una cuenta de ElevenLabs y cargar <code>ELEVENLABS_API_KEY</code> en Vercel. Con eso, grabás o subís un audio tuyo y lo usás en todos los reels. Mientras tanto, podés usar las voces de la lista.</div>
+    <div id="vozForm">
+      <div class="pphase"><b>Añadí tu voz.</b> Grabá o subí un audio tuyo, ponele un nombre y lo guardás para usar en cualquier reel. Con 1 o 2 minutos alcanza.</div>
+      <h3 class="sub">Cómo grabar para que salga bien</h3>
+      <ul class="vozrules">
+        <li>Grabá entre <b>1 y 2 minutos</b>. Más de 2 no mejora y puede empeorar.</li>
+        <li>Lugar <b>silencioso</b>, sin música ni ruido de fondo. Solo tu voz.</li>
+        <li>Hablá <b>como querés que suenen los reels</b>: cercano, tranquilo, con energía.</li>
+        <li>Cerca del micrófono, sin eco. El celular sirve.</li>
+        <li>Leé algo natural (contá qué hacés, presentá tu negocio). Evitá silencios largos.</li>
+      </ul>
+      <label class="f" for="vozName">Nombre de la voz</label>
+      <input type="text" id="vozName" placeholder="Mi voz, Fausto, Voz locales…">
+      <div class="row" style="align-items:center;margin-top:10px">
+        <button class="btn pri" id="vozRecBtn" type="button">⏺ Grabar</button>
+        <span id="vozTimer" style="font-variant-numeric:tabular-nums;font-size:18px">00:00</span>
+        <span style="opacity:.6">o</span>
+        <label class="btn">Subir audio o video<input type="file" id="vozFile" accept="audio/*,video/*" hidden></label>
+      </div>
+      <div id="vozPreview" class="hidden" style="margin-top:10px">
+        <p class="hint" id="vozSampleLabel" style="margin:0 0 4px"></p>
+        <audio controls style="width:100%"></audio>
+      </div>
+      <button class="btn pri" id="vozSave" style="margin-top:12px">💾 Guardar mi voz</button>
+      <p class="hint">Se sube a tu cuenta de ElevenLabs para crear el clon. Puede tardar un minuto.</p>
+      <h3 class="sub" style="margin-top:20px">Mis voces guardadas</h3>
+      <div id="vozList"></div>
+    </div>
   </div>
 
   <div class="pane" data-pane="publish">
@@ -2294,7 +2329,7 @@ async function detectServer(){
     if (r.headers.get('x-igstudio') !== '1') throw 0;
     S.server = await r.json();
   } catch { S.server = null; }
-  updatePublishUI(); fillVoices();
+  updatePublishUI(); fillVoices(); renderVoces();
 }
 function updatePublishUI(){
   const on = !!S.server;
@@ -3682,6 +3717,7 @@ function fillVoices(){
   const prem = (S.server && S.server.ttsPremium) || {};
   const opt = ([v, t]) => `<option value="${v}">${t}</option>`;
   let h = '';
+  if (S.myVoices && S.myVoices.length) h += `<optgroup label="Mis voces (tu voz)">${S.myVoices.map(v => opt(['el:' + v.id, v.name + ' · tu voz'])).join('')}</optgroup>`;
   if (prem.openai || prem.eleven) h += `<optgroup label="Premium (las más humanas)">${[...(prem.openai ? VOICE_PREMIUM.openai : []), ...(prem.eleven ? VOICE_PREMIUM.eleven : [])].map(opt).join('')}</optgroup>`;
   h += `<optgroup label="Gratis">${VOICE_LIST.map(opt).join('')}</optgroup><option value="off">Sin voz automática (solo mi voz grabada)</option>`;
   { const probe = document.createElement('select'); probe.innerHTML = h; if (![...probe.querySelectorAll('option')].some(o => o.value === S.voice.name)) { S.voice.name = (prem.openai ? 'oa:marin' : 'es-AR-TomasNeural'); store.set('voice', S.voice.name); } }
@@ -4705,6 +4741,110 @@ async function foodGenerate(){
   finally { btn.disabled = false; btn.textContent = '✨ Generar acá con IA'; }
 }
 
+/* ============ Añadir voz: guardar tu voz (clon) y reusarla en los reels ============ */
+S.myVoices = store.get('myVoices', []); // [{id, name}]
+S.vozRec = null; // { chunks, media, t0, timer, blob, url }
+
+const elevenOn = () => !!(S.server && S.server.ttsPremium && S.server.ttsPremium.eleven);
+function myVoiceName(v){ const id = v.replace(/^el:/, ''); const f = S.myVoices.find(x => x.id === id); return f ? f.name : ''; }
+
+async function sampleBlob(file){
+  // audio liviano: tal cual; video o audio pesado: lo paso a audio mono liviano
+  if (/^audio\//.test(file.type) && file.size < 3 * 1024 * 1024) return file;
+  const ac = new (window.AudioContext || window.webkitAudioContext)();
+  let ab; try { ab = await ac.decodeAudioData(await file.arrayBuffer()); } catch { ac.close && ac.close(); throw new Error('no pude leer el audio de ese archivo. Probá con un MP3 o M4A, o grabalo acá.'); }
+  ac.close && ac.close();
+  const blob = await wavMono16k(ab, 90);
+  return blob;
+}
+async function wavMono16k(ab, maxSec){
+  const sr = 16000, dur = Math.min(ab.duration, maxSec || 90), len = Math.max(1, Math.floor(dur * sr));
+  const off = new OfflineAudioContext(1, len, sr);
+  const src = off.createBufferSource(); src.buffer = ab; src.connect(off.destination); src.start(0);
+  const out = await off.startRendering(), d = out.getChannelData(0);
+  const buf = new ArrayBuffer(44 + d.length * 2), v = new DataView(buf);
+  const wr = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  wr(0, 'RIFF'); v.setUint32(4, 36 + d.length * 2, true); wr(8, 'WAVE'); wr(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); wr(36, 'data'); v.setUint32(40, d.length * 2, true);
+  let o = 44; for (let i = 0; i < d.length; i++) { const x = Math.max(-1, Math.min(1, d[i])); v.setInt16(o, x < 0 ? x * 0x8000 : x * 0x7FFF, true); o += 2; }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+const blobToDataURL = blob => new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = ko; r.readAsDataURL(blob); });
+
+function setSample(blob, label){
+  if (S.vozSample && S.vozSample.url) URL.revokeObjectURL(S.vozSample.url);
+  S.vozSample = { blob, url: URL.createObjectURL(blob), label };
+  renderVoces();
+}
+async function vozRecordToggle(){
+  const btn = $('#vozRecBtn');
+  if (S.vozRec) { // parar
+    try { S.vozRec.media.stop(); } catch {}
+    return;
+  }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { toast('Tu navegador no deja grabar audio'); return; }
+  let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); } catch { toast('No pude usar el micrófono. Dale permiso al navegador.'); return; }
+  const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+  const media = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined), chunks = [];
+  media.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  media.onstop = () => {
+    stream.getTracks().forEach(t => t.stop()); clearInterval(S.vozRec.timer);
+    const blob = new Blob(chunks, { type: (mime || 'audio/webm').split(';')[0] });
+    S.vozRec = null; $('#vozRecBtn').classList.remove('rec'); $('#vozRecBtn').textContent = '⏺ Grabar';
+    const secs = chunks.length ? Math.round((Date.now() - media._t0) / 1000) : 0;
+    if (blob.size > 2000) setSample(blob, `grabación de ${secs}s`); else toast('No se grabó nada');
+  };
+  media._t0 = Date.now();
+  S.vozRec = { media, timer: setInterval(() => { const s = Math.floor((Date.now() - media._t0) / 1000); $('#vozTimer').textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; if (s >= 150) { try { media.stop(); } catch {} } }, 250) };
+  media.start(); btn.classList.add('rec'); btn.textContent = '⏹ Detener'; $('#vozTimer').textContent = '00:00';
+}
+async function vozSave(){
+  if (!elevenOn()) { toast('Para guardar tu voz, cargá ELEVENLABS_API_KEY en Vercel'); return; }
+  const name = $('#vozName').value.trim();
+  if (!name) { toast('Ponele un nombre a la voz'); $('#vozName').focus(); return; }
+  if (!S.vozSample) { toast('Grabá o subí una muestra de audio primero'); return; }
+  const btn = $('#vozSave'); btn.disabled = true; btn.textContent = 'Guardando tu voz…';
+  try {
+    const blob = await sampleBlob(new File([S.vozSample.blob], 'm', { type: S.vozSample.blob.type }));
+    const j = await withTimeout(api('api/voz', { action: 'add', name, audio: await blobToDataURL(blob), filename: 'muestra' }), 90000);
+    S.myVoices.push({ id: j.voice_id, name }); store.set('myVoices', S.myVoices);
+    S.voice.name = 'el:' + j.voice_id; store.set('voice', S.voice.name);
+    fillVoices(); if (S.vozSample && S.vozSample.url) URL.revokeObjectURL(S.vozSample.url); S.vozSample = null; $('#vozName').value = '';
+    renderVoces(); renderScripts(true);
+    toast(`Guardé "${name}". Ya la podés elegir en los reels.`, { ms: 8000 });
+  } catch (e) { toast('No se pudo guardar la voz: ' + e.message, { ms: 9000 }); }
+  finally { btn.disabled = false; btn.textContent = '💾 Guardar mi voz'; }
+}
+async function vozDelete(id){
+  const v = S.myVoices.find(x => x.id === id); if (!v || !confirm(`¿Borrar la voz "${v.name}"? Se quita de acá y de tu cuenta de ElevenLabs.`)) return;
+  try { await api('api/voz', { action: 'delete', voiceId: id }); } catch (e) { toast('Aviso: ' + e.message); }
+  S.myVoices = S.myVoices.filter(x => x.id !== id); store.set('myVoices', S.myVoices);
+  if (S.voice.name === 'el:' + id) { S.voice.name = elevenOn() ? 'oa:marin' : 'es-AR-TomasNeural'; store.set('voice', S.voice.name); }
+  fillVoices(); renderVoces(); toast('Voz borrada');
+}
+async function vozTry(id){
+  if (!S.server) { toast('La voz funciona en tu versión de Vercel'); return; }
+  const prev = S.voice.name; S.voice.name = 'el:' + id;
+  const b = readBrand();
+  try { playBuf(await ttsBuffer(`Hola, soy ${myVoiceName('el:' + id) || 'tu voz'}. Así van a sonar tus reels.`)); } catch (e) { toast('No se pudo probar: ' + e.message); }
+  S.voice.name = prev;
+}
+function renderVoces(){
+  const box = $('#vozList'); if (!box) return;
+  const avail = elevenOn();
+  $('#vozNoKey').classList.toggle('hidden', avail);
+  $('#vozForm').classList.toggle('hidden', !avail);
+  // muestra actual
+  const prev = $('#vozPreview');
+  if (S.vozSample) { prev.classList.remove('hidden'); prev.querySelector('audio').src = S.vozSample.url; $('#vozSampleLabel').textContent = 'Muestra lista: ' + S.vozSample.label; }
+  else prev.classList.add('hidden');
+  // lista de voces guardadas
+  if (!S.myVoices.length) box.innerHTML = '<p class="hint" style="margin:0">Todavía no guardaste ninguna voz.</p>';
+  else box.innerHTML = S.myVoices.map(v => `<div class="vozitem"><b>${esc(v.name)}</b><span class="row" style="flex:0 0 auto"><button class="btn sm" data-try="${esc(v.id)}">▶ Probar</button><button class="btn sm" data-use="${esc(v.id)}">Usar en reels</button><button class="btn sm" data-del="${esc(v.id)}">Borrar</button></span></div>`).join('');
+  box.querySelectorAll('[data-try]').forEach(b => b.onclick = () => vozTry(b.dataset.try));
+  box.querySelectorAll('[data-use]').forEach(b => b.onclick = () => { setVoice('el:' + b.dataset.use); toast('Lista: elegida para los reels'); });
+  box.querySelectorAll('[data-del]').forEach(b => b.onclick = () => vozDelete(b.dataset.del));
+}
+
 /* ============ render ============ */
 let fontsReady = false;
 async function ensureFonts(){
@@ -4820,7 +4960,7 @@ function setSrc(k){ $$('#srcTabs .tab').forEach(t => t.classList.toggle('on', t.
 
 /* ============ eventos ============ */
 $$('#srcTabs .tab').forEach(t => t.onclick = () => setSrc(t.dataset.src));
-$$('#outTabs .tab').forEach(t => t.onclick = () => { $$('#outTabs .tab').forEach(x => x.classList.toggle('on', x === t)); $$('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === t.dataset.out)); if (playing) stopPlay(); if (t.dataset.out === 'publish') updatePublishUI(); if (t.dataset.out === 'pitch') renderPitch(); if (t.dataset.out === 'plan') renderPlan(); if (t.dataset.out === 'food') renderFood(); });
+$$('#outTabs .tab').forEach(t => t.onclick = () => { $$('#outTabs .tab').forEach(x => x.classList.toggle('on', x === t)); $$('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === t.dataset.out)); if (playing) stopPlay(); if (t.dataset.out === 'publish') updatePublishUI(); if (t.dataset.out === 'pitch') renderPitch(); if (t.dataset.out === 'plan') renderPlan(); if (t.dataset.out === 'food') renderFood(); if (t.dataset.out === 'voices') renderVoces(); });
 function dropify(zone, input, handler){
   zone.onclick = () => input.click();
   zone.ondragover = e => { e.preventDefault(); zone.classList.add('over'); };
@@ -4965,11 +5105,14 @@ $('#reelRender').onclick = () => renderVideoFile('reel');
 $('#storyPlay').onclick = () => playVideo('story');
 $('#storyRender').onclick = () => renderVideoFile('story');
 $$('#storyFmt .chip').forEach(c => c.onclick = () => { S.storyFmt = c.dataset.f; store.set('storyFmt', S.storyFmt); if (playing) stopPlay(); renderAll(); });
-fillVoices();
+fillVoices(); renderVoces();
 $('#musicSel').value = S.music;
 $('#musicSel').onchange = () => { S.music = $('#musicSel').value; store.set('music', S.music); syncMusicInfo(); };
 document.addEventListener('change', e => { if (e.target.matches && e.target.matches('#voiceSel, .voicePick')) setVoice(e.target.value); });
 document.addEventListener('click', e => { if (e.target.matches && e.target.matches('#voiceTry, .voiceTry2')) tryVoice(e.target); });
+$('#vozRecBtn').onclick = vozRecordToggle;
+$('#vozSave').onclick = vozSave;
+$('#vozFile').onchange = ev => { const f = ev.target.files[0]; if (f) setSample(f, f.name.length > 28 ? f.name.slice(0, 26) + '…' : f.name); ev.target.value = ''; };
 $('#dlAll').onclick = downloadAll;
 $('#regenCap').onclick = () => { S.capV = (capVersion() + 1) % 3; if (isLocalOwn()) makeLocalCaption(); else makeCaption(); renderChecks(); toast('Otra versión del texto'); };
 $$('#looks .chip').forEach(c => c.onclick = () => { S.lookSel = c.dataset.l; store.set('look', S.lookSel); syncLookUI(); renderAll(); });
