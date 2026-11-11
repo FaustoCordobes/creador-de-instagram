@@ -84,7 +84,7 @@ main{padding:18px 22px;min-width:0}
 .toast.show{opacity:1;transform:translateX(-50%)}
 .demo-badge{font-size:12px;background:#ffd36b22;color:#ffd36b;border:1px solid #ffd36b55;padding:4px 10px;border-radius:99px}
 details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-top:10px}
-.modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .mode{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
 .mode b{font:700 15px 'Space Grotesk'}
 .mode span{font-size:12px;color:var(--muted);line-height:1.3}
@@ -168,6 +168,19 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
 .fitem img{width:44px;height:78px;object-fit:cover;object-position:top;border-radius:6px;flex:0 0 auto}
 .fitem span{display:flex;flex-direction:column;gap:2px;font-size:14px}.fitem small{opacity:.75}
 #fCount.warn,#fTargetAuto.warn{color:#ffb4a8}
+.plcfg{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin:10px 0}.plcfg input,.plcfg select,.plcfg textarea,#plNotes,#fdPrompt,#cliPick{width:100%}
+.plitem{display:flex;gap:12px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px}.plitem.done{opacity:.6}
+.pldate{flex:0 0 48px;text-align:center}.pldate b{display:block;font-size:24px;line-height:1}.pldate span{font-size:12px;opacity:.75}
+.plmain{flex:1;min-width:0}.plmain input,.plmain textarea{width:100%;margin-top:6px}.pltags{display:flex;gap:6px;flex-wrap:wrap}
+.pltag{font-size:12px;padding:3px 8px;border:1px solid var(--line);border-radius:99px;font-weight:600}
+.plact{flex:0 0 auto;display:flex;flex-direction:column;gap:6px}.plact select{min-height:44px}
+.pltable{width:100%;border-collapse:collapse}.pltable th,.pltable td{text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+.fdgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin:12px 0}
+.fdcard{display:flex;flex-direction:column;gap:8px;padding:10px;border:1px solid var(--line);border-radius:14px;cursor:pointer}.fdcard.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+.fdcard input{position:absolute;opacity:0}.fdcard:focus-within{outline:2px solid var(--acc);outline-offset:2px}.fdcard canvas{width:100%;height:auto;border-radius:8px}.fdcard small{display:block;margin-top:4px;opacity:.8;line-height:1.35}
+.fdslot{width:64px;height:64px;border-radius:10px;border:1px dashed var(--line);display:grid;place-items:center;font-size:11px;overflow:hidden;flex:0 0 auto}.fdslot img{width:100%;height:100%;object-fit:cover}
+.fdout img{max-width:min(100%,420px);border-radius:14px;display:block;margin-top:12px}
+@media (max-width:640px){.plitem{flex-wrap:wrap}.plact{flex-direction:row;width:100%}}
 .pphase{padding:10px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin-bottom:12px}
 .pitem{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;margin-bottom:22px}
 .pitem .frame{flex:0 0 260px}.pitem canvas{width:260px;height:auto;display:block;border-radius:14px}
@@ -196,6 +209,7 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
   <div class="modes" id="modes" data-step="1">
     <button class="mode on" data-mode="dev"><b>Para mi Instagram</b><span>F-C Web Studio: mostrar mis apps y webs</span></button>
     <button class="mode" data-mode="local"><b>Negocio o local de otra persona</b><span>Contenido para su cuenta</span></button>
+    <button class="mode" data-mode="local" data-monthly="1"><b>Contenido mensual para clientes</b><span>Plan del mes e historial de cada local</span></button>
     <button class="mode" data-mode="brand"><b>Mi marca</b><span>Presentarte y tus servicios</span></button>
   </div>
 
@@ -224,6 +238,16 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
     <label class="f">Puntos, uno por diapositiva (<i>Título: detalle</i>)</label><textarea id="m-points" rows="6"></textarea>
     </div>
     <label class="f">Llamado a la acción</label><input type="text" id="m-cta">
+  </div>
+
+  <!-- Clientes guardados -->
+  <div class="card" data-show="local" data-step="1">
+    <h2>Tus clientes</h2>
+    <label class="f" for="cliPick" style="margin-top:0">Cliente</label>
+    <select id="cliPick"></select>
+    <p class="hint" id="cliInfo" style="margin:6px 0"></p>
+    <div class="row"><button class="btn pri" id="cliSave">💾 Guardar cliente</button><button class="btn hidden" id="cliDel">Quitar</button></div>
+    <p class="hint" style="margin:6px 0 0">Cada cliente guarda sus datos, logo, fotos y el plan de cada mes en este navegador.</p>
   </div>
 
   <!-- Local: datos -->
@@ -461,6 +485,8 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
       <button class="tab" data-out="text">Texto del posteo</button>
       <button class="tab" data-out="poster" data-show="lp-local">🪧 Cartel / promo</button>
       <button class="tab" data-out="hl">Destacadas</button>
+      <button class="tab" data-out="plan" data-show="local">📅 Plan mensual</button>
+      <button class="tab" data-out="food" data-show="local">🍔 Cartas y comida</button>
       <button class="tab" data-out="pitch" data-show="pitch">📲 Historias de funciones</button>
       <button class="tab" data-out="publish">🚀 Subir a IG</button>
     </div>
@@ -541,6 +567,51 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
     </div>
   </div>
 
+
+  <div class="pane" data-pane="plan">
+    <div id="planNoClient" class="pphase"><b>Elegí o guardá un cliente.</b> En el paso 1, en "Tus clientes", elegí uno de la lista o cargá los datos del local y tocá "Guardar cliente". El plan queda guardado dentro de cada cliente.</div>
+    <div id="planBody" class="hidden">
+      <h2 id="planTitle" style="margin:0 0 10px"></h2>
+      <div class="plcfg">
+        <div><label class="f" for="plMonth">Mes</label><input type="month" id="plMonth"></div>
+        <div><label class="f" for="plReels">Reels por semana</label><input type="number" id="plReels" min="0" max="7" value="2"></div>
+        <div><label class="f" for="plCarr">Carruseles por semana</label><input type="number" id="plCarr" min="0" max="7" value="1"></div>
+        <div><label class="f" for="plPosts">Posts por semana</label><input type="number" id="plPosts" min="0" max="7" value="1"></div>
+        <div><label class="f" for="plStories">Historias por semana</label><input type="number" id="plStories" min="0" max="7" value="5"></div>
+        <div><label class="f" for="plPrice">Precio del mes ($)</label><input type="number" id="plPrice" min="0" step="1000" placeholder="Opcional"></div>
+      </div>
+      <p class="hint">Sugerido para un local: 2 reels (traen gente nueva), 1 carrusel (se guarda y se comparte), 1 post y historias casi todos los días (generan confianza). Una de cada cinco piezas vende; el resto muestra, enseña o acerca.</p>
+      <div class="row" style="flex-wrap:wrap"><button class="btn pri" id="plBuild">📅 Armar el plan del mes</button><button class="btn" id="plCopy">📋 Copiar el plan para el cliente</button></div>
+      <p id="planSum" class="pphase" style="margin-top:12px" role="status" aria-live="polite"></p>
+      <div id="planList"></div>
+      <h3 class="sub" style="margin-top:24px">Notas del cliente</h3>
+      <textarea id="plNotes" rows="3" placeholder="Qué le gusta, qué no quiere mostrar, días que cierra, quién aprueba el contenido…"></textarea>
+      <h3 class="sub" style="margin-top:24px">Historial con este cliente</h3>
+      <div id="planHist"></div>
+    </div>
+  </div>
+
+  <div class="pane" data-pane="food">
+    <p class="pphase"><b>Cartas y fotos de comida.</b> Subí la foto de un producto, elegí uno de los 3 estilos y el estudio arma el pedido para la IA de imágenes. Sirve para el feed, las historias y la carta.</p>
+    <div id="foodStyles" class="fdgrid" role="radiogroup" aria-label="Estilo de la imagen"></div>
+    <div class="plcfg">
+      <div><label class="f">Foto del producto</label><div class="row" style="align-items:center"><div id="fdPhotoSlot" class="fdslot">sin foto</div><label class="btn">Subir foto<input type="file" id="fdPhoto" accept="image/*" hidden></label></div></div>
+      <div><label class="f" for="fdProd">Producto</label><input type="text" id="fdProd" placeholder="Hamburguesa doble"></div>
+      <div data-fd="poster hero"><label class="f" for="fdPrice">Precio (opcional)</label><input type="text" id="fdPrice" placeholder="$ 12.900"></div>
+      <div><label class="f" for="fdRatio">Formato</label><select id="fdRatio"><option value="feed">Publicación (4:5)</option><option value="story">Historia (9:16)</option></select></div>
+      <div data-fd="poster"><label class="f" for="fdKicker">Línea de arriba</label><input type="text" id="fdKicker" placeholder="Más que un postre"></div>
+      <div data-fd="poster"><label class="f" for="fdTitle">Titular (2 palabras)</label><input type="text" id="fdTitle" placeholder="Puro sabor"></div>
+      <div data-fd="poster"><label class="f" for="fdSub">Bajada</label><input type="text" id="fdSub" placeholder="Sabor en cada capa"></div>
+      <div data-fd="hero"><label class="f" for="fdWord">Palabra gigante</label><input type="text" id="fdWord" placeholder="Tremenda"></div>
+      <div data-fd="hero" style="grid-column:1/-1"><label class="f" for="fdBens">4 ventajas (una por línea)</label><textarea id="fdBens" rows="4" placeholder="Carne de verdad&#10;Queso derretido&#10;Ingredientes frescos&#10;Delivery rápido"></textarea></div>
+    </div>
+    <label class="f" for="fdPrompt">Pedido para la IA (lo podés retocar)</label>
+    <textarea id="fdPrompt" rows="9"></textarea>
+    <div class="row" style="flex-wrap:wrap;margin-top:8px"><button class="btn pri" id="fdCopy">📋 Copiar el pedido</button><button class="btn hidden" id="fdGen">✨ Generar acá con IA</button></div>
+    <p class="hint" id="fdAiHint"></p>
+    <p class="hint">Cómo usarlo en ChatGPT: abrí un chat nuevo, subí la foto del producto, pegá el pedido y enviá. Si el resultado cambia el producto, pedile "dejá el producto idéntico a la foto".</p>
+    <div id="fdOut" class="fdout"></div>
+  </div>
 
   <div class="pane" data-pane="pitch">
     <div id="pitchPhase" class="pphase"></div>
@@ -4250,6 +4321,286 @@ async function pitchPublish(){
   finally { btn.disabled = false; btn.textContent = '🚀 Publicar en mis historias'; if (uploaded.length) api('api/ig', { action: 'cleanup', urls: uploaded }).catch(() => {}); }
 }
 
+/* ============ contenido mensual para clientes + cartas y fotos de comida ============ */
+// Cada local queda guardado con sus datos, su logo, sus fotos y el plan de cada mes,
+// para seguir trabajando con él y saber qué se entregó (y qué facturar).
+S.clients = []; S.clientId = store.get('clientId', '') || ''; S.monthly = !!store.get('monthly', false);
+const curClient = () => S.clients.find(c => c.id === S.clientId) || null;
+const CLI_FIELDS = () => $$('aside [id^="l-"], aside [id^="lf-"]').filter(el => el.type !== 'file').map(el => el.id);
+async function loadClients(){ try { S.clients = (await IDB.get('clients')) || []; } catch { S.clients = []; } if (!curClient()) S.clientId = ''; renderClients(); }
+function persistClients(){ try { IDB.put('clients', S.clients); store.set('clientId', S.clientId); } catch {} }
+function snapClient(c){
+  const f = {}; CLI_FIELDS().forEach(id => { f[id] = $('#' + id).value; });
+  c.form = f; c.name = $('#l-name').value.trim() || c.name || 'Local sin nombre'; c.rubro = $('#l-rubro').value.trim();
+  c.accent = $('#accent').value; c.theme = S.theme;
+  c.logo = S.logo ? { blob: S.logo.blob, name: S.logo.name } : null; c.logoBg = S.logoBg || null;
+  c.shots = S.shots.filter(s => s.blob).slice(0, 24).map(s => ({ blob: s.blob, name: s.name, on: s.on, caption: s.caption || '' }));
+  c.updated = Date.now();
+}
+function saveClient(silent){
+  if (S.mode !== 'local') return;
+  let c = curClient();
+  if (!c) { if (!$('#l-name').value.trim()) { if (!silent) { toast('Primero completá el nombre del local'); goStep(3, true); } return; } c = { id: Math.random().toString(36).slice(2), plans: {}, notes: '', created: Date.now() }; S.clients.push(c); S.clientId = c.id; }
+  snapClient(c); persistClients(); renderClients();
+  if (!silent) toast(`Guardé a ${c.name} en tus clientes`);
+}
+async function openClient(id){
+  const prev = curClient(); if (prev && S.mode === 'local') { snapClient(prev); }
+  const c = S.clients.find(x => x.id === id);
+  S.clientId = c ? c.id : '';
+  restoring = true;
+  try {
+    CLI_FIELDS().forEach(i => { $('#' + i).value = c ? (c.form[i] ?? '') : ''; });
+    S.shots = []; S.logo = null; S.logoBg = null;
+    if (c) {
+      for (const s of c.shots || []) { const sh = await makeShot(s.blob, s.name); if (sh) { sh.on = s.on !== false; sh.manual = true; sh.caption = s.caption; S.shots.push(sh); } }
+      if (c.logo) { S.logo = await makeShot(c.logo.blob, c.logo.name); S.logoBg = c.logoBg; }
+      if (c.accent) $('#accent').value = c.accent; if (c.theme) setTheme(c.theme);
+    }
+    $('#logoSlot').innerHTML = S.logo ? `<img src="${S.logo.url}" alt="Logo">` : 'sin logo'; $('#delLogo').classList.toggle('hidden', !S.logo);
+    S.isDemo = false; $('#lDemoBadge').classList.add('hidden');
+  } finally { restoring = false; }
+  persistClients(); renderClients(); renderShotList(); renderAll(); renderPlan(); renderFood();
+  toast(c ? `Abrí a ${c.name}` : 'Local nuevo: completá sus datos');
+}
+function renderClients(){
+  const sel = $('#cliPick'); if (!sel) return;
+  sel.innerHTML = '<option value="">— Local nuevo —</option>' + S.clients.slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.id}"${c.id === S.clientId ? ' selected' : ''}>${esc(c.name)}${c.rubro ? ' · ' + esc(c.rubro) : ''}</option>`).join('');
+  const c = curClient();
+  $('#cliInfo').textContent = c ? `${Object.keys(c.plans || {}).length} mes(es) planificados · última vez: ${new Date(c.updated || c.created).toLocaleDateString('es-AR')}` : (S.clients.length ? 'Elegí un cliente o cargá uno nuevo y guardalo.' : 'Todavía no guardaste clientes. Cargá los datos del local y tocá "Guardar cliente".');
+  $('#cliDel').classList.toggle('hidden', !c);
+  $('#cliSave').textContent = c ? '💾 Guardar cambios' : '💾 Guardar cliente';
+}
+let cliT; function autoSaveClient(){ if (restoring || S.mode !== 'local' || !curClient()) return; clearTimeout(cliT); cliT = setTimeout(() => { const c = curClient(); if (c) { snapClient(c); persistClients(); } }, 1500); }
+
+/* ---- plan del mes ---- */
+// Cómo trabajan los creadores: 4 a 6 pilares fijos, reels para alcance, carruseles para guardados,
+// historias todos los días para la confianza, y más o menos 1 de cada 5 piezas es venta directa.
+const PILLARS = {
+  producto: { n: 'Producto estrella', c: '#e4572e' }, detras: { n: 'Detrás de escena', c: '#3d7ea6' }, prueba: { n: 'Lo que dicen los clientes', c: '#2e9e6b' },
+  tips: { n: 'Tips y datos útiles', c: '#8e6bbf' }, promo: { n: 'Promo u oferta', c: '#d4a017' }, comunidad: { n: 'Comunidad e interacción', c: '#c2518f' }, fecha: { n: 'Fecha especial', c: '#5a6b7a' }
+};
+const FMT = { reel: { n: 'Reel', tab: 'reel', e: '🎬' }, carrusel: { n: 'Carrusel', tab: 'carousel', e: '🖼️' }, post: { n: 'Post', tab: 'post', e: '📷' }, historia: { n: 'Historia', tab: 'story', e: '⏱️' } };
+const IDEAS = {
+  producto: [
+    { f: 'reel', t: 'Cómo se prepara {prod}, de principio a fin, en 15 segundos', h: 'Así se hace {prod} en {local}' },
+    { f: 'carrusel', t: 'Los 3 más pedidos del mes, con foto y precio', h: 'Los 3 que más salen en {local}' },
+    { f: 'post', t: 'Foto protagonista de {prod}, con una frase corta', h: '{prod}: el que piden todos' },
+    { f: 'historia', t: 'Primer plano de {prod} recién hecho, con sticker de "lo quiero"', h: 'Recién salido: {prod}' },
+    { f: 'reel', t: '"Si venís por primera vez, pedí esto": la recomendación de la casa', h: '¿Primera vez en {local}? Pedí esto' },
+    { f: 'carrusel', t: '{prod} por dentro: qué lleva y por qué sale tan bien', h: 'Qué tiene {prod} que todos vuelven' } ],
+  detras: [
+    { f: 'reel', t: 'Un día en {local} antes de abrir: preparación a cámara rápida', h: 'Lo que pasa antes de abrir' },
+    { f: 'historia', t: 'Presentar a alguien del equipo: nombre, qué hace y su favorito', h: 'Conocé a quien te atiende' },
+    { f: 'post', t: 'Foto del equipo o del dueño en el local, con la historia de cómo empezó', h: 'Así empezó {local}' },
+    { f: 'historia', t: 'Llegó la mercadería del día: mostrar lo fresco', h: 'Recién llegado' },
+    { f: 'reel', t: 'El detalle que nadie ve: cómo se cuida la calidad', h: 'El detalle que no ves (y hace la diferencia)' } ],
+  prueba: [
+    { f: 'post', t: 'Reseña real de Google o de Instagram, con foto del producto', h: 'Lo que dijo un cliente esta semana' },
+    { f: 'historia', t: 'Compartir la historia de un cliente que los etiquetó, con un gracias', h: 'Gracias por venir' },
+    { f: 'carrusel', t: '3 reseñas reales y qué pidió cada uno', h: '3 clientes, 3 favoritos' },
+    { f: 'reel', t: 'Reacción de un cliente probando {prod} (con su permiso)', h: 'Su cara lo dice todo' } ],
+  tips: [
+    { f: 'carrusel', t: '3 datos que casi nadie sabe sobre {prod}', h: '3 cosas que no sabías de {prod}' },
+    { f: 'reel', t: 'Un consejo rápido del rubro que le sirve al cliente en su casa', h: 'El truco que usamos todos los días' },
+    { f: 'historia', t: 'Mito o verdad: una pregunta con sticker de encuesta y la respuesta al día siguiente', h: '¿Mito o verdad?' },
+    { f: 'carrusel', t: 'Cómo elegir bien: guía corta para decidir qué pedir', h: 'Cómo elegir sin equivocarte' } ],
+  promo: [
+    { f: 'post', t: 'La promo de la semana, con precio grande y hasta cuándo vale', h: 'Promo de la semana en {local}' },
+    { f: 'historia', t: 'Promo solo por hoy, con cuenta regresiva y link a WhatsApp', h: 'Solo por hoy' },
+    { f: 'reel', t: 'Combo del mes mostrado en 10 segundos, con el precio al final', h: 'El combo del mes' },
+    { f: 'historia', t: 'Quedan pocos: aviso de últimas unidades o últimos lugares', h: 'Quedan pocos' } ],
+  comunidad: [
+    { f: 'historia', t: 'Encuesta: que elijan entre dos opciones de la carta', h: '¿Cuál elegís?' },
+    { f: 'historia', t: 'Caja de preguntas: "¿qué querés que sumemos?"', h: 'Te leemos' },
+    { f: 'post', t: 'Sorteo simple entre los que comentan y etiquetan a un amigo', h: 'Sorteo en {local}' },
+    { f: 'reel', t: 'Algo del barrio o de la ciudad que quieren a la par de su local', h: 'Lo que nos gusta de estar acá' },
+    { f: 'historia', t: 'Adivinanza con foto recortada del producto', h: '¿Adivinás qué es?' } ],
+  fecha: [
+    { f: 'post', t: 'Saludo y propuesta especial por {fecha}', h: '{fecha} en {local}' },
+    { f: 'historia', t: 'Recordatorio de {fecha}: qué preparan para ese día y cómo reservar o pedir', h: 'Se viene {fecha}' },
+    { f: 'reel', t: 'Especial de {fecha}: mostrar la propuesta en 10 segundos', h: 'Especial de {fecha}' } ]
+};
+// reparto de pilares: mucho valor y cercanía, poca venta directa
+const MIX_FEED = ['producto', 'tips', 'prueba', 'detras', 'producto', 'promo', 'comunidad', 'tips', 'producto', 'detras'];
+const MIX_STORY = ['detras', 'comunidad', 'producto', 'prueba', 'promo', 'comunidad', 'detras', 'producto', 'tips', 'comunidad'];
+function nthSunday(y, m, n){ const d = new Date(y, m, 1); const first = (7 - d.getDay()) % 7 + 1; return first + 7 * (n - 1); }
+function keyDates(y, m){ // m: 0 a 11
+  const F = { '0-1': 'Año Nuevo', '1-14': 'San Valentín', '2-8': 'el Día de la Mujer', '4-1': 'el Día del Trabajador', '4-25': 'el 25 de Mayo', '4-28': 'el Día de la Hamburguesa', '6-9': 'el 9 de Julio', '6-20': 'el Día del Amigo', '8-21': 'el Día de la Primavera', '9-1': 'el Día del Café', '9-31': 'Halloween', '11-8': 'el armado del arbolito', '11-24': 'Nochebuena', '11-31': 'fin de año' };
+  const out = {}; Object.entries(F).forEach(([k, v]) => { const [mm, dd] = k.split('-').map(Number); if (mm === m) out[dd] = v; });
+  if (m === 5) out[nthSunday(y, m, 3)] = 'el Día del Padre';
+  if (m === 7) out[nthSunday(y, m, 3)] = 'el Día de las Infancias';
+  if (m === 9) out[nthSunday(y, m, 3)] = 'el Día de la Madre';
+  return out;
+}
+const ymNow = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+function planCfg(){ return { reels: +$('#plReels').value || 0, carr: +$('#plCarr').value || 0, posts: +$('#plPosts').value || 0, stories: +$('#plStories').value || 0 }; }
+function buildPlan(ym, cfg){
+  const [y, mo] = ym.split('-').map(Number), m = mo - 1, days = new Date(y, mo, 0).getDate();
+  const L = readLocal(), prods = (L.itemList || []).map(i => i.title).filter(Boolean), local = L.name || 'el local';
+  const dates = keyDates(y, m), used = {}, items = [];
+  let pi = 0, fi = 0, si = 0;
+  const prod = () => prods.length ? prods[pi++ % prods.length] : 'el producto estrella';
+  const idea = (pillar, fmt, fecha) => {
+    const pool = IDEAS[pillar].filter(i => i.f === fmt), any = pool.length ? pool : IDEAS[pillar];
+    const k = pillar + fmt; used[k] = (used[k] || 0) + 1; const it = any[(used[k] - 1) % any.length], p = prod();
+    const fill = s => cap1(s.replace(/\{prod\}/g, p).replace(/\{local\}/g, local).replace(/\{fecha\}/g, fecha || ''));
+    return { t: fill(it.t), h: fill(it.h) };
+  };
+  const feedSeq = [...Array(cfg.reels).fill('reel'), ...Array(cfg.carr).fill('carrusel'), ...Array(cfg.posts).fill('post')];
+  // intercalar formatos para que no queden dos iguales seguidos
+  const seq = []; { const b = { reel: cfg.reels, carrusel: cfg.carr, post: cfg.posts }; while (seq.length < feedSeq.length) for (const k of ['reel', 'carrusel', 'post']) if (b[k] > 0) { seq.push(k); b[k]--; } }
+  const feedDays = [2, 4, 6, 1, 3, 5, 0], storyDays = [1, 3, 5, 0, 2, 4, 6];
+  for (let d = 1; d <= days; ) {
+    const wd = new Date(y, m, d).getDay(), end = Math.min(days, d + ((7 - wd) % 7)); // semana hasta el domingo
+    const inWeek = {}; for (let x = d; x <= end; x++) inWeek[new Date(y, m, x).getDay()] = x;
+    const share = (end - d + 1) / 7;
+    const nf = Math.round(seq.length * share), ns = Math.round(cfg.stories * share);
+    feedDays.filter(w => inWeek[w]).slice(0, nf).forEach((w, k) => { const day = inWeek[w], fmt = seq[k % Math.max(1, seq.length)], fecha = dates[day]; const pillar = fecha ? 'fecha' : MIX_FEED[fi++ % MIX_FEED.length]; const i = idea(pillar, fmt, fecha); items.push({ id: Math.random().toString(36).slice(2), day, fmt, pillar, idea: i.t, hook: i.h, status: 'pendiente' }); });
+    storyDays.filter(w => inWeek[w]).slice(0, ns).forEach(w => { const day = inWeek[w], fecha = dates[day] || dates[day + 1]; const pillar = fecha ? 'fecha' : MIX_STORY[si++ % MIX_STORY.length]; const i = idea(pillar, 'historia', fecha); items.push({ id: Math.random().toString(36).slice(2), day, fmt: 'historia', pillar, idea: i.t, hook: i.h, status: 'pendiente' }); });
+    d = end + 1;
+  }
+  return items.sort((a, b) => a.day - b.day || (a.fmt === 'historia') - (b.fmt === 'historia'));
+}
+const monthName = ym => { const [y, m] = ym.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' }); };
+const money = n => '$ ' + Math.round(n).toLocaleString('es-AR');
+function renderPlan(){
+  const box = $('#planList'); if (!box) return;
+  const c = curClient(), ym = $('#plMonth').value || ymNow();
+  $('#planNoClient').classList.toggle('hidden', !!c); $('#planBody').classList.toggle('hidden', !c);
+  if (!c) return;
+  const plan = (c.plans || {})[ym];
+  $('#planTitle').textContent = `${c.name} · ${monthName(ym)}`;
+  $('#plNotes').value = c.notes || '';
+  if (plan) { $('#plReels').value = plan.cfg.reels; $('#plCarr').value = plan.cfg.carr; $('#plPosts').value = plan.cfg.posts; $('#plStories').value = plan.cfg.stories; $('#plPrice').value = plan.price || ''; }
+  $('#plBuild').textContent = plan ? '🔄 Rehacer el plan de este mes' : '📅 Armar el plan del mes';
+  if (!plan) { box.innerHTML = '<p class="hint">Todavía no hay plan para este mes. Elegí cuántas piezas por semana incluye el servicio y tocá "Armar el plan del mes".</p>'; $('#planSum').innerHTML = ''; renderPlanHist(c); return; }
+  const [y, mo] = ym.split('-').map(Number), wdN = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+  let html = '', week = 0, lastW = -1;
+  plan.items.forEach(it => {
+    const dt = new Date(y, mo - 1, it.day), wk = Math.floor((it.day + (new Date(y, mo - 1, 1).getDay() + 6) % 7 - 1) / 7);
+    if (wk !== lastW) { lastW = wk; week++; html += `<h3 class="sub" style="margin:18px 0 8px">Semana ${week}</h3>`; }
+    const P = PILLARS[it.pillar], F = FMT[it.fmt];
+    html += `<div class="plitem${it.status === 'publicado' ? ' done' : ''}" data-id="${it.id}">
+      <div class="pldate"><b>${it.day}</b><span>${wdN[dt.getDay()]}</span></div>
+      <div class="plmain"><div class="pltags"><span class="pltag">${F.e} ${F.n}</span><span class="pltag" style="border-color:${P.c};color:${P.c}">${P.n}</span></div>
+        <input type="text" data-k="hook" value="${esc(it.hook)}" aria-label="Gancho del día ${it.day}">
+        <textarea data-k="idea" rows="2" aria-label="Idea del día ${it.day}">${esc(it.idea)}</textarea></div>
+      <div class="plact"><select data-k="status" aria-label="Estado"><option${it.status === 'pendiente' ? ' selected' : ''}>pendiente</option><option${it.status === 'listo' ? ' selected' : ''}>listo</option><option${it.status === 'publicado' ? ' selected' : ''}>publicado</option></select>
+        <button class="btn sm" data-make>Crear →</button><button class="btn sm" data-rm aria-label="Quitar esta pieza">✕</button></div></div>`;
+  });
+  box.innerHTML = html;
+  box.querySelectorAll('.plitem').forEach(row => {
+    const it = plan.items.find(x => x.id === row.dataset.id);
+    row.querySelectorAll('[data-k]').forEach(el => el.onchange = () => { it[el.dataset.k] = el.value; persistClients(); if (el.dataset.k === 'status') renderPlan(); });
+    row.querySelector('[data-rm]').onclick = () => { plan.items = plan.items.filter(x => x !== it); persistClients(); renderPlan(); };
+    row.querySelector('[data-make]').onclick = () => {
+      $('#lf-hook').value = it.hook; if (it.pillar === 'promo' && !$('#l-promo').value.trim()) $('#l-promo').value = it.hook;
+      if (it.status === 'pendiente') it.status = 'listo'; persistClients();
+      if (S.purpose !== 'local') { S.purpose = 'local'; applyMode(); }
+      renderAll(); $(`[data-out=${FMT[it.fmt].tab}]`).click();
+      toast(`${FMT[it.fmt].n} del día ${it.day}: ${it.idea}`, { ms: 9000 });
+    };
+  });
+  const tot = plan.items.length, by = k => plan.items.filter(i => i.fmt === k).length, done = plan.items.filter(i => i.status !== 'pendiente').length, pub = plan.items.filter(i => i.status === 'publicado').length;
+  $('#planSum').innerHTML = `<b>${tot} piezas</b>: ${by('reel')} reels, ${by('carrusel')} carruseles, ${by('post')} posts y ${by('historia')} historias · <b>${done}</b> listas, <b>${pub}</b> publicadas${plan.price ? ` · A facturar por ${monthName(ym)}: <b>${money(plan.price)}</b>` : ''}`;
+  renderPlanHist(c);
+}
+function renderPlanHist(c){
+  const ks = Object.keys(c.plans || {}).sort().reverse();
+  $('#planHist').innerHTML = ks.length ? '<table class="pltable"><tr><th>Mes</th><th>Piezas</th><th>Publicadas</th><th>Facturado</th><th></th></tr>' + ks.map(k => { const p = c.plans[k]; return `<tr><td>${cap1(monthName(k))}</td><td>${p.items.length}</td><td>${p.items.filter(i => i.status === 'publicado').length}</td><td>${p.price ? money(p.price) : '—'}</td><td><button class="btn sm" data-ym="${k}">Abrir</button></td></tr>`; }).join('') + `</table><p class="hint">Total con este cliente: <b>${money(ks.reduce((a, k) => a + (+c.plans[k].price || 0), 0))}</b> en ${ks.length} mes(es).</p>` : '<p class="hint">Acá vas a ver cada mes que trabajaste con este cliente.</p>';
+  $('#planHist').querySelectorAll('[data-ym]').forEach(b => b.onclick = () => { $('#plMonth').value = b.dataset.ym; renderPlan(); });
+}
+function makePlan(){
+  const c = curClient(); if (!c) return;
+  const ym = $('#plMonth').value || ymNow(), cfg = planCfg();
+  if (cfg.reels + cfg.carr + cfg.posts + cfg.stories === 0) { toast('Poné al menos una pieza por semana'); return; }
+  const old = c.plans[ym];
+  if (old && old.items.some(i => i.status !== 'pendiente') && !confirm('Este mes ya tiene piezas listas o publicadas. ¿Rehacer el plan igual?')) return;
+  c.plans[ym] = { cfg, price: +$('#plPrice').value || 0, items: buildPlan(ym, cfg), created: Date.now() };
+  persistClients(); renderPlan(); renderClients(); toast(`Plan de ${monthName(ym)} listo: ${c.plans[ym].items.length} piezas`);
+}
+function planText(){
+  const c = curClient(), ym = $('#plMonth').value || ymNow(), p = c && c.plans[ym]; if (!p) return '';
+  const by = k => p.items.filter(i => i.fmt === k).length;
+  return `Plan de contenido de ${monthName(ym)} para ${c.name}\n${by('reel')} reels, ${by('carrusel')} carruseles, ${by('post')} posts y ${by('historia')} historias.\n\n` + p.items.map(i => `${String(i.day).padStart(2, '0')} · ${FMT[i.fmt].n} · ${i.hook}\n    ${i.idea}`).join('\n') + '\n\nPara cada pieza necesito fotos o videos del local. Te aviso qué grabar cada semana.';
+}
+
+/* ---- cartas y fotos de comida: 3 estilos ---- */
+const FOOD = {
+  poster: { n: 'Póster minimalista', d: 'El producto como protagonista sobre fondo oscuro, con un titular grande de dos palabras, una bajada corta y el precio en un sello. Ideal para promos y lanzamientos.',
+    p: v => `Usá la foto adjunta como referencia exacta del producto. Creá un póster publicitario ${v.ratio} donde el producto sea el protagonista.
+- Producto: el mismo de la foto, sin inventar ni quitar ingredientes, con acabado fotográfico profesional (luz de estudio lateral suave, textura real, nada plástico).
+- Fondo: oscuro y sobrio (${v.dark}), con superficie de piedra o madera y 2 o 3 ingredientes sueltos del propio producto, desenfocados.
+- Arriba, centrado: una línea chica en mayúsculas espaciadas "${v.kicker}" y debajo el titular grande en tipografía sans condensada y gruesa: "${v.title}". Debajo, una bajada chica: "${v.sub}".${v.price ? `\n- Precio "${v.price}" dentro de un sello circular de trazo fino, a un costado del producto, sin tapar nada.` : ''}
+- Paleta: máximo 3 colores (${v.palette}). Mucho aire, composición limpia, jerarquía clara: titular, producto, precio.
+- Prohibido: estrellas, explosiones, flechas, stickers, textos extra, logos de otras marcas, sobresaturación y brillo artificial. Todo el texto en español, escrito exactamente como está entre comillas.` },
+  clean: { n: 'Foto limpia de estudio', d: 'Solo tu producto, sin texto, con acabado de foto publicitaria: fondo liso, luz de estudio y cada detalle nítido. Ideal para la carta, el catálogo o como base de otros diseños.',
+    p: v => `Usá la foto adjunta como referencia exacta del producto. Rehacela como fotografía publicitaria profesional ${v.ratio}.
+- Mismo producto, mismos ingredientes y mismas proporciones: no inventes, no agregues ni saques nada. Mejorá solo presentación, nitidez y luz.
+- Producto centrado y entero, ocupando el 70% del cuadro, visto de frente y apenas desde arriba.
+- Fondo liso y oscuro (${v.dark}) con degradado sutil, sobre una superficie mate. Luz de estudio suave desde un costado y un reflejo tenue debajo.
+- Texturas reales y apetitosas: brillo natural, sin aspecto plástico ni de ilustración.
+- Sin ningún texto, sin logos, sin marcas, sin manos, sin elementos decorativos. Colores fieles al producto, sin sobresaturar.` },
+  hero: { n: 'Oferta héroe minimal', d: 'Fondo claro, una palabra gigante detrás del producto y abajo cuatro íconos con sus ventajas. Limpia, moderna y sin apariencia de IA. Ideal para el feed y los destacados.',
+    p: v => `Usá la foto adjunta como referencia exacta del producto. Creá una pieza publicitaria minimalista ${v.ratio}.
+- Fondo claro y liso (${v.light}), sin texturas ni objetos.
+- Detrás del producto, de lado a lado, una sola palabra gigante en mayúsculas, tipografía sans condensada extra gruesa, color ${v.ink}: "${v.word}". El producto tapa parte de las letras.
+- Producto: el mismo de la foto, recortado, centrado, grande, con acabado fotográfico profesional y sombra suave en la base. No inventes ingredientes.
+- Abajo, una fila de 4 íconos de línea fina separados por líneas verticales, cada uno con su texto chico en mayúsculas: ${v.benefits.map(b => `"${b}"`).join(', ')}.${v.price ? `\n- Precio "${v.price}" chico y prolijo, arriba a la derecha.` : ''}
+- Paleta: máximo 3 colores (${v.palette}). Mucho aire y márgenes parejos.
+- Prohibido: degradados llamativos, estrellas, explosiones, stickers, textos extra, logos de otras marcas y sobresaturación. Todo el texto en español, exactamente como está entre comillas.` }
+};
+S.food = { style: store.get('foodStyle', 'poster'), photo: null, out: null };
+function foodVals(){
+  const L = readLocal(), b = readBrand(), acc = $('#accent').value || '#e4572e';
+  const prod = $('#fdProd').value.trim() || ((L.itemList || [])[0] || {}).title || 'el producto';
+  const bens = splitLines($('#fdBens').value).slice(0, 4); const defB = ['Ingredientes frescos', 'Hecho en el momento', 'Porciones abundantes', 'Pedilo por WhatsApp'];
+  while (bens.length < 4) bens.push(defB[bens.length]);
+  const w = (prod.split(/\s+/).sort((a, b2) => b2.length - a.length)[0] || 'SABOR').toUpperCase();
+  return { ratio: $('#fdRatio').value === 'story' ? 'vertical 9:16 (historia de Instagram)' : 'vertical 4:5 (publicación de Instagram)', prod,
+    title: ($('#fdTitle').value.trim() || prod).toUpperCase(), kicker: ($('#fdKicker').value.trim() || L.name || 'Hecho acá').toUpperCase(), sub: ($('#fdSub').value.trim() || 'Sabor en cada bocado').toUpperCase(),
+    price: $('#fdPrice').value.trim(), word: ($('#fdWord').value.trim() || w).toUpperCase(), benefits: bens.map(x => x.toUpperCase()),
+    dark: 'negro carbón', light: 'crema muy claro', ink: 'negro', palette: `negro o crema de base, blanco y un solo acento ${acc}` };
+}
+function foodPrompt(){ return FOOD[S.food.style].p(foodVals()); }
+function foodThumb(c, k){
+  const g = c.getContext('2d'), W = c.width, H = c.height; g.clearRect(0, 0, W, H);
+  const dark = k !== 'hero'; g.fillStyle = dark ? '#16161a' : '#f3eee4'; g.fillRect(0, 0, W, H);
+  const acc = $('#accent').value || '#e4572e';
+  if (k === 'poster') { g.fillStyle = '#fff'; g.fillRect(W*.2, H*.1, W*.6, H*.07); g.fillRect(W*.28, H*.2, W*.44, H*.07); g.fillStyle = acc; g.fillRect(W*.3, H*.3, W*.4, H*.012); }
+  if (k === 'hero') { g.fillStyle = '#16161a'; g.font = `900 ${H*.3}px sans-serif`; g.textAlign = 'center'; g.fillText('SABOR', W/2, H*.36, W*.96); }
+  g.fillStyle = '#b5651d'; g.beginPath(); g.ellipse(W/2, H*.52, W*.26, H*.1, 0, Math.PI, 0); g.fill();
+  g.fillStyle = '#5a3a22'; g.fillRect(W*.25, H*.53, W*.5, H*.05); g.fillStyle = '#f2c14e'; g.fillRect(W*.24, H*.585, W*.52, H*.025); g.fillStyle = '#4c9a4c'; g.fillRect(W*.23, H*.61, W*.54, H*.02);
+  g.fillStyle = '#c9812f'; g.beginPath(); g.ellipse(W/2, H*.64, W*.26, H*.06, 0, 0, Math.PI); g.fill();
+  if (k === 'poster') { g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(W*.82, H*.56, W*.1, 0, 7); g.stroke(); g.fillStyle = '#fff'; g.font = `700 ${W*.07}px sans-serif`; g.textAlign = 'center'; g.fillText('$', W*.82, H*.585); }
+  if (k === 'hero') { g.fillStyle = '#16161a'; for (let i = 0; i < 4; i++) { g.fillRect(W*(.1 + i*.22), H*.84, W*.14, H*.012); g.beginPath(); g.arc(W*(.17 + i*.22), H*.79, W*.03, 0, 7); g.fill(); } }
+}
+function renderFood(){
+  const box = $('#foodStyles'); if (!box) return;
+  box.innerHTML = Object.entries(FOOD).map(([k, f]) => `<label class="fdcard${S.food.style === k ? ' on' : ''}"><input type="radio" name="fdStyle" value="${k}"${S.food.style === k ? ' checked' : ''}><canvas width="160" height="200" data-th="${k}" aria-hidden="true"></canvas><span><b>${f.n}</b><small>${f.d}</small></span></label>`).join('');
+  box.querySelectorAll('[data-th]').forEach(c => foodThumb(c, c.dataset.th));
+  box.querySelectorAll('input').forEach(r => r.onchange = () => { S.food.style = r.value; store.set('foodStyle', r.value); renderFood(); });
+  $$('[data-fd]').forEach(el => el.classList.toggle('hidden', !el.dataset.fd.split(' ').includes(S.food.style)));
+  $('#fdPrompt').value = foodPrompt();
+  const ai = S.server && S.server.ttsPremium && S.server.ttsPremium.openai;
+  $('#fdGen').classList.toggle('hidden', !ai);
+  $('#fdAiHint').textContent = ai ? 'Generar acá usa tu clave de OpenAI y tarda cerca de 1 minuto. Cada imagen cuesta unos centavos de dólar.' : 'Para generar la imagen acá mismo, cargá OPENAI_API_KEY en Vercel. Mientras tanto, copiá el prompt y pegalo en ChatGPT junto con la foto.';
+  $('#fdPhotoSlot').innerHTML = S.food.photo ? `<img src="${S.food.photo.url}" alt="Foto del producto">` : 'sin foto';
+  $('#fdOut').innerHTML = S.food.out ? `<img src="${S.food.out.url}" alt="Imagen generada: ${esc(FOOD[S.food.style].n)}"><div class="row" style="margin-top:8px"><button class="btn pri" id="fdDl">⬇ Descargar</button><button class="btn" id="fdUse">Usar en el contenido</button></div>` : '';
+  if (S.food.out) { $('#fdDl').onclick = () => saveFile(`${fileBase()}-${S.food.style}.jpg`, S.food.out.blob); $('#fdUse').onclick = async () => { const sh = await makeShot(S.food.out.blob, `comida-${S.food.style}.jpg`); if (sh) { sh.manual = true; S.shots.unshift(sh); renderShotList(); renderAll(); toast('Sumada a las imágenes del local'); } }; }
+}
+function shotDataUrl(sh, max){ const s = Math.min(1, max / Math.max(sh.w, sh.h)), c = document.createElement('canvas'); c.width = Math.round(sh.w * s); c.height = Math.round(sh.h * s); c.getContext('2d').drawImage(sh.img, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.9); }
+async function foodGenerate(){
+  if (!S.food.photo) { toast('Primero subí la foto del producto'); return; }
+  const btn = $('#fdGen'); btn.disabled = true; btn.textContent = 'Generando… (cerca de 1 minuto)';
+  try {
+    const j = await withTimeout(api('api/imagen', { image: shotDataUrl(S.food.photo, 1280), prompt: $('#fdPrompt').value, size: $('#fdRatio').value === 'story' ? '1024x1536' : '1024x1536' }), 115000);
+    const sh = await makeShot(dataUrlBlob(j.img), 'generada.jpg'); S.food.out = sh; renderFood();
+  } catch (e) { toast('No pude generar la imagen: ' + e.message + ' Copiá el prompt y usalo en ChatGPT.', { ms: 9000 }); }
+  finally { btn.disabled = false; btn.textContent = '✨ Generar acá con IA'; }
+}
+
 /* ============ render ============ */
 let fontsReady = false;
 async function ensureFonts(){
@@ -4258,6 +4609,7 @@ async function ensureFonts(){
   fontsReady = true;
 }
 function renderAll(){
+  autoSaveClient();
   if (isPitch() && S.pitch.stories.length && $('[data-pane=pitch]').classList.contains('on')) { clearTimeout(S._pt); S._pt = setTimeout(renderPitch, 350); }
   store.set('brand', readBrand());
   const b = readBrand(), T = themeColors();
@@ -4364,7 +4716,7 @@ function setSrc(k){ $$('#srcTabs .tab').forEach(t => t.classList.toggle('on', t.
 
 /* ============ eventos ============ */
 $$('#srcTabs .tab').forEach(t => t.onclick = () => setSrc(t.dataset.src));
-$$('#outTabs .tab').forEach(t => t.onclick = () => { $$('#outTabs .tab').forEach(x => x.classList.toggle('on', x === t)); $$('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === t.dataset.out)); if (playing) stopPlay(); if (t.dataset.out === 'publish') updatePublishUI(); if (t.dataset.out === 'pitch') renderPitch(); });
+$$('#outTabs .tab').forEach(t => t.onclick = () => { $$('#outTabs .tab').forEach(x => x.classList.toggle('on', x === t)); $$('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === t.dataset.out)); if (playing) stopPlay(); if (t.dataset.out === 'publish') updatePublishUI(); if (t.dataset.out === 'pitch') renderPitch(); if (t.dataset.out === 'plan') renderPlan(); if (t.dataset.out === 'food') renderFood(); });
 function dropify(zone, input, handler){
   zone.onclick = () => input.click();
   zone.ondragover = e => { e.preventDefault(); zone.classList.add('over'); };
@@ -4421,7 +4773,7 @@ $('#fontSel').onchange = async () => { store.set('font', $('#fontSel').value); a
 function applyMode(){
   const vis = k => k === 'dev' ? S.mode === 'dev' : k === 'local' ? S.mode === 'local' : k === 'brand' ? S.mode === 'brand' : k === 'logo' ? (S.mode === 'local' || S.mode === 'brand') : k === 'notlocalown' ? !isLocalOwn() : k === 'caso' ? (S.mode === 'local' && S.purpose === 'caso') : k === 'lp-local' ? isLocalOwn() : k === 'devlike' ? (S.mode === 'dev' || (S.mode === 'local' && S.purpose === 'caso')) : k === 'pitch' ? isPitch() : k === 'nopitch' ? !isPitch() : true;
   $$('[data-show]').forEach(el => el.classList.toggle('hidden', !vis(el.dataset.show)));
-  $$('#modes .mode').forEach(x => x.classList.toggle('on', x.dataset.mode === S.mode));
+  $$('#modes .mode').forEach(x => x.classList.toggle('on', x.dataset.mode === S.mode && (S.mode !== 'local' || !!x.dataset.monthly === !!S.monthly)));
   $$('#purpose .chip').forEach(x => x.classList.toggle('on', x.dataset.p === S.purpose));
   $('#projTitle').textContent = S.mode === 'local' ? 'La web o app que le hiciste (opcional)' : 'Tu proyecto';
   $('#imgTitle').textContent = S.mode === 'local' ? 'Logo y fotos' : S.mode === 'brand' ? 'Tu logo y tus trabajos' : 'Capturas de pantalla';
@@ -4456,7 +4808,7 @@ function setMode(m){
   renderAll();
   if (!S.shots.length && !restoring) loadImages(m).then(im => { if (!im || S.mode !== m || S.shots.length) return; S.shots = im.shots; if (!S.logo && im.logo) { S.logo = im.logo; S.logoBg = im.logoBg; $('#logoSlot').innerHTML = `<img src="${S.logo.url}" alt="Logo">`; $('#delLogo').classList.remove('hidden'); } renderShotList(); renderAll(); });
 }
-$$('#modes .mode').forEach(x => x.onclick = () => setMode(x.dataset.mode));
+$$('#modes .mode').forEach(x => x.onclick = () => { const was = S.monthly; S.monthly = !!x.dataset.monthly; store.set('monthly', S.monthly); if (x.dataset.mode === S.mode) applyMode(); else setMode(x.dataset.mode); if (S.monthly) { if (S.purpose !== 'local') { S.purpose = 'local'; applyMode(); } $('[data-out=plan]').click(); } else if (was && ['plan', 'food'].includes(($('#outTabs .tab.on') || {dataset:{}}).dataset.out)) $('[data-out=carousel]').click(); });
 $$('#purpose .chip').forEach(x => x.onclick = () => { S.purpose = x.dataset.p; applyMode(); if (S.purpose === 'caso') { caseFromLocal(); makeCaption(); } else makeLocalCaption(); renderAll(); });
 LFIELDS.forEach(k => $('#l-' + k).addEventListener('input', () => debounce(renderAll)));
 MFIELDS.forEach(k => $('#m-' + k).addEventListener('input', () => debounce(() => { makeBrandCaption(); renderAll(); })));
@@ -4465,6 +4817,19 @@ MFIELDS.forEach(k => $('#m-' + k).addEventListener('input', () => debounce(() =>
 LTF.forEach(k => $('#lf-' + k).addEventListener('input', () => debounce(renderAll)));
 $('#lGenAuto').onclick = buildLocal;
 $('#lLinkGo').onclick = localFromLink;
+/* clientes, plan mensual y comida */
+$('#cliSave').onclick = () => { saveClient(); renderPlan(); };
+$('#cliPick').onchange = () => openClient($('#cliPick').value);
+$('#cliDel').onclick = () => { const c = curClient(); if (!c || !confirm(`¿Quitar a ${c.name} y todo su historial?`)) return; S.clients = S.clients.filter(x => x !== c); S.clientId = ''; persistClients(); renderClients(); renderPlan(); };
+$('#plMonth').value = ymNow(); $('#plMonth').onchange = renderPlan;
+$('#plBuild').onclick = makePlan;
+$('#plPrice').onchange = () => { const c = curClient(), p = c && c.plans[$('#plMonth').value]; if (p) { p.price = +$('#plPrice').value || 0; persistClients(); renderPlan(); } };
+$('#plNotes').onchange = () => { const c = curClient(); if (c) { c.notes = $('#plNotes').value; persistClients(); } };
+$('#plCopy').onclick = async () => { const t = planText(); if (!t) { toast('Primero armá el plan del mes'); return; } try { await navigator.clipboard.writeText(t); toast('Plan copiado: pegalo en WhatsApp'); } catch { toast('No pude copiar. Probá de nuevo.'); } };
+$('#fdPhoto').onchange = async ev => { const f = ev.target.files[0]; if (!f) return; S.food.photo = await makeShot(f, f.name); S.food.out = null; ev.target.value = ''; renderFood(); };
+['#fdProd', '#fdPrice', '#fdRatio', '#fdKicker', '#fdTitle', '#fdSub', '#fdWord', '#fdBens'].forEach(id => $(id).addEventListener('input', () => { $('#fdPrompt').value = foodPrompt(); }));
+$('#fdCopy').onclick = async () => { try { await navigator.clipboard.writeText($('#fdPrompt').value); toast('Pedido copiado: pegalo en ChatGPT junto con la foto'); } catch { toast('No pude copiar. Seleccioná el texto y copialo a mano.'); } };
+$('#fdGen').onclick = foodGenerate;
 /* historias de funciones */
 $('#fTarget').onchange = () => { S.pitch.target = $('#fTarget').value; S.pitch.sel = null; $('#fTargetAuto').classList.remove('warn'); renderFuncs(); savePitch(); if (S.pitch.stories.length) { reflow(); renderPitch(); } };
 $('#fKeyGo').onclick = () => { const k = $('#fKey').value.trim(); if (!k) { $('#fKey').focus(); return; } $('#studioKey').value = k; try { localStorage.setItem('igstudio.key', k); } catch {} refreshFuncs($('#fTour')); };
@@ -4557,7 +4922,7 @@ $('#copyCap').onclick = async () => {
   try { $('#studioKey').value = localStorage.getItem('igstudio.key') || ''; } catch {}
   syncLookUI(); renderHist();
   await restoreDraft();
-  await loadFshots(); restorePitch(); if (isPitch()) { renderFuncs(); renderPitch(); }
+  await loadClients(); await loadFshots(); restorePitch(); if (isPitch()) { renderFuncs(); renderPitch(); }
   a11yPass(); goStep(S.step);
   detectServer();
 })();

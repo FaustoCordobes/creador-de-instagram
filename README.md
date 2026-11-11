@@ -96,3 +96,22 @@ En **Para mi Instagram**, cuando traés una app con su link publicado, el estudi
 1. **Antes:** en el paso 2, "Funciones para las historias", elegís para qué tipo de negocio es la app (o lo detecta solo) y marcás de 4 a 6 funciones. Ya vienen marcadas las que más le sirven a ese rubro. Podés corregir qué muestra cada pantalla o subir capturas a mano.
 2. **Muestra:** "Armar historias" crea una historia por función, con su captura real, texto, llamado a la acción y tu contacto en la última.
 3. **Después:** en la pestaña "Historias de funciones" podés cambiar la función, la pantalla, los textos o el orden de cada historia; el estudio te sugiere intercambios (por ejemplo, "Historial del paciente" por "Recordatorio por WhatsApp"). Al confirmar queda la versión final para descargar (.zip) o publicar en tus historias.
+
+## Contenido mensual para clientes
+
+Apartado para el servicio mensual a locales. En **Tus clientes** (paso 1) cada local queda guardado en el navegador con sus datos, logo, fotos y el plan de cada mes.
+
+- **Plan mensual:** elegís el mes y cuántos reels, carruseles, posts e historias por semana incluye el servicio. El estudio arma el calendario repartiendo 7 pilares (producto estrella, detrás de escena, lo que dicen los clientes, tips, promo, comunidad y fechas especiales de Argentina), con un gancho y una idea por pieza usando los productos del local.
+- Cada pieza tiene estado (pendiente, listo, publicado) y un botón **Crear →** que la lleva al formato correspondiente del estudio.
+- **Copiar el plan para el cliente** lo deja listo para pegar en WhatsApp.
+- **Historial:** meses trabajados, piezas publicadas y lo facturado por mes y en total (el precio del mes es opcional).
+
+## Cartas y fotos de comida
+
+Pestaña **Cartas y comida**: subís la foto de un producto y elegís uno de 3 estilos. El estudio arma el pedido para la IA de imágenes con los datos del local.
+
+1. **Póster minimalista:** producto protagonista sobre fondo oscuro, titular de dos palabras y precio en un sello.
+2. **Foto limpia de estudio:** solo el producto, sin texto, con acabado publicitario.
+3. **Oferta héroe minimal:** fondo claro, palabra gigante detrás del producto y cuatro íconos con ventajas.
+
+"Copiar el pedido" sirve para pegarlo en ChatGPT junto con la foto. Con `OPENAI_API_KEY` en Vercel aparece "Generar acá con IA" (`api/imagen.js`; modelo opcional en `OPENAI_IMAGE_MODEL`).

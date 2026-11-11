@@ -18,6 +18,9 @@
     },
     "api/fetch.js": {
       "maxDuration": 60
+    },
+    "api/imagen.js": {
+      "maxDuration": 60
     }
   }
 }
