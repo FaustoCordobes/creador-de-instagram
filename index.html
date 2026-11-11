@@ -531,6 +531,7 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
           <p class="hint" style="margin-top:0">Video de hasta 59 s con las pantallas principales y una voz que lee cada una. Tocá ▶ para escucharla.</p>
           <h3 style="margin-top:14px">Guion de voz</h3>
           <p class="hint" style="margin-top:0">Editá lo que se dice o tocá 🎙 para grabarlo con tu voz.</p>
+          <div class="row" style="margin-bottom:10px"><label class="f" style="margin:0;align-self:center;flex:0 0 auto">Voz:</label><select class="voicePick" style="flex:1"></select><button class="btn sm voiceTry2" type="button" style="flex:0 0 auto">▶ Probar</button></div>
           <div id="scriptStory" class="script"></div>
         </div>
         <div data-show="notlocalown" id="storyImgOpts">
@@ -563,6 +564,7 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
         Video vertical con las escenas del carrusel, animadas y con voz. Se genera en tu navegador.
         <h3 style="margin-top:14px">Guion de voz</h3>
         <p class="hint" style="margin-top:0">Lo que dice la voz en cada pantalla. Editalo, escuchalo con ▶ o grabalo con tu voz con 🎙 (tu grabación reemplaza la voz automática).</p>
+        <div class="row" style="margin-bottom:10px"><label class="f" style="margin:0;align-self:center;flex:0 0 auto">Voz:</label><select class="voicePick" style="flex:1"></select><button class="btn sm voiceTry2" type="button" style="flex:0 0 auto">▶ Probar</button></div>
         <div id="script" class="script"></div>
         <ul>
           <li>Lleva música de fondo propia (sin derechos de autor) que baja sola cuando habla la voz, y un "whoosh" en cada cambio de pantalla. Se elige en "Estilo y marca".</li>
@@ -3676,16 +3678,24 @@ const VOICE_LIST = [
 ];
 const VOICE_PREMIUM = { openai: [['oa:marin', 'Marina · natural (mujer)'], ['oa:cedar', 'Cedro · natural (varón)'], ['oa:coral', 'Coral · cálida (mujer)'], ['oa:sage', 'Sage · tranquila (mujer)'], ['oa:verse', 'Verse · expresiva (varón)'], ['oa:ballad', 'Ballad · suave (varón)'], ['oa:nova', 'Nova · clara (mujer)'], ['oa:ash', 'Ash · grave (varón)'], ['oa:onyx', 'Onyx · profunda (varón)']], eleven: [['el:default', 'ElevenLabs · tu voz elegida']] };
 function fillVoices(){
-  const sel = $('#voiceSel'); if (!sel) return;
+  const sels = $$('#voiceSel, .voicePick'); if (!sels.length) return;
   const prem = (S.server && S.server.ttsPremium) || {};
   const opt = ([v, t]) => `<option value="${v}">${t}</option>`;
   let h = '';
   if (prem.openai || prem.eleven) h += `<optgroup label="Premium (las más humanas)">${[...(prem.openai ? VOICE_PREMIUM.openai : []), ...(prem.eleven ? VOICE_PREMIUM.eleven : [])].map(opt).join('')}</optgroup>`;
   h += `<optgroup label="Gratis">${VOICE_LIST.map(opt).join('')}</optgroup><option value="off">Sin voz automática (solo mi voz grabada)</option>`;
-  sel.innerHTML = h;
-  if (![...sel.options].some(o => o.value === S.voice.name)) { S.voice.name = (prem.openai ? 'oa:marin' : 'es-AR-TomasNeural'); store.set('voice', S.voice.name); }
-  sel.value = S.voice.name;
+  { const probe = document.createElement('select'); probe.innerHTML = h; if (![...probe.querySelectorAll('option')].some(o => o.value === S.voice.name)) { S.voice.name = (prem.openai ? 'oa:marin' : 'es-AR-TomasNeural'); store.set('voice', S.voice.name); } }
+  sels.forEach(sel => { sel.innerHTML = h; sel.value = S.voice.name; });
   const hint = $('#voiceHint'); if (hint) hint.textContent = prem.openai || prem.eleven ? '' : 'Para una voz todavía más humana, cargá OPENAI_API_KEY en Vercel (ver GUIA-VOZ.md).';
+}
+function setVoice(v){ S.voice.name = v; store.set('voice', v); $$('#voiceSel, .voicePick').forEach(s => { if (s.value !== v) s.value = v; }); renderScripts(true); renderAll(); }
+async function tryVoice(btn){
+  if (!voiceOn()) { toast('Elegí una voz de la lista'); return; }
+  if (!S.server) { toast('La voz automática funciona en tu versión de Vercel'); return; }
+  const b = readBrand(), demo = `Hola, soy la voz para tus reels. Así van a sonar tus videos de ${b.brand || 'tu negocio'}.`;
+  const old = btn.textContent; btn.disabled = true; btn.textContent = '…';
+  try { playBuf(await ttsBuffer(demo)); } catch (e) { toast('No se pudo probar la voz: ' + e.message, { ms: 7000 }); }
+  finally { btn.disabled = false; btn.textContent = old; }
 }
 
 S.music = store.get('music', 'auto');
@@ -4958,15 +4968,8 @@ $$('#storyFmt .chip').forEach(c => c.onclick = () => { S.storyFmt = c.dataset.f;
 fillVoices();
 $('#musicSel').value = S.music;
 $('#musicSel').onchange = () => { S.music = $('#musicSel').value; store.set('music', S.music); syncMusicInfo(); };
-$('#voiceSel').onchange = () => { S.voice.name = $('#voiceSel').value; store.set('voice', S.voice.name); renderScripts(true); renderAll(); };
-$('#voiceTry').onclick = async () => {
-  if (!voiceOn()) { toast('Elegí una voz de la lista'); return; }
-  if (!S.server) { toast('La voz automática funciona en tu versión de Vercel'); return; }
-  const btn = $('#voiceTry'); btn.disabled = true; btn.textContent = '…';
-  const b = readBrand(), demo = `Hola, soy la voz para tus reels. Así van a sonar tus videos de ${b.brand || 'tu negocio'}.`;
-  try { playBuf(await ttsBuffer(demo)); } catch (e) { toast('No se pudo probar la voz: ' + e.message, { ms: 7000 }); }
-  finally { btn.disabled = false; btn.textContent = '▶ Probar'; }
-};
+document.addEventListener('change', e => { if (e.target.matches && e.target.matches('#voiceSel, .voicePick')) setVoice(e.target.value); });
+document.addEventListener('click', e => { if (e.target.matches && e.target.matches('#voiceTry, .voiceTry2')) tryVoice(e.target); });
 $('#dlAll').onclick = downloadAll;
 $('#regenCap').onclick = () => { S.capV = (capVersion() + 1) % 3; if (isLocalOwn()) makeLocalCaption(); else makeCaption(); renderChecks(); toast('Otra versión del texto'); };
 $$('#looks .chip').forEach(c => c.onclick = () => { S.lookSel = c.dataset.l; store.set('look', S.lookSel); syncLookUI(); renderAll(); });
