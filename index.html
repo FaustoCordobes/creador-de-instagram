@@ -451,8 +451,9 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
     </details>
     <h3 class="sub">Video: voz, música y subtítulos</h3>
     <label class="f" style="margin-top:0">Voz de reels e historias</label>
-    <select id="voiceSel"></select>
+    <div class="row"><select id="voiceSel" style="flex:1"></select><button class="btn" id="voiceTry" type="button" style="flex:0 0 auto" aria-label="Escuchar la voz elegida">▶ Probar</button></div>
     <p class="hint" id="voiceHint"></p>
+    <p class="hint">Probá varias con el botón ▶ y quedate con la que más te guste. Las premium (si cargás la clave) son las más humanas.</p>
     <label class="f">Música de fondo</label>
     <select id="musicSel">
       <option value="auto">Automática (cambia en cada publicación)</option>
@@ -3666,11 +3667,14 @@ function syncStoryFmt(){
 
 /* ============ música de fondo (generada acá, sin derechos de autor) ============ */
 const VOICE_LIST = [
-  ['es-AR-TomasNeural', 'Tomás · Argentina'], ['es-AR-ElenaNeural', 'Elena · Argentina'],
-  ['es-UY-MateoNeural', 'Mateo · rioplatense (Uruguay)'], ['es-UY-ValentinaNeural', 'Valentina · rioplatense (Uruguay)'],
-  ['en-US-AndrewMultilingualNeural', 'Andrés · más expresiva, acento neutro'], ['en-US-AvaMultilingualNeural', 'Ava · más expresiva, acento neutro'],
+  ['es-AR-TomasNeural', 'Tomás · argentino (varón)'], ['es-AR-ElenaNeural', 'Elena · argentina (mujer)'],
+  ['es-UY-MateoNeural', 'Mateo · rioplatense, Uruguay (varón)'], ['es-UY-ValentinaNeural', 'Valentina · rioplatense, Uruguay (mujer)'],
+  ['es-MX-JorgeNeural', 'Jorge · mexicano, neutro (varón)'], ['es-MX-DaliaNeural', 'Dalia · mexicana, neutra (mujer)'],
+  ['es-ES-AlvaroNeural', 'Álvaro · español de España (varón)'],
+  ['en-US-AndrewMultilingualNeural', 'Andrés · expresiva, acento neutro (varón)'], ['en-US-AvaMultilingualNeural', 'Ava · expresiva, acento neutro (mujer)'],
+  ['en-US-BrianMultilingualNeural', 'Brian · expresiva, grave (varón)'], ['en-US-EmmaMultilingualNeural', 'Emma · expresiva, suave (mujer)'],
 ];
-const VOICE_PREMIUM = { openai: [['oa:marin', 'Marina · premium, muy natural'], ['oa:cedar', 'Cedro · premium, muy natural'], ['oa:coral', 'Coral · premium, cálida'], ['oa:ash', 'Ash · premium, grave']], eleven: [['el:default', 'ElevenLabs · tu voz elegida']] };
+const VOICE_PREMIUM = { openai: [['oa:marin', 'Marina · natural (mujer)'], ['oa:cedar', 'Cedro · natural (varón)'], ['oa:coral', 'Coral · cálida (mujer)'], ['oa:sage', 'Sage · tranquila (mujer)'], ['oa:verse', 'Verse · expresiva (varón)'], ['oa:ballad', 'Ballad · suave (varón)'], ['oa:nova', 'Nova · clara (mujer)'], ['oa:ash', 'Ash · grave (varón)'], ['oa:onyx', 'Onyx · profunda (varón)']], eleven: [['el:default', 'ElevenLabs · tu voz elegida']] };
 function fillVoices(){
   const sel = $('#voiceSel'); if (!sel) return;
   const prem = (S.server && S.server.ttsPremium) || {};
@@ -4955,6 +4959,14 @@ fillVoices();
 $('#musicSel').value = S.music;
 $('#musicSel').onchange = () => { S.music = $('#musicSel').value; store.set('music', S.music); syncMusicInfo(); };
 $('#voiceSel').onchange = () => { S.voice.name = $('#voiceSel').value; store.set('voice', S.voice.name); renderScripts(true); renderAll(); };
+$('#voiceTry').onclick = async () => {
+  if (!voiceOn()) { toast('Elegí una voz de la lista'); return; }
+  if (!S.server) { toast('La voz automática funciona en tu versión de Vercel'); return; }
+  const btn = $('#voiceTry'); btn.disabled = true; btn.textContent = '…';
+  const b = readBrand(), demo = `Hola, soy la voz para tus reels. Así van a sonar tus videos de ${b.brand || 'tu negocio'}.`;
+  try { playBuf(await ttsBuffer(demo)); } catch (e) { toast('No se pudo probar la voz: ' + e.message, { ms: 7000 }); }
+  finally { btn.disabled = false; btn.textContent = '▶ Probar'; }
+};
 $('#dlAll').onclick = downloadAll;
 $('#regenCap').onclick = () => { S.capV = (capVersion() + 1) % 3; if (isLocalOwn()) makeLocalCaption(); else makeCaption(); renderChecks(); toast('Otra versión del texto'); };
 $$('#looks .chip').forEach(c => c.onclick = () => { S.lookSel = c.dataset.l; store.set('look', S.lookSel); syncLookUI(); renderAll(); });
