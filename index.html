@@ -3389,11 +3389,157 @@ function qualityChecks(){
   if (!isLocalOwn()) { const kw = (readBrand().keyword || 'WEB').trim(); const okKw = kw && cap.toLowerCase().includes(kw.toLowerCase()); add(okKw, okKw ? `Pide que comenten "${kw.toUpperCase()}"` : `Falta pedir que comenten "${kw.toUpperCase()}" o escriban por DM`); }
   return res;
 }
+/* ============ IGH · humanizador + puntaje humano (anti-IA) ============
+   Portado de instagram-agent-skill (humanize.py + detect.py + slop.json),
+   adaptado al español. Corre 100% local, sin red. MIT · Jake Schincariol. */
+const IGH = (() => {
+  // --- caracteres invisibles (el delator más mecánico; da igual el idioma) ---
+  const INVIS_DEL = /[​‌‍⁠﻿­᠎؜‎‏⁣]/g;
+  const TAGCH = /[\u{E0000}-\u{E007F}]/gu;
+  const CF = /\p{Cf}/gu;
+  const INVIS_SP = /[      ]/g;
+  // --- tipografía delatora ---
+  const CURLY = [[/[‘’]/g, "'"], [/[“”]/g, '"'], [/…/g, '...'], [/•/g, '-']];
+  // --- léxico español (muletillas de IA y de IG). to='' borra la frase ---
+  const PHRASES = [
+    ['en el mundo actual', 'hoy'], ['en la era digital', 'hoy'], ['en el acelerado mundo de hoy', 'hoy'],
+    ['en el mundo de hoy', 'hoy'], ['hoy en dia', 'hoy'], ['hoy en día', 'hoy'],
+    ['cabe destacar que', ''], ['cabe mencionar que', ''], ['es importante destacar que', ''],
+    ['es importante mencionar que', ''], ['es importante señalar que', ''], ['vale la pena mencionar que', ''],
+    ['sin lugar a dudas', ''], ['sin duda alguna', ''], ['en resumidas cuentas', ''],
+    ['en resumen', ''], ['en conclusion', ''], ['en conclusión', ''], ['a fin de cuentas', ''],
+    ['a la hora de', 'para'], ['con el fin de', 'para'], ['de la mano de', 'con'],
+    ['en el presente articulo', ''], ['en este articulo', ''], ['en este posteo', ''],
+    ['no solo eso, sino que', 'ademas,'], ['dicho esto', ''], ['ahora bien', ''],
+    ['en pocas palabras', ''], ['por si fuera poco', ''], ['la realidad es que', ''],
+    ['lo creas o no', ''], ['prepárate para', ''], ['preparate para', '']
+  ];
+  const WORDS = [
+    ['sumérgete', 'metete'], ['sumergite', 'metete'], ['sumergirse', 'meterse'],
+    ['descubrí', 'mirá'], ['descubre', 'mirá'], ['descubrir', 'ver'],
+    ['desatá', 'soltá'], ['desata', 'suelta'], ['potenciá', 'mejorá'], ['potencia tu', 'mejorá tu'],
+    ['revolucioná', 'cambiá'], ['revoluciona', 'cambia'], ['transformá', 'cambiá'], ['transforma tu', 'cambiá tu'],
+    ['elevá', 'subí'], ['eleva tu', 'subí tu'], ['imprescindible', 'clave'], ['fundamental', 'clave'],
+    ['innovador', 'nuevo'], ['innovadora', 'nueva'], ['vanguardia', 'lo último'], ['a la vanguardia', 'adelante'],
+    ['robusto', 'sólido'], ['robusta', 'sólida'], ['sinergia', 'trabajo en conjunto'],
+    ['holístico', 'completo'], ['holística', 'completa'], ['óptimo', 'el mejor'], ['optimizar', 'mejorar'],
+    ['aprovechá al máximo', 'aprovechá'], ['maximizá', 'sacale el jugo a'], ['sin esfuerzo', 'fácil'],
+    ['soluciones', 'cosas'], ['empoderar', 'ayudar'], ['empoderá', 'ayudá'], ['excepcional', 'muy bueno'],
+    ['sin precedentes', 'nunca visto'], ['cautivador', 'que engancha'], ['cautivante', 'que engancha']
+  ];
+  const IGSLOP = [
+    ['pará de scrollear', ''], ['para de scrollear', ''], ['dejá de scrollear', ''], ['deja de scrollear', ''],
+    ['no te lo pierdas', ''], ['no te lo podés perder', ''], ['seguime para más', ''], ['seguinos para más', ''],
+    ['seguí para más', ''], ['dale like si', 'si'], ['dale like y guardá', 'guardá'],
+    ['etiquetá a alguien que', 'mandáselo a alguien que'], ['etiquetá a un amigo', ''],
+    ['guardá este post', ''], ['guardá este reel', ''], ['al algoritmo le encanta', ''],
+    ['corré, no camines', ''], ['corre, no camines', ''], ['link en la bio', 'link en bio'],
+    ['en el video de hoy', ''], ['en este video te voy a mostrar', 'mirá'], ['comentá abajo', 'contame']
+  ];
+  // --- tells estructurales (se marcan, no se reescriben solos) ---
+  const STRUCT = [
+    { id: 'no-solo', name: '"no es solo X, es Y"', re: /no es solo\b[^.?!]*?,?\s*(es|sino)\b/gi, fix: 'Decilo derecho, sin la antítesis armada.' },
+    { id: 'triada', name: 'Tríada de tres (rule of three)', re: /\b\w+,\s+\w+\s+y\s+\w+\b/gi, fix: 'Quedate con el término que más pega; tres parejos suena a plantilla.' },
+    { id: 'preg-1', name: 'Pregunta retórica de una línea', re: /^\s*¿[^?]{1,40}\?\s*$/gim, fix: 'Afirmá en vez de preguntar al aire.' },
+    { id: 'emoji-wall', name: 'Pared de emojis (🔥🚀💡✨🎯)', re: /([\u{1F525}\u{1F680}\u{1F4A1}✨\u{1F3AF}])\s*\1/gu, fix: 'Uno alcanza. Dos o más leen a bot.' },
+    { id: 'grito', name: 'Tres palabras GRITADAS seguidas', re: /\b[A-ZÁÉÍÓÚÑ]{3,}\s+[A-ZÁÉÍÓÚÑ]{3,}\s+[A-ZÁÉÍÓÚÑ]{3,}\b/g, fix: 'Mayúsculas sostenidas gritan. Bajá a minúscula.' },
+    { id: 'bait', name: 'Pedido reflejo de follow/guardado/etiqueta', re: /\b(seguime|seguinos|guardá este|etiquetá a|dale like)\b/gi, fix: 'Pedí una sola cosa, y que valga la pena.' }
+  ];
+  const sub = (txt, pairs, fam) => {
+    const rep = [];
+    for (const [find, to] of pairs.slice().sort((a, b) => b[0].length - a[0].length)) {
+      const re = new RegExp('(^|[^\\p{L}])(' + find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+') + ')(?![\\p{L}])', 'giu');
+      let n = 0;
+      txt = txt.replace(re, (m, pre, hit) => { n++; return pre + matchCase(hit, to); });
+      if (n) rep.push({ find, to: to || '(borrado)', count: n, fam });
+    }
+    return { txt, rep };
+  };
+  const matchCase = (src, rep) => {
+    if (!rep) return rep;
+    if (src === src.toUpperCase() && src.length > 1) return rep.toUpperCase();
+    if (src[0] === src[0].toUpperCase() && src[0] !== src[0].toLowerCase()) return rep[0].toUpperCase() + rep.slice(1);
+    return rep;
+  };
+  function stripInvisible(t) {
+    return t.replace(TAGCH, '').replace(INVIS_DEL, '').replace(CF, '').replace(INVIS_SP, ' ');
+  }
+  function clean(text) {
+    let t = String(text || ''), report = { invisible: 0, typo: 0, lexical: [], structures: [] };
+    const before = t;
+    const inv = (t.match(TAGCH) || []).length + (t.match(INVIS_DEL) || []).length + (t.match(CF) || []).length + (t.match(INVIS_SP) || []).length;
+    report.invisible = inv; t = stripInvisible(t);
+    // tipografía
+    const em = (t.match(/[—–]/g) || []).length;
+    t = t.replace(/\s*—\s*/g, ', ').replace(/\s*–\s*(?=\d)/g, '-').replace(/\s+–\s+/g, ', ').replace(/–/g, '-');
+    let typo = em;
+    for (const [re, to] of CURLY) { const n = (t.match(re) || []).length; typo += n; t = t.replace(re, to); }
+    report.typo = typo;
+    t = t.replace(/,\s*([,.;:!?])/g, '$1').replace(/,\s*\n/g, '\n');
+    // léxico
+    let r1 = sub(t, PHRASES, 'frases'); t = r1.txt;
+    let r2 = sub(t, WORDS, 'palabras'); t = r2.txt;
+    let r3 = sub(t, IGSLOP, 'instagram'); t = r3.txt;
+    report.lexical = r1.rep.concat(r2.rep, r3.rep);
+    // limpieza tras borrados
+    t = t.replace(/[ \t]{2,}/g, ' ').replace(/^[ \t]*(?:[,.;:]+[ \t]*)+/gm, '');
+    t = t.replace(/([.!?])\s+(?:y|e|o|u|pero|adem[aá]s)\s*(?=[.!?])/gi, '$1');
+    t = t.replace(/(?:^|\n)[ \t]*(?:y|e|o|u|pero)[ \t]*(?=\n|$)/gi, '\n');
+    t = t.replace(/\s+([,.;:!?])/g, '$1').replace(/([.!?])[ \t]*(?=[.!?])/g, '').replace(/\n{3,}/g, '\n\n').replace(/[ \t]+$/gm, '').trim();
+    // tells (solo marcar)
+    for (const s of STRUCT) { s.re.lastIndex = 0; const m = (t.match(s.re) || []).length; if (m) report.structures.push({ name: s.name, count: m, fix: s.fix }); }
+    report.changed = t !== before;
+    return { text: t, report };
+  }
+  // --- puntaje humano (0-100) ---
+  const clamp = n => Math.max(0, Math.min(100, n));
+  const scale = (v, human, machine) => human === machine ? 50 : clamp((v - machine) / (human - machine) * 100);
+  const SENT = s => (String(s).match(/[^.!?\n]+[.!?]*/g) || []).map(x => x.trim()).filter(x => x.split(/\s+/).length > 2);
+  const WRD = s => String(s).match(/[\p{L}']+/gu) || [];
+  const pstdev = a => { if (!a.length) return 0; const m = a.reduce((x, y) => x + y, 0) / a.length; return Math.sqrt(a.reduce((x, y) => x + (y - m) ** 2, 0) / a.length); };
+  function score(text) {
+    const t = String(text || ''), w = WRD(t), checks = {};
+    // burstiness
+    const lens = SENT(t).map(s => s.split(/\s+/).length);
+    if (lens.length < 4) checks.ritmo = [50, 'texto corto'];
+    else { const mean = lens.reduce((a, b) => a + b, 0) / lens.length, cv = mean ? pstdev(lens) / mean : 0; checks.ritmo = [scale(cv, 0.70, 0.22), `variación ${cv.toFixed(2)} (querés 0,55+)`]; }
+    // specificity
+    if (w.length < 25) checks.concreto = [50, 'texto corto'];
+    else { const nums = (t.match(/\b\d[\d.,]*%?\b|\$\s?\d/g) || []).length, props = new Set(t.match(/(?<![.!?]\s)(?<!^)\b\p{Lu}\p{Ll}{2,}\b/gmu) || []).size; const d = (nums + props) * 100 / w.length; checks.concreto = [scale(d, 6, 0.5), `${nums + props} datos concretos, ${d.toFixed(1)} c/100 (querés 4+)`]; }
+    // slop
+    if (!w.length) checks.muletillas = [50, 'vacío'];
+    else { let hits = 0; const all = PHRASES.concat(WORDS, IGSLOP); for (const [f] of all) { const re = new RegExp('\\b' + f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+') + '\\b', 'giu'); hits += (t.match(re) || []).length; } const d = hits * 100 / w.length; checks.muletillas = [scale(d, 0, 4), `${hits} muletillas, ${d.toFixed(1)} c/100`]; }
+    // fingerprint
+    { const inv = (t.match(CF) || []).length, em = (t.match(/—/g) || []).length, curly = (t.match(/[‘’“”]/g) || []).length, ell = (t.match(/…/g) || []).length, nb = (t.match(INVIS_SP) || []).length; const per1k = (inv * 4 + em * 2 + curly + ell + nb) * 1000 / Math.max(t.length, 1); checks.huella = [scale(per1k, 0, 12), `${inv} invisibles, ${em} guión largo, ${curly} comilla curva, ${ell} puntos susp.`]; }
+    // voice
+    if (w.length < 25) checks.voz = [50, 'texto corto'];
+    else { const per100 = 100 / w.length, pron = (t.match(/\b(yo|me|mi|mí|mis|vos|te|tu|tus|nos|nuestro|nuestra|ustedes|usted)\b/gi) || []).length * per100; let tells = 0; for (const s of STRUCT) { s.re.lastIndex = 0; tells += (t.match(s.re) || []).length; } checks.voz = [clamp(scale(pron, 8, 1) * 0.55 + clamp(100 - tells * 22) * 0.45), `${pron.toFixed(1)} pronombres personales c/100, ${tells} tell(s)`]; }
+    const keys = ['ritmo', 'concreto', 'muletillas', 'huella', 'voz'];
+    const sc = keys.map(k => checks[k][0]), mean = sc.reduce((a, b) => a + b, 0) / sc.length, mn = Math.min(...sc);
+    const overall = mean * 0.6 + mn * 0.4;
+    const verdict = overall >= 70 && mn >= 55 ? 'BIEN' : (overall >= 50 ? 'REVISAR' : 'SUENA A IA');
+    return { overall, verdict, checks, weakest: keys.reduce((a, b) => checks[a][0] <= checks[b][0] ? a : b) };
+  }
+  return { clean, score, stripInvisible };
+})();
+const LABELS_IGH = { ritmo: 'Ritmo', concreto: 'Concreto', muletillas: 'Muletillas', huella: 'Huella IA', voz: 'Voz propia' };
 function renderChecks(){
   const list = qualityChecks(), bad = list.filter(z => !z.ok), fixable = bad.some(z => z.fix);
-  const html = `<p class="hint" style="margin:0 0 6px">${bad.length ? `${list.length - bad.length} de ${list.length} bien` : 'Todo en orden ✔'}</p><ul class="checks">${list.map(z => `<li class="${z.ok ? 'ok' : 'bad'}">${z.ok ? '✔' : '✖'} ${z.txt.replace(/</g, '&lt;')}</li>`).join('')}</ul>${fixable ? '<button class="btn sm" data-fixall>🧹 Arreglar lo automático</button>' : ''}`;
+  const sc = IGH.score($('#f-caption').value), pct = Math.round(sc.overall);
+  const col = sc.verdict === 'BIEN' ? '#39d98a' : (sc.verdict === 'REVISAR' ? '#ffb020' : '#ff6b6b');
+  const bars = ['ritmo', 'concreto', 'muletillas', 'huella', 'voz'].map(k => `<div style="display:flex;justify-content:space-between;font-size:11px;opacity:.75"><span>${LABELS_IGH[k]}</span><span>${Math.round(sc.checks[k][0])}</span></div>`).join('');
+  const human = `<div style="margin-top:12px;border-top:1px solid var(--line,#2a2f3a);padding-top:10px"><div style="display:flex;align-items:center;justify-content:space-between"><b style="font-size:13px">Puntaje humano</b><b style="color:${col}">${pct}/100 · ${sc.verdict}</b></div><div style="margin:6px 0 8px">${bars}</div><button class="btn sm" data-humanize>✨ Humanizar texto</button></div>`;
+  const html = `<p class="hint" style="margin:0 0 6px">${bad.length ? `${list.length - bad.length} de ${list.length} bien` : 'Todo en orden ✔'}</p><ul class="checks">${list.map(z => `<li class="${z.ok ? 'ok' : 'bad'}">${z.ok ? '✔' : '✖'} ${z.txt.replace(/</g, '&lt;')}</li>`).join('')}</ul>${fixable ? '<button class="btn sm" data-fixall>🧹 Arreglar lo automático</button>' : ''}${human}`;
   ['#checksText', '#checksPub'].forEach(id => { const el = $(id); if (el) el.innerHTML = html; });
   $$('[data-fixall]').forEach(bt => bt.onclick = fixAll);
+  $$('[data-humanize]').forEach(bt => bt.onclick = humanizeCaption);
+}
+function humanizeCaption(){
+  const r = IGH.clean($('#f-caption').value);
+  $('#f-caption').value = r.text;
+  const n = r.report.invisible + r.report.typo + r.report.lexical.reduce((a, b) => a + b.count, 0), tells = r.report.structures.length;
+  renderAll();
+  toast(n ? `Limpié ${n} marca${n > 1 ? 's' : ''} de IA${tells ? ` · quedan ${tells} para reescribir a mano` : ''}` : (tells ? `${tells} estructura(s) para reescribir a mano` : 'Ya estaba limpio ✔'), { ms: 7000 });
 }
 function keepCase(m, rep){ return rep && m && m[0] === m[0].toUpperCase() && m[0] !== m[0].toLowerCase() ? cap1(rep) : rep; }
 function trimTags(cap, tagsTxt, max){
@@ -3415,7 +3561,7 @@ function fixAll(){
   if (pubHist()[0] && pubHist()[0].look === curLook()) { nextVariant(); syncLookUI(); }
   renderAll(); toast('Listo, revisá el texto');
 }
-function finalCaption(){ const t = trimTags($('#f-caption').value.trim(), $('#f-hashtags').value.trim(), 5); return (t.cap.trim() + (t.tags ? '\n\n' + t.tags : '')).trim().slice(0, 2200); }
+function finalCaption(){ const t = trimTags(IGH.stripInvisible($('#f-caption').value).trim(), $('#f-hashtags').value.trim(), 5); return (t.cap.trim() + (t.tags ? '\n\n' + t.tags : '')).trim().slice(0, 2200); }
 function syncLookUI(){
   $$('#looks .chip').forEach(x => x.classList.toggle('on', x.dataset.l === S.lookSel));
   const i = $('#lookInfo'); if (i) i.textContent = S.lookSel === 'rotar' ? `Ahora: ${LOOK_NAMES[curLook()]}. Cambia solo después de cada publicación, así el feed no se ve repetido.` : '';
