@@ -8,8 +8,9 @@ const { issueSignedToken } = require('@vercel/blob');
 const { cors, readBody, studioPass } = require('./_lib');
 // Token OIDC que Vercel manda en cada pedido; hace falta con la conexión nueva (BLOB_STORE_ID).
 const oidc = req => { const t = req.headers['x-vercel-oidc-token'] || process.env.VERCEL_OIDC_TOKEN; return t ? { oidcToken: String(t) } : {}; };
-// Credencial para firmar: la clave fija del almacén si está, si no el token OIDC del pedido.
-const cred = req => process.env.BLOB_READ_WRITE_TOKEN ? { token: process.env.BLOB_READ_WRITE_TOKEN } : oidc(req);
+// Credencial para firmar: el token OIDC del pedido (lo que pide Vercel para links prefirmados);
+// si no llegó, la clave fija del almacén.
+const cred = req => { const o = oidc(req); return o.oidcToken ? o : (process.env.BLOB_READ_WRITE_TOKEN ? { token: process.env.BLOB_READ_WRITE_TOKEN } : {}); };
 
 const TYPES = ['image/jpeg', 'video/mp4'];
 const MAX = 200 * 1024 * 1024;

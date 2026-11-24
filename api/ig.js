@@ -176,7 +176,7 @@ module.exports = async (req, res) => {
       const { issueSignedToken, presignUrl } = require('@vercel/blob');
       const validUntil = Date.now() + 60 * 60 * 1000;
       const oidcT = req.headers['x-vercel-oidc-token'] || process.env.VERCEL_OIDC_TOKEN;
-      const token = await issueSignedToken({ ...(process.env.BLOB_READ_WRITE_TOKEN ? { token: process.env.BLOB_READ_WRITE_TOKEN } : oidcT ? { oidcToken: String(oidcT) } : {}), pathname, operations: ['get'], validUntil });
+      const token = await issueSignedToken({ ...(oidcT ? { oidcToken: String(oidcT) } : process.env.BLOB_READ_WRITE_TOKEN ? { token: process.env.BLOB_READ_WRITE_TOKEN } : {}), pathname, operations: ['get'], validUntil });
       const { presignedUrl } = await presignUrl(token, { operation: 'get', pathname, access: 'private', validUntil });
       return res.json({ url: presignedUrl });
     }
