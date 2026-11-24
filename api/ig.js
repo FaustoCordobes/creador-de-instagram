@@ -69,7 +69,7 @@ module.exports = async (req, res) => {
       tts: true,
       ttsPremium: { openai: !!process.env.OPENAI_API_KEY, eleven: !!process.env.ELEVENLABS_API_KEY, fish: !!process.env.FISH_API_KEY },
       blob: !!(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID),
-      blobMode: process.env.BLOB_READ_WRITE_TOKEN ? 'token' : (process.env.BLOB_STORE_ID ? 'presigned' : null),
+      blobMode: (process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID) ? 'presigned' : null,
       oidc: !!(req.headers['x-vercel-oidc-token'] || process.env.VERCEL_OIDC_TOKEN),
       blobToken: (() => { const t = process.env.BLOB_READ_WRITE_TOKEN; if (!t) return null; return { formato: /^vercel_blob_rw_[A-Za-z0-9]+_[A-Za-z0-9]+$/.test(t), comillas: /["']/.test(t), espacios: /\s/.test(t), igual: t.includes('='), largo: t.length, mismoStore: !!process.env.BLOB_STORE_ID && t.split('_')[3] === String(process.env.BLOB_STORE_ID).replace(/^store_/, '') }; })(),
       protected: !!studioPass(),
@@ -176,7 +176,7 @@ module.exports = async (req, res) => {
       const { issueSignedToken, presignUrl } = require('@vercel/blob');
       const validUntil = Date.now() + 60 * 60 * 1000;
       const oidcT = req.headers['x-vercel-oidc-token'] || process.env.VERCEL_OIDC_TOKEN;
-      const token = await issueSignedToken({ ...(oidcT ? { oidcToken: String(oidcT) } : {}), pathname, operations: ['get'], validUntil });
+      const token = await issueSignedToken({ ...(process.env.BLOB_READ_WRITE_TOKEN ? { token: process.env.BLOB_READ_WRITE_TOKEN } : oidcT ? { oidcToken: String(oidcT) } : {}), pathname, operations: ['get'], validUntil });
       const { presignedUrl } = await presignUrl(token, { operation: 'get', pathname, access: 'private', validUntil });
       return res.json({ url: presignedUrl });
     }

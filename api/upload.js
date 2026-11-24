@@ -8,6 +8,8 @@ const { issueSignedToken } = require('@vercel/blob');
 const { cors, readBody, studioPass } = require('./_lib');
 // Token OIDC que Vercel manda en cada pedido; hace falta con la conexión nueva (BLOB_STORE_ID).
 const oidc = req => { const t = req.headers['x-vercel-oidc-token'] || process.env.VERCEL_OIDC_TOKEN; return t ? { oidcToken: String(t) } : {}; };
+// Credencial para firmar: la clave fija del almacén si está, si no el token OIDC del pedido.
+const cred = req => process.env.BLOB_READ_WRITE_TOKEN ? { token: process.env.BLOB_READ_WRITE_TOKEN } : oidc(req);
 
 const TYPES = ['image/jpeg', 'video/mp4'];
 const MAX = 200 * 1024 * 1024;
@@ -22,7 +24,7 @@ module.exports = async (req, res) => {
   try {
     const body = await readBody(req);
     let json;
-    if (process.env.BLOB_READ_WRITE_TOKEN) {
+    if (body && body.type === 'blob.generate-client-token') {
       json = await handleUpload({
         body, request: req,
         onBeforeGenerateToken: async (pathname, clientPayload) => { checkKey(clientPayload); return { allowedContentTypes: TYPES, maximumSizeInBytes: MAX, addRandomSuffix: true }; }
@@ -32,7 +34,7 @@ module.exports = async (req, res) => {
         body, request: req,
         getSignedToken: async (pathname, clientPayload) => {
           checkKey(clientPayload);
-          const token = await issueSignedToken({ ...oidc(req), pathname, operations: ['put'], allowedContentTypes: TYPES, maximumSizeInBytes: MAX, validUntil: Date.now() + 30 * 60 * 1000 });
+          const token = await issueSignedToken({ ...cred(req), pathname, operations: ['put'], allowedContentTypes: TYPES, maximumSizeInBytes: MAX, validUntil: Date.now() + 30 * 60 * 1000 });
           return { token, urlOptions: { allowedContentTypes: TYPES, maximumSizeInBytes: MAX, addRandomSuffix: true } };
         }
       });
