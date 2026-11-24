@@ -53,9 +53,10 @@ Iniciá sesión con tu Instagram cuando lo pida y aceptá todo.
 1. Abrí **Graph API Explorer**: <https://developers.facebook.com/tools/explorer>.
 2. Arriba a la derecha, en *Meta App*, elegí **Estudio IG**.
 3. En *User or Page* elegí **Get User Access Token**.
-4. En *Permissions* agregá estos 6:
+4. En *Permissions* agregá estos 7:
    - `pages_show_list`
    - `pages_read_engagement`
+   - `pages_manage_posts` ← necesario para publicar también en tu Página de Facebook
    - `instagram_basic`
    - `instagram_content_publish`
    - `instagram_manage_insights` ← necesario para que "Un local" lea el Instagram de otros negocios
@@ -88,13 +89,26 @@ Ojo: solo se pueden leer cuentas **de empresa o creador**. Si el local tiene Ins
 
 ## Cómo publicar
 
-Pestaña **🚀 Subir a IG** → marcá qué subir (carrusel, post, historia, reel) → **Publicar ahora** → tocá de nuevo para confirmar. Al terminar te deja el link de cada publicación.
+Pestaña **🚀 Subir a IG** → marcá **dónde** (Instagram, Facebook, WhatsApp) y **qué** (carrusel, post, historia, reel) → **Publicar ahora** → tocá de nuevo para confirmar. Al terminar te deja el link de cada publicación.
 
-## Límites que pone Instagram
+- **Facebook** usa la misma conexión que Instagram (tu Página). El carrusel sale como un post con varias fotos; el post, como foto; la historia y el reel, igual que en Instagram.
+- **WhatsApp** no tiene forma oficial de publicar solo en Estados ni Canales, y las apps que lo hacen son las que hacen bloquear números. El estudio te deja el archivo y el texto listos: tocás **📲 Abrir WhatsApp**, elegís WhatsApp → *Mi estado* (o tu canal) y publicás vos.
+
+## Para que no te bloqueen ni te tomen por robot
+
+- Todo pasa por la **conexión oficial de Meta** (la de esta guía). Nunca uses apps que pidan tu contraseña de Instagram, ni "bots" de WhatsApp.
+- Activá la **verificación en dos pasos** en Facebook, Instagram y WhatsApp, y usá siempre el mismo celular y la misma compu.
+- Publicá **1 o 2 veces por día** como mucho. El estudio espera unos segundos entre una red y otra, te avisa si ya publicaste varias veces hoy y si repetís el mismo texto.
+- No cambies el nombre de la Página, la contraseña y el celular de la cuenta el mismo día: de a un cambio por vez.
+- **Número nuevo de WhatsApp Business**: completá el perfil (foto, horario, descripción), usalo unos días con charlas normales antes de difundir, y nunca mandes mensajes a gente que no te escribió primero.
+- El botón **📥 Traer de Instagram** usa tu sesión: el estudio lo limita a 5 por día con 2 minutos entre uno y otro. Si Instagram te pide verificar, dejalo de usar unos días.
+
+## Límites que ponen Instagram y Facebook
 
 - Solo cuentas **profesionales**; hasta **50 publicaciones cada 24 horas** (un carrusel cuenta como una).
 - Las historias se publican **sin stickers** (link, encuesta, ubicación).
 - El reel sale sin música; si querés una canción de Instagram, subilo desde la app.
+- Facebook: hasta **30 reels por día**; historias en video de 3 a 60 segundos.
 - Se publica siempre en **tu** cuenta. Para la cuenta de un local, descargá los archivos y subilos desde su celu.
 
 ## Si algo falla
@@ -104,6 +118,7 @@ Pestaña **🚀 Subir a IG** → marcá qué subir (carrusel, post, historia, re
 | *Clave del estudio incorrecta* | Escribí la misma clave que `STUDIO_PASSWORD`. |
 | *El token no ve ninguna Página* | En el paso 5 faltó `pages_show_list` o no elegiste la Página. |
 | *no tiene un Instagram vinculado* | Repetí el paso 2. |
-| *(#10)* o error de permisos | Generá el token de nuevo con **los 5 permisos** del paso 5. |
+| *(#10)* o error de permisos | Generá el token de nuevo con **todos los permisos** del paso 5. |
+| *falta el permiso para publicar (pages_manage_posts)* | Repetí los pasos 5 y 6 sumando `pages_manage_posts`. |
 | *No pude cargar el módulo de subida* | Revisá tu conexión y que el Blob esté creado (paso 4). |
 | *Instagram rechazó el archivo* | Probá de nuevo; si sigue, mandá captura del mensaje. |

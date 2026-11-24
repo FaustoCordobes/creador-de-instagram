@@ -264,7 +264,7 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
     <p class="hint">Con un solo link completa datos, logo y fotos. Después revisá todo.</p>
     <div class="bmbox">
       <a class="btn sm" id="bmLink" href="#" title="Arrastralo a la barra de favoritos">📥 Traer de Instagram</a>
-      <span class="hint" style="margin:0">Para Instagram, lo más seguro: <b>arrastrá este botón a tu barra de favoritos</b> (una sola vez). Después abrí el perfil del local en Instagram y tocalo: los datos y las fotos llegan solos acá.</span>
+      <span class="hint" style="margin:0"><b>Arrastrá este botón a tu barra de favoritos</b> (una sola vez). Después abrí el perfil del local en Instagram y tocalo: los datos y las fotos llegan solos acá.<br><span style="color:#ffd36b">⚠️ Usa tu sesión de Instagram, así que usalo con calma: máximo 5 por día y con 2 minutos entre uno y otro (el botón te frena solo). Si Instagram te pide verificar la cuenta, dejalo de usar unos días y cargá los datos a mano.</span></span>
     </div>
     <div class="status" id="lStatus" role="status" aria-live="polite"></div>
     <label class="f">¿Para quién es el contenido?</label>
@@ -697,16 +697,36 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
             <input type="password" id="studioKey" placeholder="La que pusiste en STUDIO_PASSWORD">
           </div>
           <div class="card" style="margin-top:14px">
-            <h2>¿Qué subo a mi Instagram?</h2>
+            <h2>¿Dónde lo publico?</h2>
+            <label class="chk"><input type="checkbox" id="pubToIG" checked> Instagram</label>
+            <label class="chk"><input type="checkbox" id="pubToFB"> Facebook <span class="hint" id="fbName" style="margin:0"></span></label>
+            <label class="chk"><input type="checkbox" id="pubToWA"> WhatsApp <span class="hint" style="margin:0">(te lo dejo listo y lo subís vos con un toque)</span></label>
+            <h2 style="margin-top:16px">¿Qué subo?</h2>
             <label class="chk"><input type="checkbox" id="pubCarousel" checked> Carrusel con el texto y los hashtags</label>
             <label class="chk"><input type="checkbox" id="pubPost"> Post simple (imagen cuadrada)</label>
             <label class="chk"><input type="checkbox" id="pubStory" checked> Historia</label>
             <label class="chk"><input type="checkbox" id="pubReel"> Reel (video)</label>
-            <label class="chk" style="padding-left:26px"><input type="checkbox" id="pubReelFeed" checked> Mostrar el reel también en el feed</label>
+            <label class="chk" style="padding-left:26px"><input type="checkbox" id="pubReelFeed" checked> Mostrar el reel también en el feed de Instagram</label>
             <div class="status show hidden" id="pubWarn"></div>
             <button class="btn pri" id="pubGo" style="width:100%;margin-top:12px">🚀 Publicar ahora</button>
             <ol id="pubLog" class="pubLog"></ol>
           </div>
+        </div>
+        <div class="card" id="waCard" style="margin-top:14px">
+          <h2>📲 WhatsApp</h2>
+          <p class="hint" style="margin-top:0">WhatsApp no deja que ninguna app publique sola en Estados ni Canales (las que lo hacen son las que bloquean números). Por eso te lo dejo listo: tocás el botón, elegís <b>WhatsApp → Mi estado</b> o tu canal, y listo. El texto también queda copiado.</p>
+          <label class="f">¿Qué mando?</label>
+          <select id="waWhat">
+            <option value="story">Historia (la mejor para el Estado)</option>
+            <option value="post">Post (imagen cuadrada)</option>
+            <option value="carousel">Imágenes del carrusel</option>
+            <option value="reel">Reel (video)</option>
+          </select>
+          <label class="f">Número de WhatsApp del negocio (opcional)</label>
+          <input type="tel" id="waNum" placeholder="Ej: 2972 123456" autocomplete="off">
+          <label class="chk"><input type="checkbox" id="waAddToText"> Sumar "Escribinos al WhatsApp" al texto de Instagram y Facebook</label>
+          <button class="btn pri" id="waGo" style="width:100%;margin-top:10px">📲 Preparar para WhatsApp</button>
+          <div class="status" id="waStatus" role="status" aria-live="polite"></div>
         </div>
       </div>
       <div class="side">
@@ -714,8 +734,10 @@ h3.sub{font:700 13px Inter;color:var(--muted);text-transform:uppercase;letter-sp
         <div id="checksPub"></div>
         <h3 style="margin-top:18px">Últimas publicaciones</h3>
         <ul id="histList"></ul>
-        <h3 style="margin-top:18px">Límites de Instagram</h3>
-        <ul><li>Solo cuentas profesionales; hasta 50 publicaciones por día.</li><li>Hasta 5 hashtags por publicación (los demás se sacan solos al publicar).</li><li>Historias sin stickers (link, encuesta, ubicación).</li><li>El reel sale sin música.</li></ul>
+        <h3 style="margin-top:18px">Para que no te tomen por robot</h3>
+        <ul><li>Publicá 1 o 2 veces por día como mucho; el estudio espera unos segundos entre una red y otra.</li><li>No repitas el mismo texto: si lo detecta, te avisa.</li><li>Nada de apps "no oficiales" para WhatsApp ni mensajes masivos.</li><li>Activá la verificación en dos pasos en Facebook, Instagram y WhatsApp.</li></ul>
+        <h3 style="margin-top:18px">Límites de Instagram y Facebook</h3>
+        <ul><li>Solo cuentas profesionales; hasta 50 publicaciones por día.</li><li>Facebook: hasta 30 reels por día; historias en video de hasta 60 s.</li><li>Hasta 5 hashtags por publicación (los demás se sacan solos al publicar).</li><li>Historias sin stickers (link, encuesta, ubicación).</li><li>El reel sale sin música.</li></ul>
         <h3 style="margin-top:18px">Google Maps</h3>
         <p style="margin:4px 0 0">Con la clave de Google, un link de búsqueda de Google, de Maps o solo el nombre del local trae dirección, horarios, teléfono, calificación, una reseña y fotos. Pasos en <b>GUIA-GOOGLE.md</b>.</p>
         <h3 style="margin-top:18px">Instagram</h3>
@@ -2358,7 +2380,9 @@ async function refreshAccount(){
     S.igAccount = a;
     const used = a.limit ? ` · usaste ${a.limit.quota_usage} de ${(a.limit.config && a.limit.config.quota_total) || 50} publicaciones hoy` : '';
     box.innerHTML = `Conectado como <b style="color:var(--ink)">@${a.username}</b>${a.followers_count != null ? ` · ${a.followers_count} seguidores` : ''}${used}`
-      + (a.missing && a.missing.length ? `<br><span style="color:#ffd36b">⚠️ A tu conexión le falta: ${a.missing.join(', ')}. ${a.missing.includes('instagram_manage_insights') ? 'Sin ese permiso "Negocio o local de otra persona" no puede leer otros Instagram. ' : ''}Ver GUIA-INSTAGRAM.md, paso 7.</span>` : '');
+      + (a.missing && a.missing.length ? `<br><span style="color:#ffd36b">⚠️ A tu conexión le falta: ${a.missing.join(', ')}. ${a.missing.includes('instagram_manage_insights') ? 'Sin ese permiso "Negocio o local de otra persona" no puede leer otros Instagram. ' : ''}Ver GUIA-INSTAGRAM.md, paso 7.</span>` : '')
+      + (a.fb && a.fb.name ? `<br>Facebook: <b style="color:var(--ink)">${a.fb.name}</b>${a.fb.canPost === false ? ' <span style="color:#ffd36b">· falta el permiso para publicar (pages_manage_posts)</span>' : a.fb.canPost ? ' · listo para publicar' : ''}` : '');
+    $('#fbName').textContent = a.fb && a.fb.name ? '(' + a.fb.name + ')' : '';
   } catch (e) { box.textContent = e.status === 401 ? 'Clave del estudio incorrecta. ' + await keyDiagnosis() : 'No pude leer la cuenta: ' + e.message; }
 }
 
@@ -2397,72 +2421,205 @@ async function waitReady(id, video){
   }
 }
 let pubArmed = 0;
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+// Pausa entre redes: publicar todo en el mismo segundo es lo que hacen los robots
+async function pausa(li, a, b){ const s = rnd(a, b); for (let i = s; i > 0; i--) { li.textContent = `⏳ Espero ${i} s antes de seguir (para que no parezca un robot)…`; await sleep(1000); } li.remove(); }
+const pubDay = () => { const d = new Date().toISOString().slice(0, 10); const x = store.get('pubDay', {}); return x.d === d ? x : { d, n: 0 }; };
+const capHash = t => { let h = 0; for (const c of String(t).replace(/\s+/g, ' ').trim().toLowerCase()) h = (h * 31 + c.charCodeAt(0)) | 0; return String(h); };
+function waLine(){ const n = ($('#waNum').value || '').trim(); return $('#waAddToText').checked && n ? `📲 Escribinos al WhatsApp: ${n}` : ''; }
+function pubCaption(){
+  const t = trimTags(IGH.stripInvisible($('#f-caption').value).trim(), $('#f-hashtags').value.trim(), 5);
+  const w = waLine();
+  return (t.cap.trim() + (w ? '\n\n' + w : '') + (t.tags ? '\n\n' + t.tags : '')).trim().slice(0, 2200);
+}
+/* ---- Facebook: mismos formatos que Instagram ---- */
+async function fbVideo(url, kind, caption, li){
+  const lbl = kind === 'story' ? 'la historia' : 'el reel';
+  const { videoId } = await api('api/ig', { action: 'fb_video', kind, url });
+  li.textContent = `Facebook está bajando ${lbl}…`;
+  let t0 = Date.now();
+  for (;;) {
+    const s = await api('api/ig', { action: 'fb_video_status', videoId });
+    if (s.video_status === 'error') throw new Error('Facebook rechazó el video');
+    if ((s.uploading_phase && s.uploading_phase.status === 'complete') || s.video_status === 'ready') break;
+    if (Date.now() - t0 > 3 * 60 * 1000) throw new Error('Facebook tardó demasiado en bajar el video');
+    await sleep(3000);
+  }
+  const r = await api('api/ig', { action: 'fb_video_finish', videoId, kind, caption });
+  li.textContent = `Facebook está procesando ${lbl}…`;
+  t0 = Date.now();
+  for (;;) {
+    const s = await api('api/ig', { action: 'fb_video_status', videoId }).catch(() => ({}));
+    const err = s.processing_phase && s.processing_phase.errors && s.processing_phase.errors[0];
+    if (s.video_status === 'error' || err) throw new Error('Facebook rechazó el video' + (err && err.message ? ': ' + err.message : ''));
+    if (s.video_status === 'ready' || (s.processing_phase && s.processing_phase.status === 'complete')) break;
+    if (Date.now() - t0 > 4 * 60 * 1000) { plog(`ℹ️ Facebook sigue procesando ${lbl}; aparece solo en unos minutos.`); break; }
+    await sleep(5000);
+  }
+  return r;
+}
+const FBP = {
+  carousel: async (urls, caption) => { const ids = []; for (const url of urls) ids.push((await api('api/ig', { action: 'fb_photo', url, published: false })).id); return api('api/ig', { action: 'fb_feed', photoIds: ids, caption }); },
+  post: (url, caption) => api('api/ig', { action: 'fb_photo', url, caption }),
+  storyPhoto: async url => { const photoId = (await api('api/ig', { action: 'fb_photo', url, published: false })).id; return api('api/ig', { action: 'fb_story_photo', photoId }); }
+};
 async function publishFlow(){
+  const to = { ig: $('#pubToIG').checked, fb: $('#pubToFB').checked, wa: $('#pubToWA').checked };
   const want = { carousel: $('#pubCarousel').checked, post: $('#pubPost').checked, story: $('#pubStory').checked, reel: $('#pubReel').checked };
   const n = Object.values(want).filter(Boolean).length;
+  if (!to.ig && !to.fb && !to.wa) { toast('Elegí dónde publicar'); return; }
   if (!n) { toast('Elegí qué subir'); return; }
+  if (!to.ig && !to.fb) { waGo(); return; }
   if (!S.server || !S.server.ig) { toast('Primero conectá Instagram'); return; }
+  if (to.fb && S.igAccount && S.igAccount.fb && S.igAccount.fb.canPost === false) { toast('A tu conexión le falta el permiso para publicar en Facebook (pages_manage_posts). Hay que generar el token de nuevo.'); return; }
   try { localStorage.setItem('igstudio.key', $('#studioKey').value.trim()); } catch {}
   const btn = $('#pubGo');
-  if (Date.now() - pubArmed > 6000) { pubArmed = Date.now(); btn.textContent = `Confirmá: publicar ${n} cosa${n > 1 ? 's' : ''} en @${(S.igAccount && S.igAccount.username) || 'tu cuenta'}`; setTimeout(() => { if (Date.now() - pubArmed >= 6000) btn.textContent = '🚀 Publicar ahora'; }, 6200); return; }
+  const caption = pubCaption();
+  const dia = pubDay(), repetido = store.get('lastCap', '') === capHash(caption);
+  const donde = [to.ig && 'Instagram', to.fb && 'Facebook'].filter(Boolean).join(' y ');
+  if (Date.now() - pubArmed > 8000) {
+    pubArmed = Date.now();
+    btn.textContent = repetido ? '⚠️ Este texto ya lo publicaste. Tocá de nuevo si igual querés'
+      : dia.n >= 3 ? `⚠️ Ya publicaste ${dia.n} veces hoy. Tocá de nuevo para seguir`
+      : `Confirmá: publicar ${n} cosa${n > 1 ? 's' : ''} en ${donde}`;
+    setTimeout(() => { if (Date.now() - pubArmed >= 8000) btn.textContent = '🚀 Publicar ahora'; }, 8200); return;
+  }
   pubArmed = 0; btn.disabled = true; btn.textContent = 'Publicando…'; $('#pubLog').innerHTML = '';
-  const caption = finalCaption();
-  const uploaded = [], kinds = [];
+  const uploaded = [], kinds = [], made = {};
+  let primera = true, okAlguna = false;
   const up = async (blob, name, type) => { const r = await blobUpload(blob, name, type); uploaded.push(r.url); return r.publicUrl || r.url; };
-  const done = (what, r) => kinds.push(what.toLowerCase()) && plog(`✅ ${what} ${what === 'Historia' ? 'publicada' : 'publicado'}${r.permalink ? ` — <a href="${r.permalink}" target="_blank" rel="noopener">ver</a>` : ''}`, 'ok');
+  const fem = w => w === 'Historia';
+  // Publica una pieza en cada red, por separado: si una falla, la otra sigue
+  async function enRedes(what, igFn, fbFn){
+    let ok = false;
+    for (const [red, fn] of [['Instagram', to.ig && igFn], ['Facebook', to.fb && fbFn]]) {
+      if (!fn) continue;
+      if (!primera) await pausa(plog('⏳'), 12, 30);
+      primera = false;
+      const li = plog(`${what} → ${red}…`);
+      try {
+        const r = await fn(li);
+        li.className = 'ok'; ok = true;
+        li.innerHTML = `✅ ${what} ${fem(what) ? 'publicada' : 'publicado'} en ${red}${r && r.permalink ? ` — <a href="${r.permalink}" target="_blank" rel="noopener">ver</a>` : ''}`;
+      } catch (e) {
+        if (e.status === 401) throw e;
+        li.className = 'err'; li.textContent = `❌ ${what} en ${red}: ${e.message}`;
+      }
+    }
+    if (ok) { kinds.push(what.toLowerCase()); okAlguna = true; }
+  }
   try {
     await ensureFonts(); renderAll();
     if (want.carousel) {
       const cs = $$('#carousel canvas').slice(0, 10);
       const li = plog(`Subiendo ${cs.length} imágenes del carrusel…`);
-      const ids = [];
-      for (let i = 0; i < cs.length; i++) { const url = await up(await jpegBlob(cs[i]), `slide-${i + 1}.jpg`, 'image/jpeg'); ids.push((await api('api/ig', { action: 'container', kind: 'item', url, alt: cs[i].dataset.alt || '' })).id); li.textContent = `Preparando carrusel ${i + 1}/${cs.length}…`; }
-      const parent = (await api('api/ig', { action: 'container', kind: 'carousel', children: ids, caption })).id;
-      await waitReady(parent, false);
-      done('Carrusel', await api('api/ig', { action: 'publish', id: parent }));
+      const urls = [], alts = []; made.carousel = [];
+      for (let i = 0; i < cs.length; i++) { const b = await jpegBlob(cs[i]); made.carousel.push(b); urls.push(await up(b, `slide-${i + 1}.jpg`, 'image/jpeg')); alts.push(cs[i].dataset.alt || ''); li.textContent = `Subiendo imágenes ${i + 1}/${cs.length}…`; }
+      li.remove();
+      await enRedes('Carrusel', async l => {
+        const ids = []; for (let i = 0; i < urls.length; i++) { ids.push((await api('api/ig', { action: 'container', kind: 'item', url: urls[i], alt: alts[i] })).id); l.textContent = `Carrusel → Instagram: preparando ${i + 1}/${urls.length}…`; }
+        const parent = (await api('api/ig', { action: 'container', kind: 'carousel', children: ids, caption })).id;
+        await waitReady(parent, false); return api('api/ig', { action: 'publish', id: parent });
+      }, () => FBP.carousel(urls, caption));
     }
     if (want.post) {
-      plog('Subiendo el post…');
-      const url = await up(await jpegBlob($('#cPost')), 'post.jpg', 'image/jpeg');
-      const id = (await api('api/ig', { action: 'container', kind: 'image', url, caption, alt: $('#cPost').dataset.alt || '' })).id;
-      await waitReady(id, false); done('Post', await api('api/ig', { action: 'publish', id }));
+      const li = plog('Subiendo el post…');
+      made.post = await jpegBlob($('#cPost'));
+      const url = await up(made.post, 'post.jpg', 'image/jpeg'); li.remove();
+      await enRedes('Post', async () => {
+        const id = (await api('api/ig', { action: 'container', kind: 'image', url, caption, alt: $('#cPost').dataset.alt || '' })).id;
+        await waitReady(id, false); return api('api/ig', { action: 'publish', id });
+      }, () => FBP.post(url, caption));
     }
     if (want.story && S.storyFmt === 'video') {
       const li = plog('Creando el video de la historia…');
       const r = await encodeStory(p => li.textContent = `Creando el video de la historia… ${Math.round(p * 100)}%`);
       if (r.ext !== 'mp4') throw new Error('Este navegador solo crea WEBM y Instagram pide MP4. Usá Chrome o Edge actualizados.');
       if (r.note) plog('⚠️ ' + r.note);
-      S.lastStory = r; li.textContent = 'Subiendo la historia…';
-      const url = await up(r.blob, 'historia.mp4', 'video/mp4');
-      const id = (await api('api/ig', { action: 'container', kind: 'story', url, video: true })).id;
-      li.textContent = 'Instagram está procesando la historia…';
-      await waitReady(id, true); done('Historia', await api('api/ig', { action: 'publish', id }));
+      S.lastStory = r; made.story = r.blob; li.textContent = 'Subiendo la historia…';
+      const url = await up(r.blob, 'historia.mp4', 'video/mp4'); li.remove();
+      await enRedes('Historia', async l => {
+        const id = (await api('api/ig', { action: 'container', kind: 'story', url, video: true })).id;
+        l.textContent = 'Instagram está procesando la historia…';
+        await waitReady(id, true); return api('api/ig', { action: 'publish', id });
+      }, l => fbVideo(url, 'story', '', l));
     } else if (want.story) {
-      plog('Subiendo la historia…');
-      const url = await up(await jpegBlob($('#cStory')), 'historia.jpg', 'image/jpeg');
-      const id = (await api('api/ig', { action: 'container', kind: 'story', url })).id;
-      await waitReady(id, false); done('Historia', await api('api/ig', { action: 'publish', id }));
+      const li = plog('Subiendo la historia…');
+      made.story = await jpegBlob($('#cStory'));
+      const url = await up(made.story, 'historia.jpg', 'image/jpeg'); li.remove();
+      await enRedes('Historia', async () => {
+        const id = (await api('api/ig', { action: 'container', kind: 'story', url })).id;
+        await waitReady(id, false); return api('api/ig', { action: 'publish', id });
+      }, () => FBP.storyPhoto(url));
     }
     if (want.reel) {
       const li = plog('Creando el video del reel…');
       const r = await encodeReel(p => li.textContent = `Creando el video del reel… ${Math.round(p * 100)}%`);
       if (r.note) plog('⚠️ ' + r.note);
       if (r.ext !== 'mp4') throw new Error('Este navegador solo crea WEBM y Instagram pide MP4. Usá Chrome o Edge actualizados.');
-      S.lastReel = r;
+      S.lastReel = r; made.reel = r.blob;
       li.textContent = 'Subiendo el reel…';
-      const url = await up(r.blob, 'reel.mp4', 'video/mp4');
-      const id = (await api('api/ig', { action: 'container', kind: 'reel', url, caption, shareToFeed: $('#pubReelFeed').checked })).id;
-      li.textContent = 'Instagram está procesando el reel (puede tardar un par de minutos)…';
-      await waitReady(id, true); done('Reel', await api('api/ig', { action: 'publish', id }));
+      const url = await up(r.blob, 'reel.mp4', 'video/mp4'); li.remove();
+      await enRedes('Reel', async l => {
+        const id = (await api('api/ig', { action: 'container', kind: 'reel', url, caption, shareToFeed: $('#pubReelFeed').checked })).id;
+        l.textContent = 'Instagram está procesando el reel (puede tardar un par de minutos)…';
+        await waitReady(id, true); return api('api/ig', { action: 'publish', id });
+      }, l => fbVideo(url, 'reel', caption, l));
     }
-    toast('¡Publicado!');
+    if (okAlguna) { toast('¡Publicado!'); store.set('lastCap', capHash(caption)); const d = pubDay(); d.n++; store.set('pubDay', d); }
   } catch (e) {
     plog('❌ ' + (e.status === 401 ? 'Clave del estudio incorrecta.' : e.message), 'err');
   } finally {
+    // WhatsApp: deja listo lo mismo que se publicó
+    if (to.wa && (made.story || made.post || made.carousel || made.reel)) { waFromMade(made); plog('📲 WhatsApp listo: tocá "Abrir WhatsApp" abajo.', 'ok'); try { $('#waCard').scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch {} }
     if (kinds.length) { addHist(kinds); if (S.lookSel === 'rotar') { nextVariant(); syncLookUI(); plog('🎲 Lo próximo que armes sale con otro estilo (' + LOOK_NAMES[curLook()] + ').'); } renderAll(); }
     if (uploaded.length) { try { await api('api/ig', { action: 'cleanup', urls: uploaded }); } catch {} }
     btn.disabled = false; btn.textContent = '🚀 Publicar ahora'; refreshAccount();
   }
+}
+/* ---- WhatsApp: un toque y publicás vos (sin apps "no oficiales") ---- */
+let WA = null;
+const waText = () => { const t = trimTags(IGH.stripInvisible($('#f-caption').value).trim(), '', 0); const n = ($('#waNum').value || '').trim(); return t.cap.trim() + (n && $('#waAddToText').checked ? `\n\n📲 ${n}` : ''); };
+const fileOf = (b, name) => new File([b], name, { type: b.type || (/\.mp4$/.test(name) ? 'video/mp4' : 'image/jpeg') });
+function waReady(files, label){
+  WA = { files, text: waText(), label };
+  $('#waGo').textContent = '📲 Abrir WhatsApp';
+  waSay(`Listo: ${label}. Tocá <b>📲 Abrir WhatsApp</b> y elegí WhatsApp → <b>Mi estado</b> (o tu canal).`);
+}
+function waFromMade(m){
+  const pref = $('#waWhat').value;
+  const pick = (m[pref] && pref) || ['story', 'post', 'carousel', 'reel'].find(k => m[k]);
+  const ext = b => /mp4/.test(b.type) ? 'mp4' : 'jpg';
+  const files = pick === 'carousel' ? m.carousel.map((b, i) => fileOf(b, `imagen-${i + 1}.jpg`)) : [fileOf(m[pick], `${pick === 'reel' ? 'reel' : pick === 'post' ? 'post' : 'historia'}.${ext(m[pick])}`)];
+  waReady(files, { story: 'la historia', post: 'el post', carousel: 'las imágenes del carrusel', reel: 'el reel' }[pick]);
+}
+const waSay = h => { const s = $('#waStatus'); s.innerHTML = h; s.classList.add('show'); };
+async function waPrepare(){
+  const what = $('#waWhat').value, btn = $('#waGo');
+  btn.disabled = true;
+  try {
+    await ensureFonts(); renderAll();
+    const m = {};
+    if (what === 'carousel') m.carousel = await Promise.all($$('#carousel canvas').slice(0, 10).map(jpegBlob));
+    else if (what === 'post') m.post = await jpegBlob($('#cPost'));
+    else if (what === 'story' && S.storyFmt !== 'video') m.story = await jpegBlob($('#cStory'));
+    else { const r = await (what === 'reel' ? encodeReel : encodeStory)(p => waSay(`Creando el video… ${Math.round(p * 100)}%`)); if (r.ext !== 'mp4') throw new Error('Este navegador solo crea WEBM y WhatsApp pide MP4. Usá Chrome o Edge actualizados.'); m[what] = r.blob; }
+    waFromMade(m);
+  } catch (e) { waSay('❌ ' + e.message); }
+  finally { btn.disabled = false; }
+}
+async function waGo(){
+  if (WA && WA.text !== waText()) WA = null; // cambiaste el texto: se vuelve a preparar
+  if (!WA) { $('#waGo').textContent = 'Preparando…'; await waPrepare(); if (!WA) $('#waGo').textContent = '📲 Preparar para WhatsApp'; return; }
+  try { await navigator.clipboard.writeText(WA.text); } catch {}
+  const data = { files: WA.files, text: WA.text };
+  if (navigator.canShare && navigator.canShare({ files: WA.files })) {
+    try { await navigator.share(data); waSay('✅ Enviado a la app. Si elegiste WhatsApp, revisá el texto antes de publicar.'); return; }
+    catch (e) { if (e.name === 'AbortError') return; }
+  }
+  // Compu sin "compartir": bajo los archivos y dejo el texto copiado
+  WA.files.forEach(f => { const a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000); });
+  waSay('Te bajé ' + (WA.files.length > 1 ? 'los archivos' : 'el archivo') + ' y copié el texto. Pasalo al celular (o abrí WhatsApp en la compu) y subilo a tu estado o canal.');
 }
 async function igSetup(){
   const out = $('#igSetupOut'); out.textContent = 'Convirtiendo…';
@@ -4142,7 +4299,7 @@ async function clientPackage(){
   finally { btn.disabled = false; btn.textContent = '📦 Armar paquete para el cliente'; }
 }
 
-const BM_CODE = "(async()=>{const APP='__APP__';if(!/(^|\\.)instagram\\.com$/.test(location.hostname)){alert('Abrí primero el Instagram del local (instagram.com/usuario) y tocá este botón ahí.');return}const user=location.pathname.split('/').filter(Boolean)[0];if(!user||/^(p|reel|reels|explore|stories|direct|accounts)$/.test(user)){alert('Entrá al perfil del local (instagram.com/usuario) y tocá el botón de nuevo.');return}const w=window.open(APP,'igstudio');let ok=false;window.addEventListener('message',e=>{if(e.data&&e.data.type==='igstudio-ok')ok=true});try{const r=await fetch('/api/v1/users/web_profile_info/?username='+encodeURIComponent(user),{headers:{'X-IG-App-ID':'936619743392459'},credentials:'include'});const u=((await r.json()).data||{}).user;if(!u)throw new Error('Instagram no devolvió el perfil');let addr='';try{const a=JSON.parse(u.business_address_json||'{}');addr=[a.street_address,a.city_name].filter(Boolean).join(', ')}catch(e){}const toData=async url=>{try{const b=await(await fetch(url)).blob();return await new Promise(res=>{const f=new FileReader();f.onload=()=>res(f.result);f.readAsDataURL(b)})}catch(e){return url}};const nodes=((u.edge_owner_to_timeline_media||{}).edges||[]).map(e=>e.node).slice(0,10);const media=[];for(const n of nodes){media.push({media_type:n.is_video?'VIDEO':'IMAGE',media_url:await toData(n.display_url),caption:(((n.edge_media_to_caption||{}).edges||[])[0]||{node:{text:''}}).node.text})}const d={source:'navegador',username:u.username,name:u.full_name,biography:u.biography,website:u.external_url,profile_picture_url:await toData(u.profile_pic_url_hd||u.profile_pic_url),category:u.category_name||'',phone:u.business_phone_number||u.public_phone_number||'',address:addr,private:!!u.is_private,media:{data:media}};for(let i=0;i<90&&!ok;i++){try{w.postMessage({type:'igstudio-import',data:d},new URL(APP).origin)}catch(e){}await new Promise(r=>setTimeout(r,500))}if(!ok)alert('No pude pasar los datos al Estudio. Fijate que se haya abierto la pestaña y probá de nuevo.')}catch(e){alert('No pude leer el perfil ('+e.message+'). ¿Iniciaste sesión en Instagram en este navegador?')}})();";
+const BM_CODE = "(async()=>{const APP='__APP__';if(!/(^|\\.)instagram\\.com$/.test(location.hostname)){alert('Abrí primero el Instagram del local (instagram.com/usuario) y tocá este botón ahí.');return}const user=location.pathname.split('/').filter(Boolean)[0];if(!user||/^(p|reel|reels|explore|stories|direct|accounts)$/.test(user)){alert('Entrá al perfil del local (instagram.com/usuario) y tocá el botón de nuevo.');return}try{const K='igstudioBM',dd=new Date().toISOString().slice(0,10);let s=JSON.parse(localStorage.getItem(K)||'{}');if(s.d!==dd)s={d:dd,n:0,t:0};if(s.n>=5){alert('Ya usaste este botón 5 veces hoy. Para cuidar tu cuenta de Instagram, seguí mañana o cargá los datos a mano.');return}const falta=Math.ceil((s.t+120000-Date.now())/1000);if(falta>0){alert('Esperá '+falta+' segundos antes de usarlo de nuevo, así Instagram no lo toma como un robot.');return}s.n++;s.t=Date.now();localStorage.setItem(K,JSON.stringify(s))}catch(e){}const w=window.open(APP,'igstudio');let ok=false;window.addEventListener('message',e=>{if(e.data&&e.data.type==='igstudio-ok')ok=true});try{const r=await fetch('/api/v1/users/web_profile_info/?username='+encodeURIComponent(user),{headers:{'X-IG-App-ID':'936619743392459'},credentials:'include'});const u=((await r.json()).data||{}).user;if(!u)throw new Error('Instagram no devolvió el perfil');let addr='';try{const a=JSON.parse(u.business_address_json||'{}');addr=[a.street_address,a.city_name].filter(Boolean).join(', ')}catch(e){}const toData=async url=>{try{const b=await(await fetch(url)).blob();return await new Promise(res=>{const f=new FileReader();f.onload=()=>res(f.result);f.readAsDataURL(b)})}catch(e){return url}};const nodes=((u.edge_owner_to_timeline_media||{}).edges||[]).map(e=>e.node).slice(0,10);const media=[];for(const n of nodes){media.push({media_type:n.is_video?'VIDEO':'IMAGE',media_url:await toData(n.display_url),caption:(((n.edge_media_to_caption||{}).edges||[])[0]||{node:{text:''}}).node.text})}const d={source:'navegador',username:u.username,name:u.full_name,biography:u.biography,website:u.external_url,profile_picture_url:await toData(u.profile_pic_url_hd||u.profile_pic_url),category:u.category_name||'',phone:u.business_phone_number||u.public_phone_number||'',address:addr,private:!!u.is_private,media:{data:media}};for(let i=0;i<90&&!ok;i++){try{w.postMessage({type:'igstudio-import',data:d},new URL(APP).origin)}catch(e){}await new Promise(r=>setTimeout(r,500))}if(!ok)alert('No pude pasar los datos al Estudio. Fijate que se haya abierto la pestaña y probá de nuevo.')}catch(e){alert('No pude leer el perfil ('+e.message+'). ¿Iniciaste sesión en Instagram en este navegador?')}})();";
 /* ---- subtítulos de la voz (accesibilidad y para quien mira sin sonido) ---- */
 S.subs = store.get('subs', true);
 function subChunks(text){
@@ -5370,6 +5527,12 @@ $('#pitchZip').onclick = pitchZip; $('#pitchPub').onclick = pitchPublish; $('#pi
 $('#lLink').onkeydown = e => { if (e.key === 'Enter') localFromLink(); };
 $('#igSetup').onclick = igSetup;
 $('#pubGo').onclick = publishFlow;
+$('#waGo').onclick = waGo;
+try { $('#waNum').value = localStorage.getItem('igstudio.waNum') || ''; $('#waAddToText').checked = localStorage.getItem('igstudio.waAdd') === '1'; $('#pubToFB').checked = localStorage.getItem('igstudio.toFB') === '1'; $('#pubToWA').checked = localStorage.getItem('igstudio.toWA') === '1'; $('#pubToIG').checked = localStorage.getItem('igstudio.toIG') !== '0'; } catch {}
+$('#waNum').onchange = () => { try { localStorage.setItem('igstudio.waNum', $('#waNum').value.trim()); } catch {} };
+$('#waAddToText').onchange = () => { try { localStorage.setItem('igstudio.waAdd', $('#waAddToText').checked ? '1' : '0'); } catch {} };
+['IG', 'FB', 'WA'].forEach(k => $('#pubTo' + k).onchange = () => { try { localStorage.setItem('igstudio.to' + k, $('#pubTo' + k).checked ? '1' : '0'); } catch {} });
+$('#waWhat').onchange = () => { WA = null; $('#waGo').textContent = '📲 Preparar para WhatsApp'; $('#waStatus').classList.remove('show'); };
 $('#studioKey').addEventListener('change', () => { try { localStorage.setItem('igstudio.key', $('#studioKey').value.trim()); } catch {} refreshAccount(); });
 $('#lGenAI').onclick = () => S.purpose === 'caso' ? generateAI() : generateLocalAI();
 $('#addLogo').onclick = () => $('#inLogo').click();

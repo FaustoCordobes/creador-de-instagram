@@ -48,6 +48,16 @@ async function igPublic(user){
   return { source: 'og', username: user, name, biography: bio, profile_picture_url: meta('og:image'), media: { data: [] } };
 }
 const IGID = () => process.env.IG_USER_ID;
+// Página de Facebook del mismo token (el token de Página "es" la Página: /me la devuelve)
+let FBP = null;
+async function fbPage() {
+  if (FBP && FBP.token === TOKEN()) return FBP;
+  const me = await graph('/me', { fields: 'id,name,link', access_token: TOKEN() });
+  const id = String(process.env.FB_PAGE_ID || me.id).replace(/["'\s]/g, '');
+  FBP = { id, name: me.name, link: me.link, token: TOKEN() };
+  return FBP;
+}
+async function fbPermalink(id) { try { const j = await graph('/' + id, { fields: 'permalink_url', access_token: TOKEN() }); return j.permalink_url ? (/^https?:/.test(j.permalink_url) ? j.permalink_url : 'https://www.facebook.com' + j.permalink_url) : null; } catch { return null; } }
 
 module.exports = async (req, res) => {
   cors(res);
@@ -102,8 +112,9 @@ module.exports = async (req, res) => {
         const id = String(process.env.META_APP_ID || '').replace(/["'\s]/g, ''), secret = String(process.env.META_APP_SECRET || '').replace(/["'\s]/g, '');
         if (id && secret) { const d = await graph('/debug_token', { input_token: TOKEN(), access_token: id + '|' + secret }); scopes = (d.data && d.data.scopes) || null; }
       } catch {}
-      const need = ['instagram_basic', 'instagram_content_publish', 'instagram_manage_insights', 'pages_read_engagement', 'pages_show_list'];
-      return res.json({ ...me, limit: limit && limit.data && limit.data[0], scopes, missing: scopes ? need.filter(x => !scopes.includes(x)) : null });
+      const need = ['instagram_basic', 'instagram_content_publish', 'instagram_manage_insights', 'pages_read_engagement', 'pages_show_list', 'pages_manage_posts'];
+      let fb = null; try { const p = await fbPage(); fb = { id: p.id, name: p.name, link: p.link || null, canPost: scopes ? scopes.includes('pages_manage_posts') && scopes.includes('pages_read_engagement') : null }; } catch (e) { fb = { error: e.message }; }
+      return res.json({ ...me, limit: limit && limit.data && limit.data[0], scopes, missing: scopes ? need.filter(x => !scopes.includes(x)) : null, fb });
     }
 
     if (action === 'public') {
@@ -137,12 +148,12 @@ module.exports = async (req, res) => {
       const k = body.kind;
       if (k === 'image') { p.image_url = body.url; p.caption = body.caption || ''; }
       else if (k === 'item') { p.image_url = body.url; p.is_carousel_item = 'true'; }
-      // texto alternativo (accesibilidad): solo imágenes del feed y del carrusel
-      if ((k === 'image' || k === 'item') && body.alt) p.alt_text = String(body.alt).slice(0, 1000);
       else if (k === 'story') { p.media_type = 'STORIES'; if (body.video) p.video_url = body.url; else p.image_url = body.url; }
       else if (k === 'reel') { p.media_type = 'REELS'; p.video_url = body.url; p.caption = body.caption || ''; p.share_to_feed = body.shareToFeed === false ? 'false' : 'true'; }
       else if (k === 'carousel') { p.media_type = 'CAROUSEL'; p.children = (body.children || []).join(','); p.caption = body.caption || ''; }
       else throw new Error('Tipo de contenido desconocido.');
+      // texto alternativo (accesibilidad): solo imágenes del feed y del carrusel
+      if ((k === 'image' || k === 'item') && body.alt) p.alt_text = String(body.alt).slice(0, 1000);
       const j = await graph('/' + IGID() + '/media', p, 'POST');
       return res.json({ id: j.id });
     }
@@ -156,6 +167,51 @@ module.exports = async (req, res) => {
       const j = await graph('/' + IGID() + '/media_publish', { creation_id: body.id, access_token: TOKEN() }, 'POST');
       let link = null; try { const m = await graph('/' + j.id, { fields: 'permalink', access_token: TOKEN() }); link = m.permalink; } catch {}
       return res.json({ id: j.id, permalink: link });
+    }
+
+    /* ---------- Facebook (Página) ---------- */
+    if (action === 'fb_photo') {
+      // published=false sube la foto sin publicarla (para carrusel o historia)
+      const pg = await fbPage(); const pub = body.published !== false;
+      const p = { url: body.url, access_token: TOKEN(), published: pub ? 'true' : 'false' };
+      if (pub && body.caption) p.message = String(body.caption);
+      const j = await graph('/' + pg.id + '/photos', p, 'POST');
+      return res.json({ id: j.id, postId: j.post_id || null, permalink: pub ? await fbPermalink(j.post_id || j.id) : null });
+    }
+    if (action === 'fb_feed') {
+      // post con varias fotos (equivalente al carrusel)
+      const pg = await fbPage();
+      const p = { message: String(body.caption || ''), access_token: TOKEN() };
+      (body.photoIds || []).slice(0, 10).forEach((id, i) => { p['attached_media[' + i + ']'] = JSON.stringify({ media_fbid: id }); });
+      const j = await graph('/' + pg.id + '/feed', p, 'POST');
+      return res.json({ id: j.id, permalink: await fbPermalink(j.id) });
+    }
+    if (action === 'fb_story_photo') {
+      const pg = await fbPage();
+      const j = await graph('/' + pg.id + '/photo_stories', { photo_id: body.photoId, access_token: TOKEN() }, 'POST');
+      return res.json({ id: j.post_id || null });
+    }
+    if (action === 'fb_video') {
+      // Reel o historia en video: empezar, subir desde el link y terminar
+      const pg = await fbPage(); const edge = body.kind === 'story' ? 'video_stories' : 'video_reels';
+      const st = await graph('/' + pg.id + '/' + edge, { upload_phase: 'start', access_token: TOKEN() }, 'POST');
+      const up = await fetch(st.upload_url || ('https://rupload.facebook.com/video-upload/' + require('./_lib').GRAPH.split('/').pop() + '/' + st.video_id), { method: 'POST', headers: { Authorization: 'OAuth ' + TOKEN(), file_url: body.url } });
+      const uj = await up.json().catch(() => ({}));
+      if (!up.ok || !uj.success) throw new Error('Facebook no pudo bajar el video' + (uj.debug_info && uj.debug_info.message ? ': ' + uj.debug_info.message : ''));
+      return res.json({ videoId: st.video_id });
+    }
+    if (action === 'fb_video_status') {
+      const j = await graph('/' + body.videoId, { fields: 'status', access_token: TOKEN() });
+      return res.json(j.status || {});
+    }
+    if (action === 'fb_video_finish') {
+      const pg = await fbPage();
+      if (body.kind === 'story') {
+        const j = await graph('/' + pg.id + '/video_stories', { video_id: body.videoId, upload_phase: 'finish', access_token: TOKEN() }, 'POST');
+        return res.json({ id: j.post_id || null });
+      }
+      const j = await graph('/' + pg.id + '/video_reels', { video_id: body.videoId, upload_phase: 'finish', video_state: 'PUBLISHED', description: String(body.caption || ''), access_token: TOKEN() }, 'POST');
+      return res.json({ id: body.videoId, permalink: 'https://www.facebook.com/reel/' + body.videoId, ok: !!j.success });
     }
 
     if (action === 'sign') {
