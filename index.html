@@ -2372,10 +2372,12 @@ async function blobUpload(blob, name, type){
   const path = `ig/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${name}`;
   const opts = { access: 'public', handleUploadUrl: 'api/upload', clientPayload: studioKey(), contentType: type };
   let r;
-  try { r = S.server && S.server.blobMode === 'presigned' && blobLib.uploadPresigned ? await blobLib.uploadPresigned(path, blob, opts) : await blobLib.upload(path, blob, opts); }
+  // Reintenta: a veces Vercel tarda en darle permiso al servidor para firmar la subida
+  const subir = async o => { let last; for (let i = 0; i < 3; i++) { try { return S.server && S.server.blobMode === 'presigned' && blobLib.uploadPresigned ? await blobLib.uploadPresigned(path, blob, o) : await blobLib.upload(path, blob, o); } catch (e) { last = e; if (/private|access mode/i.test(String(e && e.message))) throw e; await new Promise(res => setTimeout(res, 2000 * (i + 1))); } } throw last; };
+  try { r = await subir(opts); }
   catch (e) {
     const m = String(e && e.message || e);
-    if (/private|access/i.test(m)) { const o2 = { ...opts, access: 'private' }; r = S.server && S.server.blobMode === 'presigned' && blobLib.uploadPresigned ? await blobLib.uploadPresigned(path, blob, o2) : await blobLib.upload(path, blob, o2); }
+    if (/private|access/i.test(m)) { const o2 = { ...opts, access: 'private' }; r = await subir(o2); }
     else throw new Error('No pude subir el archivo: ' + m.replace(/^Vercel Blob:\s*/, ''));
   }
   // Blob privado: Instagram necesita un link firmado temporal

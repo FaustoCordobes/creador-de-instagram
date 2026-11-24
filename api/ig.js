@@ -152,16 +152,6 @@ module.exports = async (req, res) => {
       return res.json(j);
     }
 
-    if (action === 'blobtest') {
-      // Prueba temporal: sube y borra un archivo chico con el token del servidor
-      const { put, del } = require('@vercel/blob'); const out = {};
-      for (const access of ['private', 'public']) {
-        try { const b = await put('ig/diag-' + Date.now() + '.txt', 'ok', { access, addRandomSuffix: true }); out[access] = 'ok'; try { await del(b.url); } catch {} break; }
-        catch (e) { out[access] = String(e.message).slice(0, 200); }
-      }
-      return res.json(out);
-    }
-
     if (action === 'publish') {
       const j = await graph('/' + IGID() + '/media_publish', { creation_id: body.id, access_token: TOKEN() }, 'POST');
       let link = null; try { const m = await graph('/' + j.id, { fields: 'permalink', access_token: TOKEN() }); link = m.permalink; } catch {}
