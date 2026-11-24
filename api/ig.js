@@ -71,8 +71,6 @@ module.exports = async (req, res) => {
       blob: !!(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID),
       blobMode: process.env.BLOB_READ_WRITE_TOKEN ? 'token' : (process.env.BLOB_STORE_ID ? 'presigned' : null),
       oidc: !!(req.headers['x-vercel-oidc-token'] || process.env.VERCEL_OIDC_TOKEN),
-      oidcCtx: (() => { try { const c = globalThis[Symbol.for('@vercel/request-context')]; const h = c && c.get && c.get() && c.get().headers; return h ? !!h['x-vercel-oidc-token'] : 'sin contexto'; } catch (e) { return 'error'; } })(),
-      oidcLib: await (async () => { try { const { getVercelOidcToken } = require('@vercel/oidc'); return !!(await getVercelOidcToken()); } catch (e) { return String(e.message).slice(0, 160); } })(),
       protected: !!studioPass(),
       pass: passInfo()
     });
