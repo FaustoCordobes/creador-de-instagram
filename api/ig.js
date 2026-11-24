@@ -70,6 +70,7 @@ module.exports = async (req, res) => {
       ttsPremium: { openai: !!process.env.OPENAI_API_KEY, eleven: !!process.env.ELEVENLABS_API_KEY, fish: !!process.env.FISH_API_KEY },
       blob: !!(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID),
       blobMode: process.env.BLOB_READ_WRITE_TOKEN ? 'token' : (process.env.BLOB_STORE_ID ? 'presigned' : null),
+      oidc: !!(req.headers['x-vercel-oidc-token'] || process.env.VERCEL_OIDC_TOKEN),
       protected: !!studioPass(),
       pass: passInfo()
     });
@@ -163,14 +164,15 @@ module.exports = async (req, res) => {
       const pathname = decodeURIComponent(u.pathname.replace(/^\//, ''));
       const { issueSignedToken, presignUrl } = require('@vercel/blob');
       const validUntil = Date.now() + 60 * 60 * 1000;
-      const token = await issueSignedToken({ pathname, operations: ['get'], validUntil });
+      const oidcT = req.headers['x-vercel-oidc-token'] || process.env.VERCEL_OIDC_TOKEN;
+      const token = await issueSignedToken({ ...(oidcT ? { oidcToken: String(oidcT) } : {}), pathname, operations: ['get'], validUntil });
       const { presignedUrl } = await presignUrl(token, { operation: 'get', pathname, access: 'private', validUntil });
       return res.json({ url: presignedUrl });
     }
 
     if (action === 'cleanup') {
       const urls = (body.urls || []).filter(u => /blob\.vercel-storage\.com/.test(u));
-      if (urls.length && (process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID)) { const { del } = require('@vercel/blob'); await del(urls); }
+      if (urls.length && (process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID)) { const { del } = require('@vercel/blob'); const oidcT = req.headers['x-vercel-oidc-token'] || process.env.VERCEL_OIDC_TOKEN; await del(urls, oidcT ? { oidcToken: String(oidcT) } : {}); }
       return res.json({ deleted: urls.length });
     }
 

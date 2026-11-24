@@ -6,6 +6,8 @@
 const { handleUpload, handleUploadPresigned } = require('@vercel/blob/client');
 const { issueSignedToken } = require('@vercel/blob');
 const { cors, readBody, studioPass } = require('./_lib');
+// Token OIDC que Vercel manda en cada pedido; hace falta con la conexión nueva (BLOB_STORE_ID).
+const oidc = req => { const t = req.headers['x-vercel-oidc-token'] || process.env.VERCEL_OIDC_TOKEN; return t ? { oidcToken: String(t) } : {}; };
 
 const TYPES = ['image/jpeg', 'video/mp4'];
 const MAX = 200 * 1024 * 1024;
@@ -30,7 +32,7 @@ module.exports = async (req, res) => {
         body, request: req,
         getSignedToken: async (pathname, clientPayload) => {
           checkKey(clientPayload);
-          const token = await issueSignedToken({ pathname, operations: ['put'], allowedContentTypes: TYPES, maximumSizeInBytes: MAX, validUntil: Date.now() + 30 * 60 * 1000 });
+          const token = await issueSignedToken({ ...oidc(req), pathname, operations: ['put'], allowedContentTypes: TYPES, maximumSizeInBytes: MAX, validUntil: Date.now() + 30 * 60 * 1000 });
           return { token, urlOptions: { allowedContentTypes: TYPES, maximumSizeInBytes: MAX, addRandomSuffix: true } };
         }
       });
